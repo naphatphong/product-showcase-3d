@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 import { site } from "@/config/site";
 import "./globals.css";
 
 // next/font โหลดฟอนต์ตอน build แล้วเสิร์ฟจากเว็บเราเอง (ไม่ดึงจาก Google ตอนเปิดเว็บ)
 // และตั้งเป็น CSS variable ไว้ให้ globals.css เรียกใช้
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Cormorant Garamond = ตัวหนังสือหัวเรื่องแบบ serif หรูๆ, Jost = ตัวหนังสือทั่วไปแบบเรียบ
+const display = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sans = Jost({
+  variable: "--font-jost",
   subsets: ["latin"],
 });
 
@@ -25,10 +27,7 @@ export const metadata: Metadata = {
 // LayoutProps เป็น type ที่ Next.js สร้างให้อัตโนมัติตอน build/dev
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${display.variable} ${sans.variable} h-full antialiased`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

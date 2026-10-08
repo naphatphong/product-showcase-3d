@@ -1,22 +1,41 @@
-import SceneLoader from "@/components/three/SceneLoader";
+import Link from "next/link";
+import Showroom from "@/components/Showroom";
+import { products } from "@/config/products";
 import { site } from "@/config/site";
 
-// หน้าแรก (Server Component) — ฉาก 3D + ชื่อแบรนด์ + tagline
-// ข้อความนี้ render บน server จึงขึ้นทันที ไม่ต้องรอฉาก 3D โหลด
+// หน้าแรก (Server Component): หัวเว็บ + ข้อความ render บน server จึงขึ้นทันที
+// ส่วนที่เป็น 3D และโต้ตอบได้อยู่ใน <Showroom /> (Client Component)
 export default function Home() {
   return (
-    <>
-      {/* ฉาก 3D อยู่หลังสุด (fixed เต็มจอ) */}
-      <SceneLoader />
-      {/* pointer-events-none: ให้เมาส์/นิ้วทะลุข้อความไปถึง canvas ด้านหลัง จะได้หมุนกระบอกได้ */}
-      <main className="pointer-events-none flex min-h-dvh flex-col items-center justify-between px-4 py-16 text-center">
-        <h1 className="text-6xl font-black tracking-tighter sm:text-8xl">{site.name}</h1>
-        <p className="text-sm uppercase tracking-[0.3em] text-white/60">{site.headline}</p>
-      </main>
-      {/* ต้องมีตามข้อห้ามใน PLAN: บอกว่าเป็นงานสมมติ ไม่ใช่สินค้าจริง */}
-      <footer className="py-6 text-center text-xs text-white/40">
-        Concept project — not a real product.
-      </footer>
-    </>
+    <main className="h-dvh overflow-hidden">
+      <Showroom />
+
+      {/* pointer-events-none: ให้เมาส์/นิ้วทะลุข้อความไปถึงฉาก 3D ด้านหลัง */}
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-10 flex items-center justify-between px-5 py-5 sm:px-10">
+        <div className="font-display text-lg tracking-[0.35em]">
+          {site.name}{" "}
+          <span className="font-sans text-[11px] tracking-[0.2em] text-white/50">{site.byline}</span>
+        </div>
+        <div className="text-[11px] uppercase tracking-[0.25em] text-white/60">Cart · 0</div>
+      </header>
+
+      <div className="pointer-events-none fixed inset-x-0 top-20 z-10 px-4 text-center sm:top-24">
+        <p className="text-[11px] uppercase tracking-[0.35em] text-white/50">[ {site.eyebrow} ]</p>
+        <h1 className="mt-3 font-display text-4xl font-light sm:text-6xl">{site.headline}</h1>
+      </div>
+
+      {/* รายการสินค้าแบบ HTML ล้วน: มองไม่เห็นบนจอ แต่ screen reader และ Google อ่านได้ */}
+      <nav aria-label="Products" className="sr-only">
+        <ul>
+          {products.map((p) => (
+            <li key={p.slug}>
+              <Link href={`/${p.slug}`}>
+                {p.name} — {p.category}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </main>
   );
 }

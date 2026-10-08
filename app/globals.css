@@ -1,25 +1,25 @@
 /* โหลด Tailwind CSS v4 (ไม่ต้องมี tailwind.config แล้ว ตั้งค่าใน CSS ได้เลย) */
 @import "tailwindcss";
 
-/* สีหลักของเว็บเก็บเป็น CSS variables
-   ตอนทำระบบสลับรส (M3) จะเปลี่ยนค่าพวกนี้ แล้วทั้งหน้าเปลี่ยนสีตาม */
+/* สีหลักของเว็บเก็บเป็น CSS variables */
 :root {
-  --background: #050505;
-  --foreground: #f5f5f5;
+  --background: #000000;
+  --foreground: #f2f2f2;
 }
 
-/* ผูก CSS variables เข้ากับ Tailwind ทำให้ใช้คลาส bg-background / text-foreground ได้ */
+/* ผูกค่าเข้ากับ Tailwind: ได้คลาส bg-background, font-sans, font-display */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jost);
+  --font-display: var(--font-cormorant);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-jost), Arial, Helvetica, sans-serif;
+  font-weight: 300;
   /* กันไม่ให้เกิด scroll แนวนอนบนมือถือ */
   overflow-x: hidden;
 }

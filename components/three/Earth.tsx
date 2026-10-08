@@ -7,7 +7,7 @@ import * as THREE from "three";
 
 // ตำแหน่งและขนาดโลกในฉาก — โลกใหญ่มากและอยู่ต่ำ/ไกลกว่าสินค้า
 // กล้องจึงเห็นแค่ส่วนบนของโลกเป็นขอบฟ้าโค้งๆ ด้านล่างจอ
-export const EARTH_CENTER = new THREE.Vector3(0, -13.5, -13);
+export const EARTH_CENTER = new THREE.Vector3(0, -17, -16);
 export const EARTH_RADIUS = 12;
 // ทิศที่แสงอาทิตย์ส่องมา (ใช้ทั้ง shader ของโลกและไฟของสินค้า ให้แสงไปทางเดียวกัน)
 export const SUN_DIR = new THREE.Vector3(1, 0.45, -0.35).normalize();
