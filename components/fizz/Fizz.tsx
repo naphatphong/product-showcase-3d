@@ -14,6 +14,7 @@ import {
 import Safe from "@/components/Safe";
 import { benefits, brandStories } from "@/config/fizz";
 import { products } from "@/config/products";
+import * as sfx from "@/lib/fizzSound";
 import { useNarrow } from "@/lib/useNarrow";
 import { archivo } from "./font";
 import Hud from "./Hud";
@@ -30,6 +31,8 @@ const brands = products.find((p) => p.slug === "drink")!.variants;
 const N = brands.length;
 const LAST = SECTIONS.length - 1; // section สุดท้าย = สำเนาหน้าเลือกยี่ห้อ (ใช้ตอนวนกลับ)
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+// ความดังของเสียงซ่าพื้นหลังในแต่ละ section (ตามลำดับ SECTIONS) — section ฟองซ่า/CRACK ดังสุด
+const FIZZ_LEVEL = [0.25, 0.2, 0.7, 0.4, 0.25, 0.25, 0.6, 0.35, 0.12, 0.12, 0.25];
 
 // หน้าสินค้า FIZZ: เลื่อนจอทีละ section (เหมือนเปิดหน้าหนังสือ) ฉาก 3D ขยับตามการเลื่อน
 // ไฟล์นี้เป็นตัวควบคุม: ตำแหน่งเลื่อนจอ, section ที่แสดงอยู่, ยี่ห้อที่เลือก แล้วส่งต่อให้แต่ละส่วน
@@ -40,7 +43,14 @@ export default function Fizz() {
   const sections = useRef<(HTMLElement | null)[]>([]);
   const bar = useRef<HTMLDivElement>(null); // เส้นความคืบหน้าด้านบน
   // สถานะการเลื่อนทีละ section: busy = กำลังเลื่อนอยู่ (ไม่รับคำสั่งใหม่), last = เวลาที่หมุนล้อครั้งล่าสุด
-  const pager = useRef({ busy: false, last: -Infinity, timer: 0 as ReturnType<typeof setTimeout> | 0 });
+  // queued = ปุ่มคีย์บอร์ดที่กดระหว่างกำลังเลื่อน (จำไว้ 1 ครั้ง เลื่อนเสร็จแล้วทำต่อ)
+  const pager = useRef({
+    busy: false,
+    last: -Infinity,
+    timer: 0 as ReturnType<typeof setTimeout> | 0,
+    queued: 0 as -1 | 0 | 1,
+  });
+  const pageRef = useRef<(dir: 1 | -1) => void>(() => {});
   // การปัดนิ้วบนมือถือ: จุดเริ่มต้น + ตัดสินแล้วว่าเป็นการปัดแบบไหน
   const touch = useRef<{ x: number; y: number; mode: "page" | "free" | "side" | null } | null>(null);
   const [brand, setBrand] = useState(0);
@@ -80,8 +90,12 @@ export default function Fizz() {
     const p = pager.current;
     clearTimeout(p.timer);
     const check = () => {
-      if (performance.now() - p.last > 180) p.busy = false;
-      else p.timer = setTimeout(check, 60);
+      if (performance.now() - p.last > 180) {
+        p.busy = false;
+        const q = p.queued;
+        p.queued = 0;
+        if (q) pageRef.current(q); // มีปุ่มที่กดค้างคิวไว้ → เลื่อนต่ออีก 1 section
+      } else p.timer = setTimeout(check, 60);
     };
     check();
   }, []);
@@ -118,6 +132,9 @@ export default function Fizz() {
     },
     [goTo],
   );
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
 
   // ---------- Lenis: เลื่อนจอแบบนุ่ม + วนรอบไม่รู้จบ ----------
   useEffect(() => {
@@ -242,21 +259,71 @@ export default function Fizz() {
   }, [goTo, page, paged, release, rotateTo, step]);
 
   // คีย์บอร์ด: ↓ ↑ PageDown PageUp Space = เปลี่ยน section, ← → = เปลี่ยนยี่ห้อ (ในหน้าเลือกยี่ห้อ)
+  // (ถ้าไม่ดักไว้ เบราว์เซอร์จะเลื่อนจอเองครั้งละเกือบเต็มจอ ไม่ตรง section)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target !== document.body) return; // กำลังใช้ปุ่ม/ลิงก์อยู่ ปล่อยให้ทำงานตามปกติ
-      const down = e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ";
+      const el = e.target as HTMLElement;
+      if (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return; // กำลังพิมพ์อยู่
+      // Space บนปุ่ม/ลิงก์ = กดปุ่มนั้น จึงใช้เลื่อน section เฉพาะตอนไม่ได้เลือกปุ่มอะไรอยู่
+      const space = e.key === " " && el === document.body;
+      const down = e.key === "ArrowDown" || e.key === "PageDown" || space;
       const up = e.key === "ArrowUp" || e.key === "PageUp";
       if ((down || up) && paged(down ? 1 : -1)) {
         e.preventDefault();
         if (!pager.current.busy) page(down ? 1 : -1);
-      } else if (active === 0 && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+        else pager.current.queued = down ? 1 : -1;
+      } else if (active === 0 && el === document.body && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
         step(e.key === "ArrowRight" ? 1 : -1);
       }
     };
     addEventListener("keydown", onKey);
     return () => removeEventListener("keydown", onKey);
   }, [active, page, paged, step]);
+
+  // ---------- เสียง (ปิดไว้ก่อนเสมอ เปิดได้จากปุ่มมุมซ้ายบน) ----------
+  // เปิด/ปิด: ต้องปลุกระบบเสียงตอนผู้ใช้กดปุ่มจริงๆ (กฎของเบราว์เซอร์) จึงเรียก unlock ใน handler นี้
+  const toggleSound = () => {
+    if (!sound) sfx.unlock();
+    setSound(!sound);
+  };
+  // ปุ่ม "ฟังเสียง" ใน section CRACK: เปิดเสียง (ถ้ายังปิด) แล้วเล่นเสียงเปิดกระป๋อง
+  const playCrack = () => {
+    sfx.unlock();
+    setSound(true);
+    setTimeout(sfx.crack, 150); // รอเสียงหลักเฟดขึ้นนิดหนึ่งก่อน
+  };
+  useEffect(() => {
+    if (sound) sfx.unlock(); // กลับมาจากหน้าอื่น/แท็บอื่น: ปลุกระบบเสียงให้ทำงานต่อ
+    sfx.setEnabled(sound);
+  }, [sound]);
+  useEffect(() => {
+    if (sound) sfx.setFizz(FIZZ_LEVEL[active]);
+  }, [active, sound]);
+  // เปลี่ยน section = ลมวูบ, เข้า section CRACK = เสียงเปิดกระป๋อง, เปลี่ยนยี่ห้อ = ฟองแตกป๊อก
+  const heard = useRef({ active, brand });
+  useEffect(() => {
+    const h = heard.current;
+    if (sound && h.active !== active) {
+      sfx.whoosh();
+      if (SECTIONS[active] === "crack") sfx.crack();
+    }
+    if (sound && h.brand !== brand) sfx.pop(brand);
+    heard.current = { active, brand };
+  }, [active, brand, sound]);
+  // ซ่อนแท็บ = พักระบบเสียง, กลับมา = ปลุก (ถ้าเปิดเสียงไว้) / ออกจากหน้านี้ = ปิดเสียง
+  const soundOn = useRef(sound);
+  useEffect(() => {
+    soundOn.current = sound;
+  }, [sound]);
+  useEffect(() => {
+    const onVis = () => (document.hidden ? sfx.sleep() : soundOn.current && sfx.unlock());
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      sfx.setEnabled(false);
+      sfx.sleep();
+    };
+  }, []);
 
   // ยี่ห้อที่เลือกอยู่ใส่ไว้ใน URL (?v=pepsi) แชร์ลิงก์แล้วเปิดมาเจอยี่ห้อเดิม (replaceState = ไม่เพิ่มประวัติการกด back)
   useEffect(() => {
@@ -385,7 +452,12 @@ export default function Fizz() {
         <BenefitOverlay key={x.id} active={active === i + 2} index={i} />
       ))}
       <BenefitNav active={active >= 1 && active <= 5} current={active - 2} onGo={(i) => goTo(i + 2)} />
-      <Caption active={active === 6} title="Pssst." text="Cold can, one crack, the first rush of bubbles. Turn the sound on to hear it." />
+      <Caption
+        active={active === 6}
+        title="Pssst."
+        text="Cold can, one crack, the first rush of bubbles."
+        action={{ label: sound ? "Crack another ▸" : "Hear it ▸", onClick: playCrack }}
+      />
       <Caption active={active === 7} title="The lineup" text={brands.map((x) => x.name).join(" · ")} />
 
       {/* เนื้อหาที่เลื่อนจริง: section ละ 1 จอ (เป็นตัวกำหนดความยาวหน้า) + FAQ + ท้ายเว็บ
@@ -406,7 +478,7 @@ export default function Fizz() {
         ))}
       </main>
 
-      <Hud bar={bar} sound={sound} onSound={() => setSound((s) => !s)} onLogo={() => goTo(0)} />
+      <Hud bar={bar} sound={sound} onSound={toggleSound} onLogo={() => goTo(0)} />
       <Loader progress={progress} ready={ready} onDone={onLoaded} />
     </div>
   );

@@ -222,13 +222,31 @@ export function GhostText({
 }
 
 // ---------- ข้อความเล็กด้านล่าง ของ section CRACK และรวมกระป๋อง ----------
-export function Caption({ active, title, text }: { active: boolean; title: string; text: string }) {
+export function Caption({
+  active,
+  title,
+  text,
+  action,
+}: {
+  active: boolean;
+  title: string;
+  text: string;
+  action?: { label: string; onClick: () => void }; // ปุ่มเล็กใต้ข้อความ (ถ้ามี)
+}) {
   return (
     <div data-active={active} className="overlay pointer-events-none fixed inset-x-0 bottom-[7%] z-[3] px-6 text-center">
       <h2 className="fizz-title text-[clamp(1.8rem,3.5vw,3rem)] leading-none">
         <Reveal text={title} />
       </h2>
       <p className="reveal-fade mx-auto mt-3 max-w-xl text-sm text-white/75">{text}</p>
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="reveal-fade pointer-events-auto mt-5 rounded-full border border-white/40 px-5 py-2 text-[11px] uppercase tracking-[0.25em] transition hover:bg-white hover:text-black"
+        >
+          {action.label}
+        </button>
+      )}
     </div>
   );
 }
