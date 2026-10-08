@@ -18,6 +18,14 @@ const VIEWS = {
   wide: { pos: new THREE.Vector3(-0.8, -0.3, 8), look: new THREE.Vector3(-0.8, -0.3, 0), fov: 38 },
   narrow: { pos: new THREE.Vector3(0, -1.2, 11), look: new THREE.Vector3(0, -1.2, 0), fov: 52 },
 };
+// มุมกล้องตอนหน้าเปิด: ถอยหลังและเงยขึ้น → โลกลดลงไปอยู่ครึ่งล่าง ท้องฟ้าด้านบนว่างให้หัวข้อ
+// กดเริ่มแล้วกล้องค่อยๆ ก้มลงมาเป็นมุมปกติ พร้อมกับที่สินค้าชิ้นแรกบินเข้ามา
+const SPLASH = {
+  wide: { pos: new THREE.Vector3(-0.8, 0.3, 9.5), look: new THREE.Vector3(-0.8, 2.2, 0), fov: 38 },
+  narrow: { pos: new THREE.Vector3(0, -0.5, 12.5), look: new THREE.Vector3(0, 1.6, 0), fov: 52 },
+};
+const ARRIVE_SECONDS = 2.2; // เวลาที่สินค้าชิ้นแรกบินจากนอกจอเข้ามาจอด
+const ARRIVE_FROM = 1.7; // ชิ้นแรกเริ่มบินจากตรงไหน (นับเป็นระยะห่างระหว่างสินค้า: เกิน 1 = นอกจอมุมขวาบน)
 
 // ---------- วงโคจรของสินค้า ----------
 // สินค้าทุกชิ้นเป็นเหมือนดาวเทียมบนวงโคจรเดียวกันรอบโลก (วงกลมรอบศูนย์กลางโลก ผ่านจุด SLOT)
@@ -49,6 +57,7 @@ export type SceneProps = {
   onHover: (index: number | null) => void;
   onSelect: (index: number) => void;
   onReady: () => void; // เรียกเมื่อภาพโลกโหลดเสร็จ (ใช้ซ่อนข้อความ loading)
+  started: boolean; // false = หน้าเปิด (เห็นแค่โลก สินค้ายังไม่มา), true = สินค้าบินเข้ามาแล้ว
   labelLayer: RefObject<HTMLDivElement | null>; // ชั้น HTML สำหรับป้ายชื่อสินค้า
   variants: number[]; // สินค้าแต่ละชิ้นเลือกแบบที่เท่าไรอยู่ (ใช้กับสินค้าที่มีหลายแบบ)
   diveTo: { lat: number; lon: number } | null; // มีค่า = กำลังดำดิ่งเข้าหาจุดนี้บนโลก
@@ -58,8 +67,8 @@ export default function Scene(props: SceneProps) {
   return (
     // dpr [1, 2]: ความคมตามจอ แต่ไม่เกิน 2 เท่า กันมือถือจอคมสูงทำงานหนักเกิน
     // fallback: แสดงแทนเมื่อเครื่องไม่รองรับ WebGL
-    <Canvas camera={{ position: [0, 0.6, 8.2], fov: 38 }} dpr={[1, 2]} fallback={<NoWebGL />}>
-      <Rig narrow={props.narrow} diveTo={props.diveTo} />
+    <Canvas camera={{ position: SPLASH.wide.pos.toArray(), fov: 38 }} dpr={[1, 2]} fallback={<NoWebGL />}>
+      <Rig narrow={props.narrow} started={props.started} diveTo={props.diveTo} />
       <Backdrop />
       {/* ดาว: กระจายอยู่บนทรงกลมรัศมี 120 รอบฉาก, fade = ดาวขอบๆ จางลง */}
       <Stars radius={120} depth={40} count={6000} factor={5} saturation={0} fade speed={0.4} />
@@ -111,7 +120,7 @@ export default function Scene(props: SceneProps) {
 // ระยะห่างระหว่างชิ้นคำนวณจากขนาดจอ ให้ชิ้นข้างเคียงอยู่พ้นขอบจอพอดี (ลากค้างไว้ = เห็นชิ้นเดิมออก ชิ้นใหม่เข้าพร้อมกัน)
 // วนได้ไม่สิ้นสุด: ตำแหน่งของแต่ละชิ้นนับห่างจากชิ้นตรงกลางไม่เกินครึ่งวง (3 ชิ้น = −1.5 ถึง 1.5 ชิ้น)
 // ชิ้นที่ข้ามจากฝั่งหนึ่งไปอีกฝั่งจะกระโดดตอนอยู่นอกจอ ผู้ใช้จึงไม่เห็น
-function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants }: SceneProps) {
+function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants, started }: SceneProps) {
   const size = useThree((s) => s.size);
   const view = narrow ? VIEWS.narrow : VIEWS.wide;
   // ครึ่งความกว้าง/สูงของภาพที่ระยะของ SLOT (คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ)
@@ -133,23 +142,32 @@ function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants
   const items = useRef<(THREE.Group | null)[]>([]);
   const pos = useRef<number | null>(null); // ตำแหน่งวงโคจรที่แสดงอยู่ตอนนี้ (ไล่ตาม ring.goal แบบนุ่มๆ)
   const bank = useRef(0); // มุมเอียงตอนเคลื่อนที่ (เหมือนเครื่องบินเอียงตอนเลี้ยว)
+  const arrive = useRef(0); // ความคืบหน้าการบินเข้ามาของชิ้นแรก 0 → 1
+  const extraPrev = useRef(ARRIVE_FROM); // ระยะบินที่เหลือของเฟรมก่อน (ใช้คิดความเร็ว)
   const point = useRef(new THREE.Vector3());
   // ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": สินค้ากระโดดไปเลย ไม่เลื่อนให้เห็น
   const [reduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   useFrame((_, dt) => {
     const goal = ring.current.goal;
-    const prev = pos.current ?? goal;
-    const p = pos.current === null || reduced ? goal : THREE.MathUtils.damp(prev, goal, 5, dt);
+    // หน้าเปิด: สินค้ายังไม่มา / กดเริ่มแล้ว: ชิ้นแรกบินจากนอกจอมุมขวาบนเข้ามาจอด (เร็วตอนแรก แล้วค่อยๆ ชะลอ)
+    if (started) arrive.current = reduced ? 1 : Math.min(1, arrive.current + dt / ARRIVE_SECONDS);
+    const extra = ARRIVE_FROM * Math.pow(1 - arrive.current, 3); // ระยะที่ยังเหลือก่อนถึงที่จอด (easeOutCubic)
+    const prevGoal = pos.current ?? goal;
+    const p = pos.current === null || reduced ? goal : THREE.MathUtils.damp(prevGoal, goal, 5, dt);
+    // ความเร็ว (ชิ้นต่อวินาที รวมการบินเข้ามาตอนเริ่ม) → เอียงตัวไปทางที่เคลื่อน
+    const shown = p - extra;
+    const v = dt > 0 && pos.current !== null ? (shown - (prevGoal - extraPrev.current)) / dt : 0;
+    extraPrev.current = extra;
     pos.current = p;
-    // ความเร็ว (ชิ้นต่อวินาที) → เอียงตัวไปทางที่เคลื่อน
-    const v = dt > 0 ? (p - prev) / dt : 0;
     bank.current = THREE.MathUtils.damp(bank.current, THREE.MathUtils.clamp(v * 0.18, -0.4, 0.4), 6, dt);
     const n = products.length;
     items.current.forEach((g, i) => {
       if (!g) return;
       const k = mod(i - p + n / 2, n) - n / 2; // ห่างจากชิ้นตรงกลางกี่ชิ้น: −n/2 ถึง n/2
-      g.position.copy(orbitPoint(k * spacing, point.current));
+      // ระหว่างบินเข้ามา: แสดงเฉพาะชิ้นที่จะมาจอด (ชิ้นอื่นอาจลอยผ่านกลางจอเพราะเลื่อนตามกันมา)
+      g.visible = started && (arrive.current >= 1 || Math.abs(k) < 0.5);
+      g.position.copy(orbitPoint((k + extra) * spacing, point.current));
       g.rotation.z = bank.current;
       g.scale.setScalar(scale);
     });
@@ -190,8 +208,9 @@ type Dive = {
   lookTo: THREE.Vector3;
 };
 
-function Rig({ narrow, diveTo }: { narrow: boolean; diveTo: SceneProps["diveTo"] }) {
-  const look = useRef(new THREE.Vector3());
+function Rig({ narrow, started, diveTo }: Pick<SceneProps, "narrow" | "started" | "diveTo">) {
+  // จุดที่กล้องมอง: เริ่มที่มุมของหน้าเปิด (ไม่ใช่ 0,0,0 ไม่งั้นเฟรมแรกๆ กล้องจะหันวูบ)
+  const look = useRef((narrow ? SPLASH.narrow : SPLASH.wide).look.clone());
   const dive = useRef<Dive | null>(null);
 
   useFrame((state, dt) => {
@@ -230,15 +249,16 @@ function Rig({ narrow, diveTo }: { narrow: boolean; diveTo: SceneProps["diveTo"]
     }
 
     dive.current = null;
-    const view = narrow ? VIEWS.narrow : VIEWS.wide;
+    const views = started ? VIEWS : SPLASH;
+    const view = narrow ? views.narrow : views.wide;
     const k = narrow ? 0 : 1; // มือถือไม่มีเมาส์ → ไม่ต้อง parallax
     const damp = THREE.MathUtils.damp;
-    cam.position.x = damp(cam.position.x, view.pos.x + state.pointer.x * 0.5 * k, 2.5, dt);
-    cam.position.y = damp(cam.position.y, view.pos.y + state.pointer.y * 0.25 * k, 2.5, dt);
-    cam.position.z = damp(cam.position.z, view.pos.z, 2.5, dt);
+    cam.position.x = damp(cam.position.x, view.pos.x + state.pointer.x * 0.5 * k, 1.6, dt);
+    cam.position.y = damp(cam.position.y, view.pos.y + state.pointer.y * 0.25 * k, 1.6, dt);
+    cam.position.z = damp(cam.position.z, view.pos.z, 1.6, dt);
     cam.fov = damp(cam.fov, view.fov, 4, dt);
     cam.updateProjectionMatrix();
-    look.current.lerp(view.look, 1 - Math.exp(-4 * dt));
+    look.current.lerp(view.look, 1 - Math.exp(-1.6 * dt));
     cam.lookAt(look.current);
   });
   return null;

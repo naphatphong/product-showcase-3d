@@ -68,6 +68,73 @@ body {
   }
 }
 
+/* ======================= หน้าแรก (วงโคจร) ======================= */
+
+/* ฟอนต์ของหน้าแรก: Archivo (ตัวหนังสือทั่วไป) + IBM Plex Mono (ป้ายเล็กๆ แบบ HUD) — ตั้งค่าใน components/fonts.ts */
+.orbit-root {
+  font-family: var(--font-archivo), Arial, sans-serif;
+  font-weight: 400;
+}
+.orbit-thin {
+  font-weight: 200;
+  letter-spacing: -0.01em;
+}
+.orbit-bold {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.orbit-mono {
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+}
+
+/* ปุ่มหลักแบบต้นแบบ: กล่องขาว ตัวหนังสือดำ + มุมเล็กๆ 4 มุมรอบปุ่ม (เหมือนกรอบเล็งของกล้อง)
+   มุม 4 มุมวาดด้วย background หลายชั้นของ ::before (เส้นสั้นๆ แนวนอน + แนวตั้งที่แต่ละมุม) */
+.orbit-cta {
+  position: relative;
+  display: inline-block;
+  padding: 0.85rem 1.9rem;
+  background: #fff;
+  color: #000;
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.25s,
+    color 0.25s;
+}
+.orbit-cta::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  pointer-events: none;
+  --c: rgba(255, 255, 255, 0.85);
+  background:
+    linear-gradient(var(--c), var(--c)) left top / 7px 1px,
+    linear-gradient(var(--c), var(--c)) left top / 1px 7px,
+    linear-gradient(var(--c), var(--c)) right top / 7px 1px,
+    linear-gradient(var(--c), var(--c)) right top / 1px 7px,
+    linear-gradient(var(--c), var(--c)) left bottom / 7px 1px,
+    linear-gradient(var(--c), var(--c)) left bottom / 1px 7px,
+    linear-gradient(var(--c), var(--c)) right bottom / 7px 1px,
+    linear-gradient(var(--c), var(--c)) right bottom / 1px 7px;
+  background-repeat: no-repeat;
+  transition: inset 0.25s;
+}
+.orbit-cta:hover {
+  background: transparent;
+  color: #fff;
+}
+.orbit-cta:hover::before {
+  inset: -3px;
+}
+
+/* หน้าเปิด: วงมืดจางๆ ด้านหลังหัวข้อ ให้ตัวหนังสือบางๆ อ่านได้แม้ทับโลกที่สว่าง */
+.orbit-scrim {
+  background: radial-gradient(50% 42% at 50% 46%, rgba(0, 0, 0, 0.45), transparent 75%);
+}
+
 /* ======================= หน้า FIZZ (/drink) ======================= */
 
 /* CSS ที่ Lenis ต้องใช้ (คัดมาจาก lenis/dist/lenis.css) — ใส่ไว้ที่นี่แทนการ import ในหน้า

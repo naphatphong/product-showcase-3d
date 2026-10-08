@@ -126,38 +126,25 @@ export default function FloatingProduct({
         </group>
       </group>
 
-      {/* ป้ายใต้สินค้า: เป็น HTML ที่ drei จัดตำแหน่งให้ตามจุด 3D (แค่ตกแต่ง screen reader ข้ามได้)
-          ชิ้นหน้าสุด = บอกว่าคลิกอีกครั้งเพื่อเข้า / ชิ้นอื่น = ชื่อสินค้า (คลิกแล้วหมุนมาข้างหน้า) */}
+      {/* ป้ายใต้สินค้า (เฉพาะชิ้นที่จอดอยู่): เป็น HTML ที่ drei จัดตำแหน่งให้ตามจุด 3D (แค่ตกแต่ง screen reader ข้ามได้)
+          ชิ้นอื่นอยู่นอกจอ ไม่ต้องมีป้าย (ถ้ามี ป้ายจะลอยผ่านกลางจอตอนสินค้าบินเข้ามา) */}
       {/* portal: บอก drei ให้วางป้ายในชั้นที่เตรียมไว้ตั้งแต่แรก (ถ้าปล่อยให้ drei หาที่วางเอง มันจะย้ายที่หลัง
           render ครั้งแรก ทำให้ React 19 error ตอนเปลี่ยนหน้า) */}
-      {labelLayer && (
+      {labelLayer && active && (
         <Html
           portal={labelLayer as RefObject<HTMLElement>}
-          position={[0, -halfHeight - (active ? 0.18 : 0.25), 0]}
+          position={[0, -halfHeight - 0.18, 0]}
           center
           pointerEvents="none"
           zIndexRange={[5, 0]}
         >
-          {active ? (
-            <div
-              aria-hidden
-              className="whitespace-nowrap rounded-full border bg-black/40 px-4 py-1.5 text-[10px] uppercase tracking-[0.3em] backdrop-blur-sm motion-safe:animate-fade-in"
-              style={{ borderColor: variant.accent, color: variant.accent }}
-            >
-              Click to enter
-            </div>
-          ) : (
-            <div
-              aria-hidden
-              className={`w-56 text-center transition-opacity duration-300 ${hovered ? "opacity-100" : "opacity-60"}`}
-            >
-              <div className="text-[10px] tracking-[0.35em] text-white/50">0{index + 1}</div>
-              <div className="mt-1 font-display text-xl tracking-[0.2em] text-white">{product.name}</div>
-              <div className="mt-0.5 text-[11px] uppercase tracking-[0.25em] text-white/50">
-                {product.category}
-              </div>
-            </div>
-          )}
+          <div
+            aria-hidden
+            className="whitespace-nowrap rounded-full border bg-black/40 px-4 py-1.5 text-[10px] uppercase tracking-[0.3em] backdrop-blur-sm motion-safe:animate-fade-in"
+            style={{ borderColor: variant.accent, color: variant.accent }}
+          >
+            Click to enter
+          </div>
         </Html>
       )}
     </group>

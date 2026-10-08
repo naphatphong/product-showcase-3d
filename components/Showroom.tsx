@@ -16,6 +16,7 @@ import {
 import { look, productHref, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
+import { site } from "@/config/site";
 import ProductPanel from "./ProductPanel";
 import Safe from "./Safe";
 import type { Ring } from "./three/Scene";
@@ -53,9 +54,14 @@ type Drag = {
   v: number; // ความเร็วตอนลาก (ชิ้นต่อวินาที) ใช้ตอนปล่อย: ปัดแรง = ไปต่ออีกชิ้น
 };
 
-// ส่วนที่โต้ตอบได้ของหน้าแรก: วงแหวนสินค้า (หมุนได้) + แผงรายละเอียด + การดำดิ่งเข้าหน้าสินค้า
-// children = หัวเว็บที่ render บน server (ส่งมาจาก page.tsx) — Showroom แค่ทำให้จางหายตอนดำดิ่ง
-export default function Showroom({ children }: { children: ReactNode }) {
+// จำไว้ในแท็บนี้ว่าผ่านหน้าเปิดแล้ว (กลับมาหน้าแรกอีกครั้ง → ข้ามหน้าเปิด สินค้าบินเข้ามาเลย)
+const SEEN = "orbit-entered";
+
+// ส่วนที่โต้ตอบได้ของหน้าแรก:
+// 1. หน้าเปิด: เห็นแค่โลก + หัวข้อ + ปุ่ม Enter orbit (กดปุ่ม / เลื่อนลง / Enter = เริ่ม)
+// 2. วงโคจรสินค้า: สินค้าชิ้นแรกบินเข้ามา แล้วเลื่อนเปลี่ยนทีละชิ้นได้ไม่สิ้นสุด + แผงรายละเอียด + การดำดิ่งเข้าหน้าสินค้า
+// header / intro = ข้อความที่ render บน server (ส่งมาจาก page.tsx) — Showroom แค่จัดวางและซ่อน/แสดงตามจังหวะ
+export default function Showroom({ header, intro }: { header: ReactNode; intro: ReactNode }) {
   const narrow = useNarrow();
   const router = useRouter();
   // turn = วงแหวนหมุนมาแล้วกี่ชิ้น (นับต่อเนื่อง ไม่วนกลับ เช่น 0, 1, 2, 3 หรือติดลบ)
@@ -72,6 +78,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
   // แบบที่เลือกของสินค้าแต่ละชิ้น (เริ่มที่แบบแรกทุกชิ้น) เช่น [0, 0, 1] = ชิ้นที่ 3 เลือกแบบที่ 2
   const [variants, setVariants] = useState(() => products.map(() => 0));
   const [ready, setReady] = useState(false); // ภาพโลกโหลดเสร็จหรือยัง
+  const [started, setStarted] = useState(false); // ผ่านหน้าเปิดแล้วหรือยัง (false = ยังอยู่หน้าเปิด)
   const [entering, setEntering] = useState<number | null>(null); // กำลังดำดิ่งเข้าสินค้าชิ้นไหน
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const labelLayer = useRef<HTMLDivElement>(null); // ชั้นวางป้ายชื่อสินค้า (drei จะใส่ป้ายลงในนี้)
@@ -88,6 +95,30 @@ export default function Showroom({ children }: { children: ReactNode }) {
     [],
   );
 
+  // เคยผ่านหน้าเปิดแล้วในแท็บนี้ → ข้ามหน้าเปิด (อ่านหลัง render แรก เพราะ server ไม่รู้ค่า sessionStorage)
+  // setState ผ่าน requestAnimationFrame = ไม่ setState ตรงๆ ใน effect (กฎของ React)
+  useEffect(() => {
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(SEEN) === "1";
+    } catch {
+      // บางเบราว์เซอร์ (โหมดส่วนตัว/ปิด storage) อ่านไม่ได้ → แสดงหน้าเปิดตามปกติ
+    }
+    if (!seen) return;
+    const id = requestAnimationFrame(() => setStarted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // ออกจากหน้าเปิด → สินค้าชิ้นแรกบินเข้ามา
+  const start = useCallback(() => {
+    setStarted(true);
+    try {
+      sessionStorage.setItem(SEEN, "1");
+    } catch {
+      // จำไม่ได้ก็ไม่เป็นไร ครั้งหน้าแค่เห็นหน้าเปิดอีกรอบ
+    }
+  }, []);
+
   // หมุนวงแหวนไปตำแหน่ง t: ฉาก 3D อ่านจาก ref ทันที, แผงรายละเอียดอัปเดตจาก state
   const rotateTo = useCallback((t: number) => {
     ring.current.goal = t;
@@ -97,9 +128,9 @@ export default function Showroom({ children }: { children: ReactNode }) {
   // หมุนไปชิ้นถัดไป (dir = 1) หรือก่อนหน้า (dir = -1)
   const step = useCallback(
     (dir: 1 | -1) => {
-      if (!busy) rotateTo(Math.round(ring.current.goal) + dir);
+      if (!busy && started) rotateTo(Math.round(ring.current.goal) + dir);
     },
-    [busy, rotateTo],
+    [busy, started, rotateTo],
   );
 
   // หมุนเอาชิ้น index มาไว้หน้าสุด ทางที่ใกล้ที่สุด (3 ชิ้น: หมุนไปทางซ้ายหรือขวา 1 ชิ้นเสมอ)
@@ -133,7 +164,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
   // - ชิ้นอื่น → หมุนมาไว้หน้าสุดก่อน (คลิกอีกครั้งถึงเข้า)
   // - คลิกที่ 2 ของดับเบิลคลิกไม่นับ (สินค้ากำลังหมุนหนี อาจไปโดนชิ้นอื่น) ให้ onDoubleClick จัดการแทน
   const select = (index: number) => {
-    if (busy) return;
+    if (busy || !started) return; // หน้าเปิด: สินค้ายังซ่อนอยู่ แต่กล่องรับคลิกยังอยู่ในฉาก → ไม่นับ
     const now = performance.now();
     if (now - lastPick.current.t < 450) return;
     lastPick.current = { index, t: now };
@@ -142,6 +173,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
   };
   // ดับเบิลคลิกสินค้าชิ้นไหนก็ได้ = เข้าหน้าสินค้านั้นเลย
   const doubleClick = () => {
+    if (!started) return;
     const { index, t } = lastPick.current;
     if (index >= 0 && performance.now() - t < 700) enter(index);
   };
@@ -151,7 +183,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
   const pxPerItem = () => Math.min(640, Math.max(220, window.innerWidth * (narrow ? 0.6 : 0.4)));
 
   const pointerDown = (e: PointerEvent) => {
-    if (busy || (e.pointerType === "mouse" && e.button !== 0)) return; // เมาส์: เฉพาะปุ่มซ้าย
+    if (busy || !started || (e.pointerType === "mouse" && e.button !== 0)) return; // เมาส์: เฉพาะปุ่มซ้าย
     const g = ring.current.goal;
     drag.current = { x: e.clientX, from: g, moved: false, lastX: e.clientX, lastT: e.timeStamp, v: 0 };
   };
@@ -195,7 +227,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
     rotateTo(target);
   };
 
-  // ล้อเมาส์ / ทัชแพด: เลื่อน 1 ครั้ง = หมุน 1 ชิ้น
+  // ล้อเมาส์ / ทัชแพด: เลื่อน 1 ครั้ง = หมุน 1 ชิ้น (หน้าเปิด: เลื่อนลง = เริ่ม)
   // ทัชแพดส่ง event รัวๆ ต่อเนื่อง (รวมแรงเฉื่อยหลังปล่อยนิ้ว) → นับเป็นครั้งเดียวจนกว่าจะหยุดไป 200ms
   const onWheel = (e: WheelEvent) => {
     if (busy) return;
@@ -209,7 +241,9 @@ export default function Showroom({ children }: { children: ReactNode }) {
     const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 800 : 1; // บางเบราว์เซอร์นับเป็นบรรทัด/หน้า
     w.acc += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * unit;
     if (Math.abs(w.acc) >= 40) {
-      step(w.acc > 0 ? 1 : -1); // เลื่อนลง/ไปทางขวา = ชิ้นถัดไป
+      if (!started) {
+        if (w.acc > 0) start();
+      } else step(w.acc > 0 ? 1 : -1); // เลื่อนลง/ไปทางขวา = ชิ้นถัดไป
       w.done = true;
     }
   };
@@ -217,8 +251,16 @@ export default function Showroom({ children }: { children: ReactNode }) {
   const onReady = useCallback(() => setReady(true), []);
 
   // คีย์บอร์ด: ← → หมุนวงแหวน, Enter เข้าหน้าสินค้าที่อยู่หน้าสุด
+  // หน้าเปิด: Enter / เว้นวรรค / ↓ / → = เริ่ม (ถ้ากำลัง focus ปุ่ม/ลิงก์อยู่ ปล่อยให้ปุ่มนั้นทำงานเอง)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (!started) {
+        if (e.target === document.body && ["Enter", " ", "ArrowDown", "ArrowRight"].includes(e.key)) {
+          e.preventDefault();
+          start();
+        }
+        return;
+      }
       if (e.key === "ArrowRight") step(1);
       else if (e.key === "ArrowLeft") step(-1);
       // ถ้ากำลัง focus ปุ่ม/ลิงก์อยู่ ปล่อยให้ Enter ทำงานกับปุ่มนั้นตามปกติ
@@ -226,7 +268,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, enter, front]);
+  }, [step, enter, front, started, start]);
 
   return (
     <>
@@ -235,7 +277,9 @@ export default function Showroom({ children }: { children: ReactNode }) {
           รูปเมาส์: มือจับ (ลากได้) / นิ้วชี้ตอนชี้สินค้า (คลิกได้) / กำมือตอนกำลังลาก */}
       <div
         className={`fixed inset-0 touch-none transition-opacity duration-1000 ${ready ? "opacity-100" : "opacity-0"}`}
-        style={{ cursor: busy ? "default" : dragging ? "grabbing" : hovered !== null ? "pointer" : "grab" }}
+        style={{
+          cursor: busy || !started ? "default" : dragging ? "grabbing" : hovered !== null ? "pointer" : "grab",
+        }}
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
@@ -255,15 +299,18 @@ export default function Showroom({ children }: { children: ReactNode }) {
             onHover={narrow ? () => {} : setHovered}
             onSelect={select}
             onReady={onReady}
+            started={started}
             labelLayer={labelLayer}
             diveTo={entering === null ? null : look(products[entering], variants[entering]).origin}
             variants={variants}
           />
         </Safe>
       </div>
+      {/* ป้ายข้างสินค้า: ซ่อนตอนหน้าเปิด/ดำดิ่ง และโผล่หลังสินค้าชิ้นแรกบินมาถึง (หน่วง 1.2 วินาที) */}
       <div
         ref={labelLayer}
-        className={`pointer-events-none fixed inset-0 z-[5] transition-opacity duration-300 ${busy ? "opacity-0" : ""}`}
+        className={`pointer-events-none fixed inset-0 z-[5] transition-opacity duration-500 ${busy || !started ? "opacity-0" : ""}`}
+        style={{ transitionDelay: busy || !started ? "0s" : "1.2s" }}
       />
 
       {!ready && (
@@ -272,7 +319,31 @@ export default function Showroom({ children }: { children: ReactNode }) {
         </p>
       )}
 
-      <div className={`transition-opacity duration-500 ${busy ? "opacity-0" : ""}`}>{children}</div>
+      {/* แถบบนสุด (จางหายตอนดำดิ่ง) */}
+      <header
+        className={`pointer-events-none fixed inset-x-0 top-0 z-20 flex h-20 items-center justify-between px-5 transition-opacity duration-500 md:h-24 md:px-10 ${busy ? "opacity-0" : ""}`}
+      >
+        {header}
+      </header>
+
+      {/* หน้าเปิด: หัวข้อ + ปุ่มเริ่ม กลางจอ (class overlay = ค่อยๆ โผล่/จางตาม data-active, ตัวอักษรเลื่อนขึ้นตอนโผล่) */}
+      <div
+        data-active={ready && !started}
+        className="overlay pointer-events-none fixed inset-0 z-10 flex flex-col items-center justify-center px-6 text-center"
+      >
+        {/* แสงมืดจางๆ ด้านหลังข้อความ ให้อ่านง่ายแม้อยู่บนโลกที่สว่าง */}
+        <div aria-hidden className="orbit-scrim absolute inset-0" />
+        <div className="relative -mt-[6vh]">
+          {intro}
+          <button onClick={start} className="orbit-cta reveal-fade pointer-events-auto mt-9">
+            {site.cta}
+          </button>
+        </div>
+        <p className="orbit-mono reveal-fade absolute bottom-12 flex items-center gap-3 text-[9px] tracking-[0.3em] text-white/50 uppercase">
+          <span className="scroll-hint" aria-hidden />
+          Scroll or press Enter
+        </p>
+      </div>
 
       {/* คอม: ปุ่มหมุนวงแหวนซ้าย/ขวาที่ขอบจอ (มือถือใช้ปุ่มในแผงรายละเอียดแทน) */}
       {(
@@ -285,7 +356,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
           key={dir}
           aria-label={label}
           onClick={() => step(dir)}
-          className={`fixed top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/30 pb-0.5 text-2xl text-white/70 backdrop-blur transition hover:border-white/40 hover:text-white md:grid ${side} ${busy ? "pointer-events-none opacity-0" : ""}`}
+          className={`fixed top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/30 pb-0.5 text-2xl text-white/70 backdrop-blur transition hover:border-white/40 hover:text-white md:grid ${side} ${busy || !started ? "pointer-events-none opacity-0" : ""}`}
         >
           {icon}
         </button>
@@ -296,7 +367,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
         narrow={narrow}
         onEnter={enter}
         onStep={step}
-        hidden={busy}
+        hidden={busy || !started}
         variant={variants[front]}
         onVariant={(v) => setVariants((cur) => cur.map((x, i) => (i === front ? v : x)))}
       />

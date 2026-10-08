@@ -4,7 +4,7 @@ import { useRef, type PointerEvent } from "react";
 import { benefits, brandStories } from "@/config/fizz";
 import type { Variant } from "@/config/products";
 import { BenefitIcon } from "./icons";
-import Reveal from "./Reveal";
+import Reveal from "@/components/Reveal";
 
 // ข้อความที่ลอยทับฉาก 3D ของแต่ละ section (position: fixed อยู่กับที่ ไม่เลื่อนตามหน้า)
 // section ไหนถูกเลือก ข้อความของ section นั้นจะค่อยๆ โผล่ขึ้นมา ที่เหลือซ่อน (คลาส overlay ใน globals.css)

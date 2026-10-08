@@ -4,5 +4,8 @@ export const site = {
   name: "SHOWROOM",
   byline: "by Blue",
   eyebrow: "03 products in orbit",
-  headline: "Every product, a different world.",
+  // หัวข้อหน้าเปิด แยกเป็น 2 บรรทัด (แสดงเป็นตัวพิมพ์ใหญ่บางๆ กลางจอ)
+  headline: ["Every product,", "a different world."],
+  intro: "Three concept products orbiting one planet. Pick one, then dive to where it was born.",
+  cta: "Enter orbit",
 };

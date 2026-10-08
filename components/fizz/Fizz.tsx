@@ -15,7 +15,7 @@ import { benefits, brandStories } from "@/config/fizz";
 import { products } from "@/config/products";
 import * as sfx from "@/lib/fizzSound";
 import { useNarrow } from "@/lib/useNarrow";
-import { archivo } from "./font";
+import { archivo } from "@/components/fonts";
 import Hud from "./Hud";
 import Loader from "./Loader";
 import { CANS, createMotion, FREE_FROM, mod, SECTIONS } from "./motion";
