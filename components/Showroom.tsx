@@ -64,7 +64,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
   // ตำแหน่งที่ฉาก 3D ต้องหมุนไปหา (ค่าเดียวกับ turn แต่ระหว่างลากเป็นทศนิยมตามนิ้ว)
   const ring = useRef<Ring>({ goal: 0 });
   const drag = useRef<Drag | null>(null);
-  const wheel = useRef({ acc: 0, last: 0, lock: 0 });
+  const wheel = useRef({ acc: 0, last: -Infinity, done: false }); // สถานะการเลื่อนล้อเมาส์ครั้งล่าสุด
   const lastPick = useRef({ index: -1, t: -Infinity }); // คลิกสินค้าครั้งล่าสุด (ใช้แยกดับเบิลคลิก)
   const [dragging, setDragging] = useState(false);
   const [hovered, setHovered] = useState<number | null>(null); // สินค้าที่เมาส์ชี้อยู่ (ใช้เปลี่ยนรูปเมาส์)
@@ -194,20 +194,22 @@ export default function Showroom({ children }: { children: ReactNode }) {
     rotateTo(target);
   };
 
-  // ล้อเมาส์ / ทัชแพด: หมุน 1 ชิ้นต่อการเลื่อน 1 ครั้ง แล้วพักสั้นๆ (ทัชแพดส่ง event รัวๆ ต่อเนื่อง)
+  // ล้อเมาส์ / ทัชแพด: เลื่อน 1 ครั้ง = หมุน 1 ชิ้น
+  // ทัชแพดส่ง event รัวๆ ต่อเนื่อง (รวมแรงเฉื่อยหลังปล่อยนิ้ว) → นับเป็นครั้งเดียวจนกว่าจะหยุดไป 200ms
   const onWheel = (e: WheelEvent) => {
     if (busy) return;
     const w = wheel.current;
-    const now = e.timeStamp;
-    if (now - w.last > 250) w.acc = 0; // หยุดเลื่อนไปพักหนึ่ง = เริ่มนับใหม่
-    w.last = now;
-    if (now < w.lock) return;
+    if (e.timeStamp - w.last > 200) {
+      w.acc = 0; // หยุดไปพักหนึ่งแล้ว = เริ่มการเลื่อนครั้งใหม่
+      w.done = false;
+    }
+    w.last = e.timeStamp;
+    if (w.done) return; // การเลื่อนครั้งนี้หมุนไปแล้ว รอให้หยุดก่อน
     const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 800 : 1; // บางเบราว์เซอร์นับเป็นบรรทัด/หน้า
     w.acc += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * unit;
     if (Math.abs(w.acc) >= 40) {
-      step(w.acc > 0 ? 1 : -1);
-      w.acc = 0;
-      w.lock = now + 450;
+      step(w.acc > 0 ? 1 : -1); // เลื่อนลง/ไปทางขวา = ชิ้นถัดไป
+      w.done = true;
     }
   };
 
