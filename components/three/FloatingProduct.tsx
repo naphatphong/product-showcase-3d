@@ -45,8 +45,10 @@ export default function FloatingProduct({
   const spin = useRef(0); // มุมที่ยังต้องหมุนเพิ่ม (ใช้ตอนเปลี่ยนแบบ)
   const [hovered, setHovered] = useState(false);
   const size = product.size ?? SIZE;
-  // ความสูงครึ่งหนึ่งของสินค้าจริง (รู้หลังวัดขนาดโมเดล) ใช้วางป้ายชื่อให้อยู่ใต้สินค้าพอดี
-  const [halfHeight, setHalfHeight] = useState(size / 2);
+  // ขนาดครึ่งหนึ่งของสินค้าจริง (รู้หลังวัดขนาดโมเดล): สูง = ใช้กับกล่องรับคลิก, กว้าง = วางป้ายข้างสินค้าพอดี
+  // ความกว้างคิดจากด้านที่ยาวกว่าระหว่างกว้าง/ลึก เพราะสินค้าหมุนรอบตัวเองตลอด
+  const [half, setHalf] = useState({ w: size / 2, h: size / 2 });
+  const halfHeight = half.h;
 
   // เปลี่ยนแบบ (เช่นเปลี่ยนทีม) → หมุนโชว์ 1 รอบ
   const variantId = variant.id;
@@ -116,7 +118,15 @@ export default function FloatingProduct({
           <Safe key={variantId}>
             <Suspense fallback={null}>
               {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
-              <Center key={variantId} onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
+              <Center
+                key={variantId}
+                onCentered={({ width, height, depth }) => {
+                  const w = (Math.max(width, depth) * size) / 2;
+                  const h = (height * size) / 2;
+                  // ค่าเดิม → คืน object เดิม React จะไม่ render ใหม่ (Center เรียกฟังก์ชันนี้ทุกครั้งที่ render)
+                  setHalf((cur) => (cur.w === w && cur.h === h ? cur : { w, h }));
+                }}
+              >
                 <Resize>
                   <GltfModel url={variant.model} />
                 </Resize>
@@ -126,23 +136,25 @@ export default function FloatingProduct({
         </group>
       </group>
 
-      {/* ป้ายใต้สินค้า (เฉพาะชิ้นที่จอดอยู่): เป็น HTML ที่ drei จัดตำแหน่งให้ตามจุด 3D (แค่ตกแต่ง screen reader ข้ามได้)
+      {/* ป้ายข้างสินค้า (เฉพาะชิ้นที่จอดอยู่) แบบหน้าจอเครื่องมือ: เป้าเล็ง + เส้น + "Click to enter"
+          เป็น HTML ที่ drei จัดตำแหน่งให้ตามจุด 3D (แค่ตกแต่ง screen reader ข้ามได้)
           ชิ้นอื่นอยู่นอกจอ ไม่ต้องมีป้าย (ถ้ามี ป้ายจะลอยผ่านกลางจอตอนสินค้าบินเข้ามา) */}
       {/* portal: บอก drei ให้วางป้ายในชั้นที่เตรียมไว้ตั้งแต่แรก (ถ้าปล่อยให้ drei หาที่วางเอง มันจะย้ายที่หลัง
           render ครั้งแรก ทำให้ React 19 error ตอนเปลี่ยนหน้า) */}
       {labelLayer && active && (
         <Html
           portal={labelLayer as RefObject<HTMLElement>}
-          position={[0, -halfHeight - 0.18, 0]}
-          center
+          position={[half.w + 0.1, -half.h * 0.35, 0]}
           pointerEvents="none"
           zIndexRange={[5, 0]}
         >
+          {/* มุมซ้ายบนของ Html อยู่ที่จุด 3D → เลื่อนให้กลางเป้าเล็งตรงจุดนั้นพอดี */}
           <div
             aria-hidden
-            className="whitespace-nowrap rounded-full border bg-black/40 px-4 py-1.5 text-[10px] uppercase tracking-[0.3em] backdrop-blur-sm motion-safe:animate-fade-in"
-            style={{ borderColor: variant.accent, color: variant.accent }}
+            className="orbit-mono flex -translate-x-[6px] -translate-y-1/2 items-center gap-2 text-[9px] whitespace-nowrap tracking-[0.3em] text-white/85 uppercase motion-safe:animate-fade-in"
           >
+            <span className="orbit-cross" style={{ color: variant.accent }} />
+            <span className="h-px w-8 bg-white/40" />
             Click to enter
           </div>
         </Html>

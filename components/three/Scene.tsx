@@ -126,7 +126,7 @@ function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants
   // ครึ่งความกว้าง/สูงของภาพที่ระยะของ SLOT (คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ)
   const halfH = view.pos.z * Math.tan(THREE.MathUtils.degToRad(view.fov / 2));
   const halfW = (halfH * size.width) / size.height;
-  const scale = narrow ? 1 : 1.2; // ขนาดสินค้า
+  const scale = narrow ? 1.25 : 1.2; // ขนาดสินค้า
   // ระยะที่ต้องเลื่อนจนสินค้าพ้นขอบจอ (เผื่อครึ่งตัวสินค้า + ป้ายใต้สินค้า) ทั้งทางขวาบนและซ้ายล่าง เอาทางที่ไกลกว่า
   const sx = SLOT.x - view.look.x;
   const sy = SLOT.y - view.look.y;

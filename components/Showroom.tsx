@@ -17,7 +17,7 @@ import { look, productHref, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
 import { site } from "@/config/site";
-import ProductPanel from "./ProductPanel";
+import OrbitPanel from "./OrbitPanel";
 import Safe from "./Safe";
 import type { Ring } from "./three/Scene";
 
@@ -56,6 +56,8 @@ type Drag = {
 
 // จำไว้ในแท็บนี้ว่าผ่านหน้าเปิดแล้ว (กลับมาหน้าแรกอีกครั้ง → ข้ามหน้าเปิด สินค้าบินเข้ามาเลย)
 const SEEN = "orbit-entered";
+// หลังกดเริ่ม รอให้สินค้าชิ้นแรกบินใกล้ถึงที่จอดก่อน (มิลลิวินาที) แล้วค่อยแสดงรายละเอียด/ปุ่ม/ป้าย
+const ARRIVE_UI_DELAY = 1300;
 
 // ส่วนที่โต้ตอบได้ของหน้าแรก:
 // 1. หน้าเปิด: เห็นแค่โลก + หัวข้อ + ปุ่ม Enter orbit (กดปุ่ม / เลื่อนลง / Enter = เริ่ม)
@@ -79,6 +81,7 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
   const [variants, setVariants] = useState(() => products.map(() => 0));
   const [ready, setReady] = useState(false); // ภาพโลกโหลดเสร็จหรือยัง
   const [started, setStarted] = useState(false); // ผ่านหน้าเปิดแล้วหรือยัง (false = ยังอยู่หน้าเปิด)
+  const [arrived, setArrived] = useState(false); // สินค้าชิ้นแรกบินมาถึงแล้ว → แสดงรายละเอียด
   const [entering, setEntering] = useState<number | null>(null); // กำลังดำดิ่งเข้าสินค้าชิ้นไหน
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const labelLayer = useRef<HTMLDivElement>(null); // ชั้นวางป้ายชื่อสินค้า (drei จะใส่ป้ายลงในนี้)
@@ -108,6 +111,14 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
     const id = requestAnimationFrame(() => setStarted(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
+  // กดเริ่มแล้ว → รอสินค้าบินมาถึงก่อนแสดงรายละเอียด (ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว" สินค้าไม่ได้บิน แสดงทันที)
+  useEffect(() => {
+    if (!started) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const t = setTimeout(() => setArrived(true), reduced ? 0 : ARRIVE_UI_DELAY);
+    return () => clearTimeout(t);
+  }, [started]);
 
   // ออกจากหน้าเปิด → สินค้าชิ้นแรกบินเข้ามา
   const start = useCallback(() => {
@@ -306,11 +317,10 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
           />
         </Safe>
       </div>
-      {/* ป้ายข้างสินค้า: ซ่อนตอนหน้าเปิด/ดำดิ่ง และโผล่หลังสินค้าชิ้นแรกบินมาถึง (หน่วง 1.2 วินาที) */}
+      {/* ป้ายข้างสินค้า: ซ่อนตอนหน้าเปิด/ดำดิ่ง และโผล่หลังสินค้าชิ้นแรกบินมาถึง */}
       <div
         ref={labelLayer}
-        className={`pointer-events-none fixed inset-0 z-[5] transition-opacity duration-500 ${busy || !started ? "opacity-0" : ""}`}
-        style={{ transitionDelay: busy || !started ? "0s" : "1.2s" }}
+        className={`pointer-events-none fixed inset-0 z-[5] transition-opacity duration-500 ${busy || !arrived ? "opacity-0" : ""}`}
       />
 
       {!ready && (
@@ -345,36 +355,36 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
         </p>
       </div>
 
-      {/* คอม: ปุ่มหมุนวงแหวนซ้าย/ขวาที่ขอบจอ (มือถือใช้ปุ่มในแผงรายละเอียดแทน) */}
+      {/* คอม: ปุ่มเปลี่ยนชิ้นซ้าย/ขวาที่ขอบจอ (มือถืออยู่ข้างปุ่มเข้าในแผงรายละเอียด) */}
       {(
         [
-          [-1, "Previous product", "left-6", "‹"],
-          [1, "Next product", "right-6", "›"],
+          [-1, "Previous product", "left-10", "‹"],
+          [1, "Next product", "right-10", "›"],
         ] as const
       ).map(([dir, label, side, icon]) => (
         <button
           key={dir}
           aria-label={label}
           onClick={() => step(dir)}
-          className={`fixed top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-black/30 pb-0.5 text-2xl text-white/70 backdrop-blur transition hover:border-white/40 hover:text-white md:grid ${side} ${busy || !started ? "pointer-events-none opacity-0" : ""}`}
+          className={`fixed top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/25 pb-0.5 text-2xl text-white/80 backdrop-blur-sm transition-[opacity,background-color,color] duration-500 hover:bg-white hover:text-black md:grid ${side} ${busy || !arrived ? "pointer-events-none opacity-0" : ""}`}
         >
           {icon}
         </button>
       ))}
 
-      <ProductPanel
+      <OrbitPanel
         index={front}
         narrow={narrow}
+        visible={arrived && !busy}
         onEnter={enter}
         onStep={step}
-        hidden={busy || !started}
         variant={variants[front]}
         onVariant={(v) => setVariants((cur) => cur.map((x, i) => (i === front ? v : x)))}
       />
 
       {/* ระหว่างดำดิ่ง: บอกปลายทาง แล้วจอค่อยๆ มืดลงช่วงท้าย ต่อด้วยหน้าสินค้าที่ค่อยๆ สว่างขึ้น */}
       {entering !== null && (
-        <p className="pointer-events-none fixed inset-x-0 top-1/2 z-40 -translate-y-1/2 text-center text-[11px] uppercase tracking-[0.35em] text-white/80 motion-safe:animate-fade-in">
+        <p className="orbit-mono pointer-events-none fixed inset-x-0 top-1/2 z-40 -translate-y-1/2 px-6 text-center text-[11px] tracking-[0.3em] text-white/80 uppercase motion-safe:animate-fade-in">
           Descending to {look(products[entering], variants[entering]).origin.city} ·{" "}
           {formatCoords(look(products[entering], variants[entering]).origin)}
         </p>

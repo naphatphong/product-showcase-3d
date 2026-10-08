@@ -42,32 +42,6 @@ body {
   font-variant-numeric: lining-nums;
 }
 
-/* แผงรายละเอียดสินค้า (ProductPanel): ตั้งชื่อช่องของ grid ไว้ แต่ละส่วนในแผงบอกแค่ว่าอยู่ช่องไหน
-   มือถือ: เรียงลงเป็นแถว / คอม: 2 คอลัมน์ ซ้าย = ชื่อ + เลือกแบบ, ขวา = เมือง + สเปก + ปุ่ม Enter
-   อยู่ใน @layer components → คลาสของ Tailwind (อยู่ชั้น utilities) ยังใช้ทับได้ตามปกติ */
-@layer components {
-  .panel-grid {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 1rem;
-    grid-template-areas:
-      "head city"
-      "title enter"
-      "pick pick"
-      "specs specs"
-      "nav nav";
-  }
-  @media (min-width: 768px) {
-    .panel-grid {
-      column-gap: 2.5rem;
-      grid-template-areas:
-        "head city"
-        "title specs"
-        "pick enter";
-    }
-  }
-}
-
 /* ======================= หน้าแรก (วงโคจร) ======================= */
 
 /* ฟอนต์ของหน้าแรก: Archivo (ตัวหนังสือทั่วไป) + IBM Plex Mono (ป้ายเล็กๆ แบบ HUD) — ตั้งค่าใน components/fonts.ts */
@@ -128,6 +102,32 @@ body {
 }
 .orbit-cta:hover::before {
   inset: -3px;
+}
+
+/* เป้าเล็งเล็กๆ (เครื่องหมาย +) ของป้ายข้างสินค้า — สีตาม color ของตัวมันเอง */
+.orbit-cross {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.orbit-cross::before,
+.orbit-cross::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+.orbit-cross::before {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+.orbit-cross::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
 }
 
 /* หน้าเปิด: วงมืดจางๆ ด้านหลังหัวข้อ ให้ตัวหนังสือบางๆ อ่านได้แม้ทับโลกที่สว่าง */

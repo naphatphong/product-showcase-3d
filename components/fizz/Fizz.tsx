@@ -38,6 +38,7 @@ const FIZZ_LEVEL = [0.25, 0.2, 0.7, 0.4, 0.25, 0.25, 0.6, 0.35, 0.12, 0.12, 0.25
 export default function Fizz() {
   const narrow = useNarrow();
   const motion = useRef(createMotion()); // ข้อมูลที่ฉาก 3D อ่านทุกเฟรม (ดู motion.ts)
+  const urlRead = useRef(false); // อ่านยี่ห้อที่ส่งมาทาง URL (?v=) แล้วหรือยัง
   const lenis = useRef<Lenis | null>(null);
   const sections = useRef<(HTMLElement | null)[]>([]);
   const bar = useRef<HTMLDivElement>(null); // เส้นความคืบหน้าด้านบน
@@ -229,7 +230,10 @@ export default function Fizz() {
     l.scrollTo(0, { immediate: true, force: true });
     onScroll();
     const start = brands.findIndex((b) => b.id === new URLSearchParams(location.search).get("v"));
-    const startFrame = requestAnimationFrame(() => start > 0 && rotateTo(start));
+    const startFrame = requestAnimationFrame(() => {
+      urlRead.current = true; // อ่านยี่ห้อจาก URL แล้ว ต่อจากนี้เขียน URL ตามยี่ห้อที่เลือกได้
+      if (start > 0) rotateTo(start);
+    });
 
     const ro = new ResizeObserver(() => {
       measure();
@@ -325,11 +329,13 @@ export default function Fizz() {
   }, []);
 
   // ยี่ห้อที่เลือกอยู่ใส่ไว้ใน URL (?v=pepsi) แชร์ลิงก์แล้วเปิดมาเจอยี่ห้อเดิม (replaceState = ไม่เพิ่มประวัติการกด back)
+  // ต้องรออ่าน ?v= ที่ส่งมาจากหน้าแรกก่อน (urlRead) ไม่งั้นจะเขียนยี่ห้อแรกทับ — โหมด dev ที่ React รัน effect 2 รอบจะเจอ
   useEffect(() => {
+    motion.current.tint = brands[brand].accent; // ฟองซ่าเปลี่ยนสีตามยี่ห้อ
+    if (!urlRead.current) return;
     const url = new URL(location.href);
     url.searchParams.set("v", brands[brand].id);
     history.replaceState(history.state, "", url);
-    motion.current.tint = brands[brand].accent; // ฟองซ่าเปลี่ยนสีตามยี่ห้อ
   }, [brand]);
 
   // ---------- ลากหมุนวงกระป๋อง (เมาส์และนิ้วใช้โค้ดเดียวกัน) เฉพาะหน้าเลือกยี่ห้อ ----------
