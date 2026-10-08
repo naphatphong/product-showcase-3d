@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Stars } from "@react-three/drei";
+import { Environment, Lightformer, Stars, useProgress } from "@react-three/drei";
 import * as THREE from "three";
 import Safe from "@/components/Safe";
 import { look, products } from "@/config/products";
@@ -56,7 +56,8 @@ export type SceneProps = {
   ring: RefObject<Ring>;
   onHover: (index: number | null) => void;
   onSelect: (index: number) => void;
-  onReady: () => void; // เรียกเมื่อภาพโลกโหลดเสร็จ (ใช้ซ่อนข้อความ loading)
+  onReady: () => void; // เรียกเมื่อภาพโลกโหลดเสร็จ (ฉากพร้อมแสดง)
+  onProgress: (percent: number) => void; // ความคืบหน้าการโหลดไฟล์จริง 0–100 (ภาพโลก + โมเดลสินค้า)
   started: boolean; // false = หน้าเปิด (เห็นแค่โลก สินค้ายังไม่มา), true = สินค้าบินเข้ามาแล้ว
   labelLayer: RefObject<HTMLDivElement | null>; // ชั้น HTML สำหรับป้ายชื่อสินค้า
   variants: number[]; // สินค้าแต่ละชิ้นเลือกแบบที่เท่าไรอยู่ (ใช้กับสินค้าที่มีหลายแบบ)
@@ -67,7 +68,12 @@ export default function Scene(props: SceneProps) {
   return (
     // dpr [1, 2]: ความคมตามจอ แต่ไม่เกิน 2 เท่า กันมือถือจอคมสูงทำงานหนักเกิน
     // fallback: แสดงแทนเมื่อเครื่องไม่รองรับ WebGL
-    <Canvas camera={{ position: SPLASH.wide.pos.toArray(), fov: 38 }} dpr={[1, 2]} fallback={<NoWebGL />}>
+    <Canvas
+      camera={{ position: SPLASH.wide.pos.toArray(), fov: 38 }}
+      dpr={[1, 2]}
+      fallback={<NoWebGL onReady={props.onReady} onProgress={props.onProgress} />}
+    >
+      <Progress onProgress={props.onProgress} />
       <Rig narrow={props.narrow} started={props.started} diveTo={props.diveTo} />
       <Backdrop />
       {/* ดาว: กระจายอยู่บนทรงกลมรัศมี 120 รอบฉาก, fade = ดาวขอบๆ จางลง */}
@@ -264,15 +270,30 @@ function Rig({ narrow, started, diveTo }: Pick<SceneProps, "narrow" | "started" 
   return null;
 }
 
+// ส่ง % การโหลดไฟล์ทั้งหมดของฉาก (drei นับจากตัวโหลดกลางของ three.js: ภาพ + โมเดล) ออกไปให้หน้าโหลด
+// โหลดครบแล้ว (ไม่มีไฟล์ค้าง) = 100 — ไฟล์ที่โหลดไม่สำเร็จก็นับว่าจบ หน้าโหลดจะได้ไม่ค้าง
+function Progress({ onProgress }: { onProgress: (p: number) => void }) {
+  const { progress, active, total } = useProgress();
+  const done = total > 0 && !active;
+  useEffect(() => onProgress(done ? 100 : progress), [done, progress, onProgress]);
+  return null;
+}
+
 // component นี้อยู่ใน Suspense เดียวกับโลก จึง mount หลังภาพโลกโหลดเสร็จเท่านั้น
 function Ready({ onReady }: { onReady: () => void }) {
   useEffect(() => onReady(), [onReady]);
   return null;
 }
 
-function NoWebGL() {
+// เครื่องที่ไม่รองรับ WebGL: บอกหน้าโหลดว่าเสร็จแล้ว (ไม่งั้นค้างที่หน้าโหลด) แล้วแสดงลิงก์สินค้าแทนฉาก
+function NoWebGL({ onReady, onProgress }: Pick<SceneProps, "onReady" | "onProgress">) {
+  useEffect(() => {
+    onProgress(100);
+    onReady();
+  }, [onReady, onProgress]);
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
+    // อยู่ด้านบน (ใต้แถบบนสุด) ไม่ทับหัวข้อหน้าเปิดกลางจอ
+    <div className="flex h-full flex-col items-center gap-3 p-8 pt-28 text-center text-sm">
       <p className="text-white/60">This browser can’t show the 3D showroom. Pick a product:</p>
       {products.map((p) => (
         <Link key={p.slug} href={`/${p.slug}`} className="underline">

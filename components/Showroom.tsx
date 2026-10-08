@@ -17,6 +17,7 @@ import { look, productHref, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
 import { site } from "@/config/site";
+import OrbitLoader from "./OrbitLoader";
 import OrbitPanel from "./OrbitPanel";
 import Safe from "./Safe";
 import type { Ring } from "./three/Scene";
@@ -62,8 +63,8 @@ const ARRIVE_UI_DELAY = 1300;
 // ส่วนที่โต้ตอบได้ของหน้าแรก:
 // 1. หน้าเปิด: เห็นแค่โลก + หัวข้อ + ปุ่ม Enter orbit (กดปุ่ม / เลื่อนลง / Enter = เริ่ม)
 // 2. วงโคจรสินค้า: สินค้าชิ้นแรกบินเข้ามา แล้วเลื่อนเปลี่ยนทีละชิ้นได้ไม่สิ้นสุด + แผงรายละเอียด + การดำดิ่งเข้าหน้าสินค้า
-// header / intro = ข้อความที่ render บน server (ส่งมาจาก page.tsx) — Showroom แค่จัดวางและซ่อน/แสดงตามจังหวะ
-export default function Showroom({ header, intro }: { header: ReactNode; intro: ReactNode }) {
+// cart / logo / intro = ข้อความที่ render บน server (ส่งมาจาก page.tsx) — Showroom แค่จัดวางและซ่อน/แสดงตามจังหวะ
+export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo: ReactNode; intro: ReactNode }) {
   const narrow = useNarrow();
   const router = useRouter();
   // turn = วงแหวนหมุนมาแล้วกี่ชิ้น (นับต่อเนื่อง ไม่วนกลับ เช่น 0, 1, 2, 3 หรือติดลบ)
@@ -80,6 +81,8 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
   // แบบที่เลือกของสินค้าแต่ละชิ้น (เริ่มที่แบบแรกทุกชิ้น) เช่น [0, 0, 1] = ชิ้นที่ 3 เลือกแบบที่ 2
   const [variants, setVariants] = useState(() => products.map(() => 0));
   const [ready, setReady] = useState(false); // ภาพโลกโหลดเสร็จหรือยัง
+  const [progress, setProgress] = useState<number | null>(null); // % การโหลดไฟล์ของฉาก (null = โค้ด 3D ยังไม่มา)
+  const [loaded, setLoaded] = useState(false); // หน้าโหลดเปิดม่านจบแล้ว → เริ่มหน้าเปิด
   const [started, setStarted] = useState(false); // ผ่านหน้าเปิดแล้วหรือยัง (false = ยังอยู่หน้าเปิด)
   const [arrived, setArrived] = useState(false); // สินค้าชิ้นแรกบินมาถึงแล้ว → แสดงรายละเอียด
   const [entering, setEntering] = useState<number | null>(null); // กำลังดำดิ่งเข้าสินค้าชิ้นไหน
@@ -98,18 +101,15 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
     [],
   );
 
-  // เคยผ่านหน้าเปิดแล้วในแท็บนี้ → ข้ามหน้าเปิด (อ่านหลัง render แรก เพราะ server ไม่รู้ค่า sessionStorage)
-  // setState ผ่าน requestAnimationFrame = ไม่ setState ตรงๆ ใน effect (กฎของ React)
+  // เคยผ่านหน้าเปิดแล้วในแท็บนี้ → ข้ามหน้าเปิด: โหลดเสร็จแล้วสินค้าบินเข้ามาเลย
+  // (อ่านหลัง render แรก เพราะ server ไม่รู้ค่า sessionStorage — เก็บใน ref ไว้ใช้ตอนหน้าโหลดจบ)
+  const skipIntro = useRef(false);
   useEffect(() => {
-    let seen = false;
     try {
-      seen = sessionStorage.getItem(SEEN) === "1";
+      skipIntro.current = sessionStorage.getItem(SEEN) === "1";
     } catch {
       // บางเบราว์เซอร์ (โหมดส่วนตัว/ปิด storage) อ่านไม่ได้ → แสดงหน้าเปิดตามปกติ
     }
-    if (!seen) return;
-    const id = requestAnimationFrame(() => setStarted(true));
-    return () => cancelAnimationFrame(id);
   }, []);
 
   // กดเริ่มแล้ว → รอสินค้าบินมาถึงก่อนแสดงรายละเอียด (ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว" สินค้าไม่ได้บิน แสดงทันที)
@@ -260,12 +260,18 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
   };
 
   const onReady = useCallback(() => setReady(true), []);
+  // หน้าโหลดเปิดม่านจบ → แสดงหน้าเปิด (หรือข้ามไปเลยถ้าเคยผ่านแล้ว)
+  const onLoaded = useCallback(() => {
+    setLoaded(true);
+    if (skipIntro.current) setStarted(true);
+  }, []);
 
   // คีย์บอร์ด: ← → หมุนวงแหวน, Enter เข้าหน้าสินค้าที่อยู่หน้าสุด
   // หน้าเปิด: Enter / เว้นวรรค / ↓ / → = เริ่ม (ถ้ากำลัง focus ปุ่ม/ลิงก์อยู่ ปล่อยให้ปุ่มนั้นทำงานเอง)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!started) {
+        if (!loaded) return; // ยังอยู่หน้าโหลด
         if (e.target === document.body && ["Enter", " ", "ArrowDown", "ArrowRight"].includes(e.key)) {
           e.preventDefault();
           start();
@@ -279,7 +285,7 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [step, enter, front, started, start]);
+  }, [step, enter, front, started, start, loaded]);
 
   return (
     <>
@@ -302,7 +308,12 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
         onDoubleClick={doubleClick}
       >
         {/* กันพังชั้นนอกสุด: ถ้าฉาก 3D พังทั้งฉาก หัวเว็บ แผงรายละเอียด และปุ่ม Enter ยังใช้ได้ */}
-        <Safe onError={onReady}>
+        <Safe
+          onError={() => {
+            setProgress(100);
+            onReady();
+          }}
+        >
           <Scene
             narrow={narrow}
             front={front}
@@ -310,6 +321,7 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
             onHover={narrow ? () => {} : setHovered}
             onSelect={select}
             onReady={onReady}
+            onProgress={setProgress}
             started={started}
             labelLayer={labelLayer}
             diveTo={entering === null ? null : look(products[entering], variants[entering]).origin}
@@ -323,22 +335,17 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
         className={`pointer-events-none fixed inset-0 z-[5] transition-opacity duration-500 ${busy || !arrived ? "opacity-0" : ""}`}
       />
 
-      {!ready && (
-        <p className="fixed inset-x-0 top-1/2 z-10 text-center text-[11px] uppercase tracking-[0.35em] text-white/50 motion-safe:animate-pulse">
-          Entering orbit…
-        </p>
-      )}
-
       {/* แถบบนสุด (จางหายตอนดำดิ่ง) */}
       <header
         className={`pointer-events-none fixed inset-x-0 top-0 z-20 flex h-20 items-center justify-between px-5 transition-opacity duration-500 md:h-24 md:px-10 ${busy ? "opacity-0" : ""}`}
       >
-        {header}
+        {cart}
+        <div className="absolute left-1/2 -translate-x-1/2">{logo}</div>
       </header>
 
       {/* หน้าเปิด: หัวข้อ + ปุ่มเริ่ม กลางจอ (class overlay = ค่อยๆ โผล่/จางตาม data-active, ตัวอักษรเลื่อนขึ้นตอนโผล่) */}
       <div
-        data-active={ready && !started}
+        data-active={loaded && !started}
         className="overlay pointer-events-none fixed inset-0 z-10 flex flex-col items-center justify-center px-6 text-center"
       >
         {/* แสงมืดจางๆ ด้านหลังข้อความ ให้อ่านง่ายแม้อยู่บนโลกที่สว่าง */}
@@ -398,6 +405,8 @@ export default function Showroom({ header, intro }: { header: ReactNode; intro: 
           transitionDuration: busy ? `${DIVE_SECONDS * 0.4}s` : "0s",
         }}
       />
+
+      <OrbitLoader progress={progress} ready={ready} logo={logo} onDone={onLoaded} />
     </>
   );
 }

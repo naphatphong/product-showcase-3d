@@ -130,6 +130,35 @@ body {
   width: 1px;
 }
 
+/* หน้าโหลด: ม่านดำ 2 แถบ (บน/ล่าง) เลื่อนแยกออกตอนโหลดเสร็จ + โลโก้เลื่อนจากกลางจอขึ้นไปจอดที่แถบบนสุด */
+.orbit-curtain {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50.5%; /* เกินครึ่งนิดหน่อย กันเส้นรอยต่อกลางจอ */
+  background: #000;
+  transition: transform 1.2s cubic-bezier(0.7, 0, 0.2, 1);
+}
+.orbit-loader-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(2.2);
+  transition:
+    top 1.2s cubic-bezier(0.7, 0, 0.2, 1),
+    transform 1.2s cubic-bezier(0.7, 0, 0.2, 1);
+}
+/* จอดตรงกึ่งกลางแถบบนสุด: สูง 80px (มือถือ) / 96px (คอม) — ต้องตรงกับ h-20 / md:h-24 ใน Showroom */
+.orbit-loader-logo.is-docked {
+  top: 40px;
+  transform: translate(-50%, -50%) scale(1);
+}
+@media (min-width: 768px) {
+  .orbit-loader-logo.is-docked {
+    top: 48px;
+  }
+}
+
 /* หน้าเปิด: วงมืดจางๆ ด้านหลังหัวข้อ ให้ตัวหนังสือบางๆ อ่านได้แม้ทับโลกที่สว่าง */
 .orbit-scrim {
   background: radial-gradient(50% 42% at 50% 46%, rgba(0, 0, 0, 0.45), transparent 75%);
@@ -449,5 +478,10 @@ html.lenis body {
   .sound-bars.is-on i,
   .scroll-hint::after {
     animation: none;
+  }
+  /* หน้าโหลดของหน้าแรก: ไม่เลื่อนม่าน/โลโก้ แค่หายไป */
+  .orbit-curtain,
+  .orbit-loader-logo {
+    transition: none;
   }
 }
