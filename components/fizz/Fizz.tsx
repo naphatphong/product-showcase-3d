@@ -1,15 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Lenis, { type VirtualScrollData } from "lenis";
 import "lenis/dist/lenis.css";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import Safe from "@/components/Safe";
 import { benefits, brandStories } from "@/config/fizz";
 import { products } from "@/config/products";
+import { useNarrow } from "@/lib/useNarrow";
 import { archivo } from "./font";
 import Hud from "./Hud";
-import { createMotion, FREE_FROM, mod, SECTIONS } from "./motion";
+import { CANS, createMotion, FREE_FROM, mod, SECTIONS } from "./motion";
 import { BenefitNav, BenefitOverlay, BrandOverlay, Caption, GhostText, HeroOverlay } from "./Overlays";
 import { Faq, Finale } from "./Outro";
+
+// ฉาก 3D โหลดแยกไฟล์ทีหลัง (three.js ใหญ่) และรันเฉพาะในเบราว์เซอร์ — ข้อความในหน้าขึ้นก่อนได้เลย
+const FizzScene = dynamic(() => import("./scene/FizzScene"), { ssr: false });
 
 // ยี่ห้อทั้ง 6 มาจาก config สินค้า (ชื่อ ไฟล์โมเดล สี เมือง)
 const brands = products.find((p) => p.slug === "drink")!.variants;
@@ -20,6 +33,7 @@ const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 // หน้าสินค้า FIZZ: เลื่อนจอทีละ section (เหมือนเปิดหน้าหนังสือ) ฉาก 3D ขยับตามการเลื่อน
 // ไฟล์นี้เป็นตัวควบคุม: ตำแหน่งเลื่อนจอ, section ที่แสดงอยู่, ยี่ห้อที่เลือก แล้วส่งต่อให้แต่ละส่วน
 export default function Fizz() {
+  const narrow = useNarrow();
   const motion = useRef(createMotion()); // ข้อมูลที่ฉาก 3D อ่านทุกเฟรม (ดู motion.ts)
   const lenis = useRef<Lenis | null>(null);
   const sections = useRef<(HTMLElement | null)[]>([]);
@@ -31,6 +45,13 @@ export default function Fizz() {
   const [brand, setBrand] = useState(0);
   const [active, setActive] = useState(0); // section ที่แสดงอยู่
   const [sound, setSound] = useState(false);
+  const [ready, setReady] = useState(false); // โมเดลกระป๋องโหลดครบแล้ว
+  const [hover, setHover] = useState(false); // เมาส์อยู่บนกระป๋อง
+  const [dragging, setDragging] = useState(false);
+  // ลากหมุนวงกระป๋อง (หน้าเลือกยี่ห้อ): จุดเริ่ม, ตำแหน่งวงตอนเริ่ม, ความเร็วล่าสุด
+  const drag = useRef<{ x: number; from: number; moved: boolean; lastX: number; lastT: number; v: number } | null>(
+    null,
+  );
 
   // ---------- เลือกยี่ห้อ (หมุนวงกระป๋อง) ----------
   // goal นับต่อเนื่อง (…, −1, 0, 1, 2, …) ยี่ห้อ = goal mod 6 → หมุนวนไปทางเดียวได้เรื่อยๆ ไม่สะดุด
@@ -234,12 +255,72 @@ export default function Fizz() {
     return () => removeEventListener("keydown", onKey);
   }, [active, page, paged, step]);
 
+  // โมเดลโหลดครบ → เริ่มฉากกระป๋องร่วงลงมาจากฟ้า
+  useEffect(() => {
+    if (ready) motion.current.introAt = performance.now();
+  }, [ready]);
+
   // ยี่ห้อที่เลือกอยู่ใส่ไว้ใน URL (?v=pepsi) แชร์ลิงก์แล้วเปิดมาเจอยี่ห้อเดิม (replaceState = ไม่เพิ่มประวัติการกด back)
   useEffect(() => {
     const url = new URL(location.href);
     url.searchParams.set("v", brands[brand].id);
     history.replaceState(history.state, "", url);
   }, [brand]);
+
+  // ---------- ลากหมุนวงกระป๋อง (เมาส์และนิ้วใช้โค้ดเดียวกัน) เฉพาะหน้าเลือกยี่ห้อ ----------
+  const pxPerCan = () => Math.min(420, Math.max(150, innerWidth * (innerWidth < 768 ? 0.45 : 0.2)));
+  const pointerDown = (e: ReactPointerEvent) => {
+    if (active !== 0 || (e.pointerType === "mouse" && e.button !== 0)) return;
+    const goal = motion.current.goal;
+    drag.current = { x: e.clientX, from: goal, moved: false, lastX: e.clientX, lastT: e.timeStamp, v: 0 };
+  };
+  const pointerMove = (e: ReactPointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    if (e.pointerType === "mouse" && e.buttons === 0) {
+      drag.current = null; // ปล่อยเมาส์นอกฉากไปแล้ว
+      return;
+    }
+    const dx = e.clientX - d.x;
+    if (!d.moved) {
+      if (Math.abs(dx) < 6) return; // ขยับนิดเดียว = ยังเป็นการคลิก
+      d.moved = true;
+      motion.current.dragging = true;
+      setDragging(true);
+      e.currentTarget.setPointerCapture(e.pointerId); // ลากเลยออกนอกฉากก็ยังหมุนต่อได้
+    }
+    const per = pxPerCan();
+    const dt = (e.timeStamp - d.lastT) / 1000;
+    if (dt > 0) d.v = 0.7 * d.v + 0.3 * (-(e.clientX - d.lastX) / per / dt);
+    d.lastX = e.clientX;
+    d.lastT = e.timeStamp;
+    motion.current.goal = d.from - dx / per; // ลากไปซ้าย = ใบทางขวาเลื่อนเข้ามาตรงกลาง
+    setBrand(mod(Math.round(motion.current.goal), N));
+  };
+  const pointerUp = (e: ReactPointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.moved) return;
+    motion.current.dragging = false;
+    setDragging(false);
+    const g = motion.current.goal;
+    const v = e.timeStamp - d.lastT > 120 ? 0 : d.v; // ค้างนิ้วไว้ก่อนปล่อย = ไม่มีแรงส่ง
+    let target = Math.round(g + Math.max(-1, Math.min(1, v * 0.25)));
+    if (target === Math.round(d.from) && Math.abs(g - d.from) > 0.15) target += Math.sign(g - d.from);
+    rotateTo(target);
+  };
+
+  // คลิกกระป๋อง: ใบตรงกลาง = ไปดูประวัติยี่ห้อ, ใบอื่น = หมุนมาไว้ตรงกลาง (เฉพาะหน้าเลือกยี่ห้อ)
+  const onPick = (can: number) => {
+    if (active !== 0) return;
+    const cur = Math.round(motion.current.goal);
+    let d = mod(can - mod(cur, CANS), CANS);
+    if (d > CANS / 2) d -= CANS;
+    if (d === 0) goTo(1);
+    else rotateTo(cur + d);
+  };
+  const onReady = useCallback(() => setReady(true), []);
+  const onProgress = useCallback(() => {}, []);
 
   const b = brands[brand];
   const tint = brandStories[b.id].tint;
@@ -263,6 +344,29 @@ export default function Fizz() {
       {/* ตัวหนังสือใหญ่จางๆ (อยู่หลังกระป๋อง) */}
       <GhostText active={active === 6} lines={["Crack.", "Fizz.", "Sip."]} />
       <GhostText active={active === 7} lines={["Six", "classics."]} size="text-[clamp(3rem,12.5vw,12rem)]" />
+
+      {/* ฉาก 3D (อยู่กับที่เต็มจอ) — รับการลากหมุนวงกระป๋องในหน้าเลือกยี่ห้อ
+          touch-none: นิ้วบนฉากไม่ทำให้เบราว์เซอร์เลื่อน/ซูมเอง (เราจัดการเองทั้งหมด) */}
+      <div
+        aria-hidden
+        className="fixed inset-0 z-[2] touch-none"
+        style={{ cursor: active !== 0 ? "default" : dragging ? "grabbing" : hover ? "pointer" : "grab" }}
+        onPointerDown={pointerDown}
+        onPointerMove={pointerMove}
+        onPointerUp={pointerUp}
+        onPointerCancel={pointerUp}
+      >
+        <Safe onError={onReady}>
+          <FizzScene
+            motion={motion}
+            narrow={narrow}
+            onReady={onReady}
+            onProgress={onProgress}
+            onPick={onPick}
+            onHover={setHover}
+          />
+        </Safe>
+      </div>
 
       {/* ข้อความของแต่ละ section (ลอยอยู่กับที่ เปลี่ยนตาม section ที่แสดง) */}
       <HeroOverlay active={active === 0 || active === LAST} brands={brands} brand={brand} onStep={step} onPick={pick} />

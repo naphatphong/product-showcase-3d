@@ -28,7 +28,7 @@ export type Pose = {
   // แสง
   key: number; // ไฟหลัก (สตูดิโอ)
   spot: number; // สปอตไลต์แคบๆ ที่ไล่ส่องฉลาก
-  spotY: number; // ความสูงของจุดที่สปอตไลต์ส่อง
+  spotY: number; // จุดที่สปอตไลต์ส่อง วัดจากกลางกระป๋องหน้าสุด (บวก = สูงขึ้น) ไล่ลงทีละข้อ = สแกนฉลาก
   // อื่นๆ
   bubbles: number; // ความหนาแน่นของฟองซ่า 0–1
   pointer: number; // กระป๋องหันตามเมาส์มากแค่ไหน
@@ -99,7 +99,7 @@ const BENEFIT = from(BRAND, {
   canRY: 0,
   canRZ: 0,
   spin: 160 * deg,
-  key: 0.18,
+  key: 0.05,
   spot: 1,
   spotY: 1.2,
   pointer: 0,
@@ -154,10 +154,10 @@ const SKY = from(HERO, { fall: 16 });
 export const POSES: Pose[] = [
   HERO,
   BRAND,
-  from(BENEFIT, { canY: -0.9, camRZ: -8 * deg }),
-  from(BENEFIT, { canY: -0.35, camRZ: 5 * deg, spin: 175 * deg, bubbles: 0.55 }),
-  from(BENEFIT, { canY: 0.2, camRZ: -8 * deg, spin: 160 * deg, bubbles: 0.3 }),
-  from(BENEFIT, { canY: 0.75, camRZ: 5 * deg, spin: 175 * deg, bubbles: 0.3 }),
+  from(BENEFIT, { canY: -0.9, camRZ: -8 * deg, spotY: 1.1 }),
+  from(BENEFIT, { canY: -0.35, camRZ: 5 * deg, spin: 175 * deg, spotY: 0.4, bubbles: 0.55 }),
+  from(BENEFIT, { canY: 0.2, camRZ: -8 * deg, spin: 160 * deg, spotY: -0.3, bubbles: 0.3 }),
+  from(BENEFIT, { canY: 0.75, camRZ: 5 * deg, spin: 175 * deg, spotY: -1, bubbles: 0.3 }),
   CRACK,
   LINEUP,
   AWAY,
@@ -172,19 +172,21 @@ export const JUMPS: Record<number, Pose> = { 9: SKY };
 // จอแคบ (มือถือแนวตั้ง): ภาพแคบกว่ามาก ต้องถอยกล้อง/ย้ายกระป๋องให้อยู่กลางจอและเหนือข้อความด้านล่าง
 export const POSES_NARROW: Pose[] = POSES.map((p, i) => {
   const narrow: Partial<Pose>[] = [
-    { camZ: 34, canY: 1.1, scale: 1.05 }, // hero: กระป๋องอยู่สูงขึ้น เหนือชื่อยี่ห้อ
-    { camZ: 10.5, canX: 0, canY: 1.2, canRZ: 14 * deg }, // brand: ข้อความอยู่ล่าง กระป๋องอยู่บน
+    { camZ: 32, canY: 1.1, scale: 1.25 }, // hero: กระป๋องอยู่สูงขึ้น เหนือชื่อยี่ห้อ
+    { camZ: 15, canX: 0, canY: 1.5, canRZ: 14 * deg }, // brand: ข้อความอยู่ล่าง กระป๋องอยู่บน
     {},
     {},
     {},
     {},
-    { camZ: 11, canY: 0.9 },
+    { camZ: 12, canY: 1.2 },
     { camX: -1.5, camZ: 34 },
     {},
     {},
     { camZ: 34, canY: 1.1, scale: 1.05 },
   ];
-  const benefit = i >= 2 && i <= 5 ? { camZ: 15, canX: 0, camY: -0.6 } : {};
+  // ข้อเด่น 4 ข้อ: กระป๋องอยู่ครึ่งบนของจอ (ข้อความอยู่ล่าง) ขยับขึ้นทีละนิดตามข้อ
+  const benefit =
+    i >= 2 && i <= 5 ? { camZ: 20, camY: -0.4, camRX: 2 * deg, canX: 0, canY: 1.3 + (i - 2) * 0.06 } : {};
   return from(p, { ...benefit, ...narrow[i] });
 });
 export const JUMPS_NARROW: Record<number, Pose> = { 9: from(POSES_NARROW[10], { fall: 16 }) };

@@ -45,15 +45,15 @@ export function HeroOverlay({
       {/* ลูกศรซ้าย/ขวา ข้างกระป๋องที่อยู่ตรงกลาง */}
       {(
         [
-          [-1, "Previous can", "left-[calc(50%-11rem)] md:left-[calc(50%-15rem)]", "‹"],
-          [1, "Next can", "right-[calc(50%-11rem)] md:right-[calc(50%-15rem)]", "›"],
+          [-1, "Previous can", "left-[calc(50%-9.5rem)] md:left-[calc(50%-10rem)]", "‹"],
+          [1, "Next can", "right-[calc(50%-9.5rem)] md:right-[calc(50%-10rem)]", "›"],
         ] as const
       ).map(([dir, label, side, icon]) => (
         <button
           key={dir}
           aria-label={label}
           onClick={() => onStep(dir)}
-          className={`pointer-events-auto absolute top-[38%] grid h-11 w-11 place-items-center rounded-full border border-white/20 pb-0.5 text-xl text-white/80 backdrop-blur-sm transition hover:border-white/60 hover:text-white md:top-1/2 ${side}`}
+          className={`pointer-events-auto absolute top-[36%] grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/25 pb-0.5 text-2xl text-white/80 backdrop-blur-sm transition hover:bg-white hover:text-black md:top-1/2 ${side}`}
         >
           {icon}
         </button>
@@ -120,7 +120,7 @@ export function BrandOverlay({ active, brand }: { active: boolean; brand: Brand 
         <p className="reveal-fade text-[11px] uppercase tracking-[0.3em] text-white/60">
           Since {s.since} · {brand.origin.city}
         </p>
-        <h2 key={brand.id} className="fizz-title mt-3 text-[clamp(2.4rem,5.5vw,4.8rem)] leading-[0.92]">
+        <h2 key={brand.id} className="fizz-title mt-3 text-[clamp(2.2rem,4.4vw,4.2rem)] leading-[0.92]">
           <Reveal text={brand.name} delay={0.1} />
         </h2>
         <p className="reveal-fade mt-5 max-w-sm text-[15px] leading-relaxed text-white/80">{s.story}</p>
@@ -228,7 +228,7 @@ export function Caption({ active, title, text }: { active: boolean; title: strin
       <h2 className="fizz-title text-[clamp(1.8rem,3.5vw,3rem)] leading-none">
         <Reveal text={title} />
       </h2>
-      <p className="reveal-fade mx-auto mt-3 max-w-md text-sm text-white/75">{text}</p>
+      <p className="reveal-fade mx-auto mt-3 max-w-xl text-sm text-white/75">{text}</p>
     </div>
   );
 }

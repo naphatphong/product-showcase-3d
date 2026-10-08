@@ -189,6 +189,7 @@ body {
 /* ตัวอักษรเลื่อนขึ้นทีละตัว (ดู Reveal.tsx) — เล่นตอนตัวครอบเป็น data-active="true" */
 .reveal-word {
   display: inline-block;
+  white-space: nowrap; /* ตัวอักษรแต่ละตัวเป็นกล่อง ถ้าไม่ห้าม คำจะถูกตัดขึ้นบรรทัดใหม่กลางคำได้ */
   overflow: hidden;
   vertical-align: top;
   /* เผื่อที่ให้ตัวเอียง/หางตัวอักษรไม่ถูกตัด */
