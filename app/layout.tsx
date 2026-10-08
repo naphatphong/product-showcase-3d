@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { brand } from "@/config/brand";
+import { site } from "@/config/site";
 import "./globals.css";
 
 // next/font โหลดฟอนต์ตอน build แล้วเสิร์ฟจากเว็บเราเอง (ไม่ดึงจาก Google ตอนเปิดเว็บ)
@@ -15,10 +15,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// title / description ของแท็บและตอนแชร์ลิงก์ ดึงจาก config แบรนด์
+// title / description ของแท็บและตอนแชร์ลิงก์ ดึงจาก config ของเว็บ
 export const metadata: Metadata = {
-  title: brand.name,
-  description: `${brand.name} — ${brand.tagline} A concept energy drink.`,
+  title: `${site.name} ${site.byline}`,
+  description: `${site.headline} Interactive 3D product showcase — concept projects.`,
 };
 
 // layout ครอบทุกหน้า: ใส่ <html> <body> และคลาสฟอนต์ไว้ที่นี่ที่เดียว
