@@ -6,6 +6,7 @@ import { Environment, Lightformer, useGLTF, useProgress } from "@react-three/dre
 import * as THREE from "three";
 import { products } from "@/config/products";
 import { CANS, mod, sectionProgress, type Motion } from "../motion";
+import Bubbles from "./Bubbles";
 import { blankPose, JUMPS, JUMPS_NARROW, POSES, POSES_NARROW, sample, type Pose } from "./timeline";
 
 const brands = products.find((p) => p.slug === "drink")!.variants;
@@ -34,11 +35,12 @@ export default function FizzScene(props: SceneProps) {
       dpr={[1, 1.75]}
       gl={{ alpha: true, antialias: true }}
       camera={{ position: [0, 0, 29], fov: 20, near: 0.1, far: 200 }}
-      fallback={null}
+      fallback={<NoWebGL onReady={props.onReady} />}
     >
       <Progress onProgress={props.onProgress} />
       <Director motion={props.motion} narrow={props.narrow} pose={pose} />
       <Lights pose={pose} />
+      <Bubbles motion={props.motion} pose={pose} narrow={props.narrow} />
       <Suspense fallback={null}>
         <Cans {...props} pose={pose} />
         <Ready onReady={props.onReady} />
@@ -51,6 +53,12 @@ export default function FizzScene(props: SceneProps) {
 function Progress({ onProgress }: { onProgress: (p: number) => void }) {
   const progress = useProgress((s) => s.progress);
   useEffect(() => onProgress(progress), [progress, onProgress]);
+  return null;
+}
+
+// เครื่องที่ไม่รองรับ WebGL: ไม่มีฉาก 3D แต่ต้องบอกว่า "พร้อม" ไม่งั้นหน้าโหลดจะค้าง (ข้อความทั้งหน้ายังใช้ได้)
+function NoWebGL({ onReady }: { onReady: () => void }) {
+  useEffect(() => onReady(), [onReady]);
   return null;
 }
 

@@ -153,3 +153,9 @@ export function look(product: Product, variant = 0) {
   const v = product.variants[variant] ?? product.variants[0];
   return { variant: v, accent: v.accent, origin: v.origin };
 }
+
+// ลิงก์ไปหน้าสินค้า: สินค้าที่มีหลายแบบส่งแบบที่เลือกไปด้วย (?v=sprite) หน้าสินค้าจะเปิดมาที่แบบเดียวกัน
+export function productHref(product: Product, variant = 0) {
+  const v = look(product, variant).variant;
+  return product.variants.length > 1 ? `/${product.slug}?v=${v.id}` : `/${product.slug}`;
+}

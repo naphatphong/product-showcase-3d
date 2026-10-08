@@ -32,6 +32,7 @@ export type Motion = {
   pointerX: number; // ตำแหน่งเมาส์ −1 (ซ้าย) ถึง 1 (ขวา)
   pointerY: number;
   introAt: number | null; // เวลาที่เริ่มฉากกระป๋องร่วงลงมา (performance.now) — null = ยังไม่เริ่ม
+  tint: string; // สีหลักของยี่ห้อที่เลือก (ฟองซ่าใช้สีนี้)
 };
 
 export const createMotion = (): Motion => ({
@@ -42,6 +43,7 @@ export const createMotion = (): Motion => ({
   pointerX: 0,
   pointerY: 0,
   introAt: null,
+  tint: "#ffffff",
 });
 
 // ตำแหน่งเลื่อนจอ → เลข section แบบทศนิยม เช่น 2.5 = เลื่อนจาก section 2 ไป 3 ได้ครึ่งทาง

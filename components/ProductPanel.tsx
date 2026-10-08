@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { look, products } from "@/config/products";
+import { look, productHref, products } from "@/config/products";
 import { formatCoords } from "@/lib/format";
 
 type Props = {
@@ -42,7 +42,7 @@ export default function ProductPanel({ index, narrow, onEnter, onStep, hidden, v
 
       {/* เป็นลิงก์จริง (คลิกขวา/เปิดแท็บใหม่ได้) แต่คลิกปกติจะเล่นแอนิเมชันก่อนเปลี่ยนหน้า */}
       <Link
-        href={`/${p.slug}`}
+        href={productHref(p, variant)}
         onClick={(e) => {
           e.preventDefault();
           onEnter(index);

@@ -17,6 +17,7 @@ import { products } from "@/config/products";
 import { useNarrow } from "@/lib/useNarrow";
 import { archivo } from "./font";
 import Hud from "./Hud";
+import Loader from "./Loader";
 import { CANS, createMotion, FREE_FROM, mod, SECTIONS } from "./motion";
 import { BenefitNav, BenefitOverlay, BrandOverlay, Caption, GhostText, HeroOverlay } from "./Overlays";
 import { Faq, Finale } from "./Outro";
@@ -46,6 +47,8 @@ export default function Fizz() {
   const [active, setActive] = useState(0); // section ที่แสดงอยู่
   const [sound, setSound] = useState(false);
   const [ready, setReady] = useState(false); // โมเดลกระป๋องโหลดครบแล้ว
+  const [progress, setProgress] = useState<number | null>(null); // % การโหลดไฟล์จริง (null = โค้ด 3D ยังไม่มา)
+  const [started, setStarted] = useState(false); // หน้าโหลดหายไปแล้ว เริ่มฉากเปิด
   const [hover, setHover] = useState(false); // เมาส์อยู่บนกระป๋อง
   const [dragging, setDragging] = useState(false);
   // ลากหมุนวงกระป๋อง (หน้าเลือกยี่ห้อ): จุดเริ่ม, ตำแหน่งวงตอนเริ่ม, ความเร็วล่าสุด
@@ -255,16 +258,12 @@ export default function Fizz() {
     return () => removeEventListener("keydown", onKey);
   }, [active, page, paged, step]);
 
-  // โมเดลโหลดครบ → เริ่มฉากกระป๋องร่วงลงมาจากฟ้า
-  useEffect(() => {
-    if (ready) motion.current.introAt = performance.now();
-  }, [ready]);
-
   // ยี่ห้อที่เลือกอยู่ใส่ไว้ใน URL (?v=pepsi) แชร์ลิงก์แล้วเปิดมาเจอยี่ห้อเดิม (replaceState = ไม่เพิ่มประวัติการกด back)
   useEffect(() => {
     const url = new URL(location.href);
     url.searchParams.set("v", brands[brand].id);
     history.replaceState(history.state, "", url);
+    motion.current.tint = brands[brand].accent; // ฟองซ่าเปลี่ยนสีตามยี่ห้อ
   }, [brand]);
 
   // ---------- ลากหมุนวงกระป๋อง (เมาส์และนิ้วใช้โค้ดเดียวกัน) เฉพาะหน้าเลือกยี่ห้อ ----------
@@ -320,7 +319,12 @@ export default function Fizz() {
     else rotateTo(cur + d);
   };
   const onReady = useCallback(() => setReady(true), []);
-  const onProgress = useCallback(() => {}, []);
+  const onProgress = useCallback((p: number) => setProgress(p), []);
+  // หน้าโหลดจางหายแล้ว → กระป๋องเริ่มร่วงลงมาจากฟ้า + ข้อความหน้าแรกเริ่มเลื่อนขึ้นมา
+  const onLoaded = useCallback(() => {
+    motion.current.introAt = performance.now();
+    setStarted(true);
+  }, []);
 
   const b = brands[brand];
   const tint = brandStories[b.id].tint;
@@ -369,7 +373,13 @@ export default function Fizz() {
       </div>
 
       {/* ข้อความของแต่ละ section (ลอยอยู่กับที่ เปลี่ยนตาม section ที่แสดง) */}
-      <HeroOverlay active={active === 0 || active === LAST} brands={brands} brand={brand} onStep={step} onPick={pick} />
+      <HeroOverlay
+        active={started && (active === 0 || active === LAST)}
+        brands={brands}
+        brand={brand}
+        onStep={step}
+        onPick={pick}
+      />
       <BrandOverlay active={active === 1} brand={b} />
       {benefits.map((x, i) => (
         <BenefitOverlay key={x.id} active={active === i + 2} index={i} />
@@ -397,6 +407,7 @@ export default function Fizz() {
       </main>
 
       <Hud bar={bar} sound={sound} onSound={() => setSound((s) => !s)} onLogo={() => goTo(0)} />
+      <Loader progress={progress} ready={ready} onDone={onLoaded} />
     </div>
   );
 }

@@ -13,7 +13,7 @@ import {
   type ReactNode,
   type WheelEvent,
 } from "react";
-import { look, products } from "@/config/products";
+import { look, productHref, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
 import ProductPanel from "./ProductPanel";
@@ -117,7 +117,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
   const enter = useCallback(
     (index: number) => {
       if (busy) return;
-      const href = `/${products[index].slug}`;
+      const href = productHref(products[index], variants[index]); // ส่งแบบที่เลือกไปด้วย เช่น /drink?v=sprite
       // ผู้ใช้ที่ตั้งค่า "ลดการเคลื่อนไหว" ในเครื่อง: ข้ามแอนิเมชัน เปลี่ยนหน้าทันที
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return router.push(href);
       bringToFront(index);
@@ -125,7 +125,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
       router.prefetch(href); // โหลดหน้าปลายทางรอไว้ระหว่างแอนิเมชัน
       timer.current = setTimeout(() => router.push(href), DIVE_SECONDS * 1000);
     },
-    [router, busy, bringToFront],
+    [router, busy, bringToFront, variants],
   );
 
   // คลิก/แตะสินค้า:
