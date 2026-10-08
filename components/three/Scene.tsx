@@ -11,6 +11,7 @@ import { DIVE_SECONDS } from "@/lib/dive";
 import Backdrop from "./Backdrop";
 import Earth, { EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
 import FloatingProduct from "./FloatingProduct";
+import LensFlare from "./LensFlare";
 
 // มุมกล้องปกติ 2 แบบ (มองตรงไปทาง −z เสมอ): จอกว้าง (คอม) / จอแคบ (มือถือแนวตั้ง ถอยออกและมุมกว้างขึ้น)
 // จุด SLOT (0,0,0) = ที่จอดของสินค้าชิ้นที่เลือก — คอมเยื้องขวาบนนิดหน่อย (ชื่อสินค้าอยู่ซ้ายล่าง), มือถืออยู่กลางค่อนบน
@@ -118,6 +119,7 @@ export default function Scene(props: SceneProps) {
           <Ready onReady={props.onReady} />
         </Suspense>
       </Safe>
+      <LensFlare />
     </Canvas>
   );
 }
