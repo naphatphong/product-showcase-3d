@@ -6,8 +6,10 @@ import { faq } from "@/config/fizz";
 // คำถามที่พบบ่อย: <details> + <summary> ของ HTML กดเปิด/ปิดได้เอง ใช้คีย์บอร์ดได้ และ screen reader รู้จัก
 export function Faq() {
   return (
-    <div className="pointer-events-auto mx-auto max-w-4xl px-6 pt-32 pb-24 md:px-[60px] md:pt-40">
-      <h2 className="fizz-title text-[clamp(3rem,9vw,7.5rem)] leading-[0.88]">
+    <div className="pointer-events-auto @container mx-auto max-w-4xl px-6 pt-32 pb-24 md:px-[60px] md:pt-40">
+      {/* ขนาดตัวอักษรอิงความกว้างคอลัมน์ (cqi) ไม่ใช่ความกว้างจอ → คำว่า QUESTIONS? ยาวพอดีคอลัมน์
+          ขอบซ้าย-ขวาตรงกับรายการคำถามด้านล่างทุกขนาดจอ ไม่ล้นออกไปทางขวา */}
+      <h2 className="fizz-title text-[12cqi] leading-[0.88]">
         Got
         <br />
         questions?
