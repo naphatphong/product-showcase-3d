@@ -15,6 +15,19 @@
   --font-display: var(--font-cormorant);
 }
 
+/* แอนิเมชันค่อยๆ สว่างขึ้นจากสีดำ: ได้คลาส animate-fade-in (ใช้ตอนเข้าหน้าสินค้า) */
+@theme {
+  --animate-fade-in: fade-in 1.2s ease-out both;
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -22,4 +35,9 @@ body {
   font-weight: 300;
   /* กันไม่ให้เกิด scroll แนวนอนบนมือถือ */
   overflow-x: hidden;
+}
+
+/* ฟอนต์หัวเรื่อง (Cormorant) ปกติใช้ตัวเลขแบบเก่าที่ห้อยลง เช่น R35 → ให้ตัวเลขสูงเท่าตัวอักษร */
+.font-display {
+  font-variant-numeric: lining-nums;
 }

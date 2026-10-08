@@ -11,6 +11,7 @@ export type Product = {
   specs: { label: string; value: string }[];
   // จุด "บ้านเกิด" บนโลก ตอนกดเข้า กล้องจะพุ่งเข้าหาจุดนี้ (lat บวก = เหนือ, lon บวก = ตะวันออก)
   origin: { city: string; lat: number; lon: number };
+  note?: string; // ข้อความเล็กๆ ท้ายหน้าสินค้า (ถ้าไม่มี ใช้ข้อความ concept project)
 };
 
 export const products: Product[] = [
@@ -52,5 +53,6 @@ export const products: Product[] = [
       { label: "0–100", value: "2.9 s" },
     ],
     origin: { city: "Tokyo", lat: 35.68, lon: 139.69 },
+    note: "Fan concept — not affiliated with or endorsed by Nissan.",
   },
 ];
