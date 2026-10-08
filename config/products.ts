@@ -1,35 +1,38 @@
 // ข้อมูลสินค้าทั้งหมดของโชว์รูม — แก้ชื่อ รายละเอียด สี ได้ที่ไฟล์นี้ที่เดียว
 // เก็บเป็นข้อมูลล้วน (ไม่มีโค้ด 3D ปน) เพื่อให้ย้ายไปเก็บใน Supabase ได้ในเฟสร้านค้า
-// ชื่อสินค้า (FIZZ / ORLÉ / GRID 26) แก้ได้ที่นี่ที่เดียว
+// ชื่อสินค้า (FIZZ / SIGNAL / GRID 26) แก้ได้ที่นี่ที่เดียว
 
 type Place = { city: string; lat: number; lon: number };
 
-// แบบย่อยของสินค้า (เช่น รถ 3 ทีม) — แต่ละแบบมีโมเดล สี และเมืองบ้านเกิดของตัวเอง
+// แบบของสินค้า (เช่น รถ 3 ทีม, น้ำ 6 ยี่ห้อ) — แต่ละแบบมีโมเดล สี และเมืองบ้านเกิดของตัวเอง
 export type Variant = {
   id: string;
   name: string;
   model: string; // ไฟล์ .glb ในโฟลเดอร์ public/
-  accent: string;
+  accent: string; // สีของแบบนี้: แสงขอบสินค้า, ปุ่ม Enter, จุดบอกตำแหน่ง
   origin: Place;
 };
 
 export type Product = {
-  slug: "drink" | "watch" | "f1"; // ใช้เป็น URL ของหน้าสินค้า เช่น /watch
+  slug: "drink" | "phone" | "f1"; // ใช้เป็น URL ของหน้าสินค้า เช่น /phone
   name: string;
   category: string;
   tagline: string;
-  accent: string; // สีประจำสินค้า: แสงวงแหวนที่แท่น + ปุ่ม
+  accent: string; // สีประจำสินค้า (ใช้ในหน้าสินค้า)
   specs: { label: string; value: string }[];
-  // จุด "บ้านเกิด" บนโลก ตอนกดเข้า กล้องจะพุ่งเข้าหาจุดนี้ (lat บวก = เหนือ, lon บวก = ตะวันออก)
+  // จุด "บ้านเกิด" ของสินค้า (แสดงในหน้าสินค้า) — lat บวก = เหนือ, lon บวก = ตะวันออก
   origin: Place;
   note?: string; // ข้อความเล็กๆ ท้ายหน้าสินค้า (ถ้าไม่มี ใช้ข้อความ concept project)
   size?: number; // ขนาดในโชว์รูม (ความยาวด้านที่ยาวที่สุด) ค่าเริ่มต้น 1.9 — ของยาวๆ อย่างรถให้ใหญ่ขึ้น
-  variants?: Variant[]; // ถ้ามี: เลือกแบบได้ และใช้โมเดล/สี/เมืองของแบบที่เลือก
+  // แบบของสินค้า อย่างน้อย 1 แบบ (type [Variant, ...Variant[]] = array ที่ห้ามว่าง)
+  // มีมากกว่า 1 แบบ → แผงรายละเอียดมีปุ่มให้เลือก / ตอนกดเข้า กล้องดำดิ่งไปเมืองของแบบที่เลือก
+  variants: [Variant, ...Variant[]];
 };
 
 // เมืองที่ใช้ซ้ำหลายแบบ
 const ATLANTA: Place = { city: "Atlanta", lat: 33.75, lon: -84.39 }; // Coca-Cola (1886)
 const NEW_BERN: Place = { city: "New Bern", lat: 35.11, lon: -77.04 }; // Pepsi (1893)
+const CUPERTINO: Place = { city: "Cupertino", lat: 37.33, lon: -122.01 }; // Apple Park
 
 export const products: Product[] = [
   {
@@ -63,17 +66,28 @@ export const products: Product[] = [
     ],
   },
   {
-    slug: "watch",
-    name: "ORLÉ",
-    category: "Luxury watch",
-    tagline: "Time, worn beautifully.",
-    accent: "#d9b26a",
+    slug: "phone",
+    name: "SIGNAL",
+    category: "Smartphones",
+    tagline: "Pro, from every angle.",
+    accent: "#7d8cff",
     specs: [
-      { label: "Case", value: "40 mm" },
-      { label: "Movement", value: "Automatic" },
-      { label: "Reserve", value: "70 h" },
+      { label: "Display", value: "6.3″" },
+      { label: "Chip", value: "A19 Pro" },
+      { label: "Cameras", value: "3 × 48 MP" },
     ],
-    origin: { city: "Geneva", lat: 46.2, lon: 6.14 },
+    origin: CUPERTINO,
+    note: "Fan concept — not affiliated with Apple. 3D model by zhe_kan (CC BY-NC-SA 4.0).",
+    // โมเดลวางมือถือ 2 เครื่องคู่กัน (ด้านหลัง + หน้าจอ) ตามที่ผู้สร้างจัดไว้
+    variants: [
+      {
+        id: "iphone-17-pro",
+        name: "iPhone 17 Pro",
+        model: "/models/phone/iphone-17-pro.glb",
+        accent: "#7d8cff",
+        origin: CUPERTINO,
+      },
+    ],
   },
   {
     slug: "f1",
@@ -116,8 +130,8 @@ export const products: Product[] = [
   },
 ];
 
-// ค่าที่ใช้แสดงจริงของสินค้า: ถ้ามีหลายแบบ ใช้สี/เมือง/โมเดลของแบบที่เลือก ไม่งั้นใช้ค่าของสินค้า
+// ค่าที่ใช้แสดงจริงของสินค้าตามแบบที่เลือก (เลขแบบเกินจำนวน → ใช้แบบแรก)
 export function look(product: Product, variant = 0) {
-  const v = product.variants?.[variant] ?? null;
-  return { variant: v, accent: v?.accent ?? product.accent, origin: v?.origin ?? product.origin };
+  const v = product.variants[variant] ?? product.variants[0];
+  return { variant: v, accent: v.accent, origin: v.origin };
 }

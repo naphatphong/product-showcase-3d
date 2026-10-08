@@ -58,7 +58,7 @@ export default function ProductPanel({ index, narrow, onEnter, onStep, hidden, v
           </div>
 
           {/* สินค้าที่มีหลายแบบ: ปุ่มเลือกแบบ (มีจุดสีประจำแบบ) */}
-          {p.variants && (
+          {p.variants.length > 1 && (
             <div role="group" aria-label="Choose a version" className="mt-3 flex flex-wrap gap-2">
               {p.variants.map((v, i) => (
                 <button
@@ -76,7 +76,7 @@ export default function ProductPanel({ index, narrow, onEnter, onStep, hidden, v
 
           {/* จอเตี้ย ซ่อนแถวสเปก ให้แผงไม่บังสินค้า (สินค้าที่มีปุ่มเลือกแบบ แผงสูงกว่า จึงซ่อนเร็วกว่า) */}
           <dl
-            className={`mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 ${p.variants ? "[@media(max-height:960px)]:hidden" : "[@media(max-height:760px)]:hidden"}`}
+            className={`mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 ${p.variants.length > 1 ? "[@media(max-height:960px)]:hidden" : "[@media(max-height:760px)]:hidden"}`}
           >
             {p.specs.map((s) => (
               <div key={s.label}>

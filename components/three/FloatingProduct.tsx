@@ -5,7 +5,6 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Center, Html, Resize, useCursor, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { Product, Variant } from "@/config/products";
-import { WatchPlaceholder } from "./placeholders";
 
 // ขนาดเริ่มต้นของสินค้า: ด้านที่ยาวที่สุดจะยาวเท่านี้ (หน่วยในฉาก) ทุกชิ้นจึงดูใหญ่พอๆ กัน
 // (สินค้าแต่ละชิ้นปรับเองได้ด้วย size ใน config เช่น รถยาวๆ ให้ใหญ่ขึ้น)
@@ -24,7 +23,7 @@ type Props = {
   scale: number;
   active: boolean; // สินค้าที่กำลังแสดงรายละเอียด
   dimmed: boolean; // มีชิ้นอื่น active อยู่ → ชิ้นนี้หรี่ลง
-  variant: Variant | null; // แบบที่เลือกอยู่ (ถ้าสินค้ามีหลายแบบ)
+  variant: Variant; // แบบที่เลือกอยู่ (โมเดล + สี)
   // ชั้น HTML (อยู่นอก Canvas) ที่ใช้วางป้ายชื่อ — null = ไม่แสดงป้าย
   labelLayer: RefObject<HTMLDivElement | null> | null;
   onHover: (index: number) => void;
@@ -52,12 +51,12 @@ export default function FloatingProduct({
   const [hovered, setHovered] = useState(false);
   useCursor(hovered); // เปลี่ยนเมาส์เป็นรูปมือเมื่อชี้สินค้า
   const size = product.size ?? SIZE;
-  const accent = variant?.accent ?? product.accent;
+  const accent = variant.accent;
   // ความสูงครึ่งหนึ่งของสินค้าจริง (รู้หลังวัดขนาดโมเดล) ใช้วางป้ายชื่อให้อยู่ใต้สินค้าพอดี
   const [halfHeight, setHalfHeight] = useState(size / 2);
 
   // เปลี่ยนแบบ (เช่นเปลี่ยนทีม) → หมุนโชว์ 1 รอบ
-  const variantId = variant?.id;
+  const variantId = variant.id;
   const firstVariant = useRef(variantId);
   useEffect(() => {
     if (variantId !== firstVariant.current) spin.current += Math.PI * 2;
@@ -65,7 +64,7 @@ export default function FloatingProduct({
 
   // ชี้/เลื่อนมาที่สินค้าที่มีหลายแบบ → โหลดไฟล์ของแบบอื่นรอไว้ กดเปลี่ยนแล้วขึ้นทันที
   useEffect(() => {
-    if (active) product.variants?.forEach((v) => useGLTF.preload(v.model));
+    if (active) product.variants.forEach((v) => useGLTF.preload(v.model));
   }, [active, product]);
 
   useFrame((state, dt) => {
@@ -109,17 +108,17 @@ export default function FloatingProduct({
       {/* ไฟดวงเล็กสีประจำสินค้า วางไว้ด้านหลัง ทำให้ขอบสินค้าเรืองสีนั้น (rim light) */}
       <pointLight ref={rim} color={accent} intensity={6} distance={3} decay={2} position={[0, 0.3, -1]} />
 
-      {/* ตัวสินค้า: ไฟล์ .glb ถ้ามี / ไม่งั้นใช้โมเดลชั่วคราวที่สร้างด้วยโค้ด
-          Resize = ย่อ/ขยายให้ด้านที่ยาวสุดยาว 1 หน่วย, Center = เลื่อนให้จุดกึ่งกลางอยู่ที่ (0,0,0)
+      {/* ตัวสินค้า: ไฟล์ .glb ของแบบที่เลือก
+          Resize =ย่อ/ขยายให้ด้านที่ยาวสุดยาว 1 หน่วย, Center = เลื่อนให้จุดกึ่งกลางอยู่ที่ (0,0,0)
           โมเดลจะขนาดเท่าไรก็ตาม จะถูกจัดให้ขนาดและตำแหน่งเท่ากันหมด
           Suspense อยู่นอก Center: Center จะวัดขนาดหลังไฟล์โหลดเสร็จแล้วเท่านั้น */}
       <group ref={model}>
         <group scale={size}>
           <Suspense fallback={null}>
             {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
-            <Center key={variantId ?? "base"} onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
+            <Center key={variantId} onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
               <Resize>
-                {variant ? <GltfModel url={variant.model} /> : <WatchPlaceholder />}
+                <GltfModel url={variant.model} />
               </Resize>
             </Center>
           </Suspense>
