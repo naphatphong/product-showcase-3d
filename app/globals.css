@@ -67,3 +67,284 @@ body {
     }
   }
 }
+
+/* ======================= หน้า FIZZ (/drink) ======================= */
+
+/* ลงทะเบียนชนิดของตัวแปรสี → เบราว์เซอร์ค่อยๆ ไล่สีตอนเปลี่ยนยี่ห้อได้ (ปกติตัวแปร CSS เปลี่ยนแบบกระโดด) */
+@property --tint1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
+}
+@property --tint2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
+}
+
+.fizz-root {
+  font-family: var(--font-archivo), Arial, sans-serif;
+  font-weight: 400;
+  transition:
+    --tint1 0.9s ease,
+    --tint2 0.9s ease;
+}
+
+/* หัวข้อแบบสปอร์ต: หนาสุด เอียง ขยายกว้าง ตัวพิมพ์ใหญ่ */
+.fizz-title {
+  font-family: var(--font-archivo), Arial, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-stretch: 115%;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- พื้นหลัง: สีเข้มของยี่ห้อ + ชั้นแสงที่เปิด/ปิดตาม section (data-section ที่ตัวครอบ) ---------- */
+.fizz-bg {
+  background: var(--tint2);
+}
+.fizz-bg > div {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.9s ease;
+}
+/* แสงสีของยี่ห้อ: เรืองจากด้านล่าง + กลางจอ */
+.fizz-glow {
+  background:
+    radial-gradient(70% 45% at 50% 105%, color-mix(in srgb, var(--tint1) 75%, transparent), transparent 70%),
+    radial-gradient(55% 55% at 50% 50%, color-mix(in srgb, var(--tint1) 28%, transparent), transparent 75%);
+}
+/* ก้อนสีฟุ้งๆ ขยับช้าๆ (section CRACK) */
+.fizz-blobs {
+  opacity: 0;
+  filter: blur(60px);
+  background:
+    radial-gradient(30% 40% at 20% 35%, color-mix(in srgb, var(--tint1) 85%, white 15%), transparent 70%),
+    radial-gradient(35% 45% at 80% 60%, var(--tint1), transparent 70%),
+    radial-gradient(40% 30% at 50% 90%, color-mix(in srgb, var(--tint1) 70%, white 30%), transparent 70%);
+  animation: fizz-drift 14s ease-in-out infinite alternate;
+}
+/* ชั้นมืด: section ที่มีสปอตไลต์ และ FAQ/ท้ายเว็บ */
+.fizz-dark {
+  opacity: 0;
+  background: radial-gradient(90% 70% at 50% 40%, transparent, rgba(0, 0, 0, 0.85));
+}
+[data-section="crack"] .fizz-blobs {
+  opacity: 1;
+}
+[data-section="fizz"] .fizz-dark,
+[data-section="cold"] .fizz-dark,
+[data-section="zero"] .fizz-dark,
+[data-section="recycle"] .fizz-dark {
+  opacity: 0.9;
+}
+[data-section="faq"] .fizz-dark,
+[data-section="finale"] .fizz-dark {
+  opacity: 1;
+  background: linear-gradient(180deg, #050505, #1c1c1f 60%, #08080a);
+}
+@keyframes fizz-drift {
+  to {
+    transform: translate3d(4%, -3%, 0) scale(1.08) rotate(6deg);
+  }
+}
+
+/* ---------- ข้อความที่ลอยทับฉาก: โผล่เฉพาะ section ที่แสดงอยู่ ---------- */
+.overlay {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.45s ease,
+    visibility 0s linear 0.45s;
+}
+.overlay[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s ease;
+}
+/* ตำแหน่งข้อความ: คอม = ซ้ายกลางจอ, มือถือ = ด้านล่างกลาง (กระป๋องอยู่ด้านบน) */
+.fizz-copy {
+  position: absolute;
+  inset-inline: 1.5rem;
+  bottom: 9%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+@media (min-width: 768px) {
+  .fizz-copy {
+    inset-inline: auto;
+    left: max(60px, 9vw);
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    max-width: 30rem;
+    text-align: left;
+    align-items: flex-start;
+  }
+}
+
+/* ตัวอักษรเลื่อนขึ้นทีละตัว (ดู Reveal.tsx) — เล่นตอนตัวครอบเป็น data-active="true" */
+.reveal-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  /* เผื่อที่ให้ตัวเอียง/หางตัวอักษรไม่ถูกตัด */
+  padding: 0 0.1em 0.06em 0;
+  margin-right: -0.1em;
+}
+.reveal-char {
+  display: inline-block;
+  transform: translateY(115%);
+}
+[data-active="true"] .reveal-char {
+  animation: reveal-up 0.8s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+.reveal-fade {
+  opacity: 0;
+}
+[data-active="true"] .reveal-fade {
+  animation: fade-up 0.9s ease 0.25s both;
+}
+.ghost-line {
+  opacity: 0;
+}
+[data-active="true"] .ghost-line {
+  animation: ghost-in 1.2s cubic-bezier(0.2, 0.75, 0.2, 1) var(--d, 0s) both;
+}
+@keyframes reveal-up {
+  from {
+    transform: translateY(115%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ghost-in {
+  from {
+    opacity: 0;
+    transform: translateY(25%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- HUD ---------- */
+/* เส้นความคืบหน้า: ยาวตาม --p (0–1) ปลายเส้นเป็นจุดเรืองแสง */
+.hud-progress {
+  width: calc(var(--p, 0) * 100%);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+.hud-progress::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 40px;
+  height: 5px;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, #fff, transparent);
+}
+/* แท่งเสียง 4 แท่ง: ปิดเสียง = แท่งเตี้ยนิ่ง, เปิดเสียง = แท่งเต้นขึ้นลงไม่พร้อมกัน */
+.sound-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 10px;
+}
+.sound-bars i {
+  width: 2px;
+  height: 3px;
+  background: currentColor;
+  transition: height 0.3s;
+}
+.sound-bars.is-on i {
+  animation: sound-bar 0.9s ease-in-out infinite alternate;
+}
+.sound-bars.is-on i:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.sound-bars.is-on i:nth-child(3) {
+  animation-delay: -0.6s;
+}
+.sound-bars.is-on i:nth-child(4) {
+  animation-delay: -0.15s;
+}
+@keyframes sound-bar {
+  from {
+    height: 3px;
+  }
+  to {
+    height: 10px;
+  }
+}
+/* รูปเมาส์เล็กๆ จุดข้างในเลื่อนลง = "เลื่อนลงได้" */
+.scroll-hint {
+  position: relative;
+  width: 14px;
+  height: 20px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+}
+.scroll-hint::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 2px;
+  height: 4px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: scroll-dot 1.6s ease-in-out infinite;
+}
+@keyframes scroll-dot {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(7px);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* ซ่อนสามเหลี่ยมของ <summary> ใน Safari */
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+/* ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": แสดงข้อความทันที ไม่มีตัวอักษรวิ่ง/พื้นหลังขยับ */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-char,
+  .reveal-fade,
+  .ghost-line,
+  [data-active="true"] .reveal-char,
+  [data-active="true"] .reveal-fade,
+  [data-active="true"] .ghost-line {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+  .fizz-blobs,
+  .sound-bars.is-on i,
+  .scroll-hint::after {
+    animation: none;
+  }
+}
