@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Center, Html, Resize, useCursor } from "@react-three/drei";
 import * as THREE from "three";
@@ -17,7 +17,8 @@ type Props = {
   scale: number;
   active: boolean; // สินค้าที่กำลังแสดงรายละเอียด
   dimmed: boolean; // มีชิ้นอื่น active อยู่ → ชิ้นนี้หรี่ลง
-  showLabel: boolean;
+  // ชั้น HTML (อยู่นอก Canvas) ที่ใช้วางป้ายชื่อ — null = ไม่แสดงป้าย
+  labelLayer: RefObject<HTMLDivElement | null> | null;
   onHover: (index: number) => void;
   onSelect: (index: number) => void;
 };
@@ -30,7 +31,7 @@ export default function FloatingProduct({
   scale,
   active,
   dimmed,
-  showLabel,
+  labelLayer,
   onHover,
   onSelect,
 }: Props) {
@@ -103,8 +104,16 @@ export default function FloatingProduct({
       </group>
 
       {/* ป้ายชื่อใต้สินค้า: เป็น HTML ที่ drei จัดตำแหน่งให้ตามจุด 3D (แค่ตกแต่ง screen reader ข้ามได้) */}
-      {showLabel && (
-        <Html position={[0, -SIZE / 2 - 0.2, 0]} center pointerEvents="none" zIndexRange={[5, 0]}>
+      {/* portal: บอก drei ให้วางป้ายในชั้นที่เตรียมไว้ตั้งแต่แรก (ถ้าปล่อยให้ drei หาที่วางเอง มันจะย้ายที่หลัง
+          render ครั้งแรก ทำให้ React 19 error ตอนเปลี่ยนหน้า) */}
+      {labelLayer && (
+        <Html
+          portal={labelLayer as RefObject<HTMLElement>}
+          position={[0, -SIZE / 2 - 0.2, 0]}
+          center
+          pointerEvents="none"
+          zIndexRange={[5, 0]}
+        >
           <div
             aria-hidden
             className={`w-56 text-center transition-opacity duration-500 ${active ? "opacity-100" : dimmed ? "opacity-35" : "opacity-70"}`}

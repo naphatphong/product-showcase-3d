@@ -24,6 +24,10 @@ export default function Home() {
         <h1 className="mt-3 font-display text-4xl font-light sm:text-6xl">{site.headline}</h1>
       </div>
 
+      <p className="pointer-events-none fixed inset-x-0 bottom-2.5 z-10 text-center text-[10px] text-white/35">
+        Concept projects — not real products · Earth imagery: NASA
+      </p>
+
       {/* รายการสินค้าแบบ HTML ล้วน: มองไม่เห็นบนจอ แต่ screen reader และ Google อ่านได้ */}
       <nav aria-label="Products" className="sr-only">
         <ul>

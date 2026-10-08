@@ -1,6 +1,6 @@
 "use client"; // ใช้ WebGL และ hooks ของ React จึงต้องรันฝั่งเบราว์เซอร์ (Client Component)
 
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useRef, type RefObject } from "react";
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, Stars } from "@react-three/drei";
@@ -20,6 +20,8 @@ export type SceneProps = {
   active: number | null;
   onHover: (index: number) => void;
   onSelect: (index: number) => void;
+  onReady: () => void; // เรียกเมื่อภาพโลกโหลดเสร็จ (ใช้ซ่อนข้อความ loading)
+  labelLayer: RefObject<HTMLDivElement | null>; // ชั้น HTML สำหรับป้ายชื่อสินค้า
 };
 
 export default function Scene(props: SceneProps) {
@@ -65,13 +67,14 @@ export default function Scene(props: SceneProps) {
       {/* Suspense: รอภาพโลกโหลดเสร็จก่อนค่อยแสดง (ระหว่างนั้นเห็นดาวกับสินค้าไปก่อน) */}
       <Suspense fallback={null}>
         <Earth />
+        <Ready onReady={props.onReady} />
       </Suspense>
     </Canvas>
   );
 }
 
 // จัดตำแหน่งสินค้า 3 ชิ้น
-function Products({ narrow, active, onHover, onSelect }: SceneProps) {
+function Products({ narrow, active, onHover, onSelect, labelLayer }: SceneProps) {
   const size = useThree((s) => s.size);
   const view = narrow ? VIEWS.narrow : VIEWS.wide;
   // ความกว้างของภาพที่ระยะของสินค้า (z = 0) คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ
@@ -100,7 +103,7 @@ function Products({ narrow, active, onHover, onSelect }: SceneProps) {
         scale={scale}
         active={active === i}
         dimmed={active !== null && active !== i}
-        showLabel={!narrow}
+        labelLayer={narrow ? null : labelLayer} // มือถือมีแผงรายละเอียดแล้ว ไม่ต้องมีป้าย
         onHover={onHover}
         onSelect={onSelect}
       />
@@ -124,6 +127,12 @@ function Rig({ narrow }: { narrow: boolean }) {
     look.current.lerp(view.look, 1 - Math.exp(-4 * dt));
     cam.lookAt(look.current);
   });
+  return null;
+}
+
+// component นี้อยู่ใน Suspense เดียวกับโลก จึง mount หลังภาพโลกโหลดเสร็จเท่านั้น
+function Ready({ onReady }: { onReady: () => void }) {
+  useEffect(() => onReady(), [onReady]);
   return null;
 }
 
