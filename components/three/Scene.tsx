@@ -7,6 +7,7 @@ import { Environment, Lightformer, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { look, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
+import Backdrop from "./Backdrop";
 import Earth, { EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
 import FloatingProduct from "./FloatingProduct";
 
@@ -38,15 +39,16 @@ export default function Scene(props: SceneProps) {
     // fallback: แสดงแทนเมื่อเครื่องไม่รองรับ WebGL
     <Canvas camera={{ position: [0, 0.6, 8.2], fov: 38 }} dpr={[1, 2]} fallback={<NoWebGL />}>
       <Rig narrow={props.narrow} diveTo={props.diveTo} />
+      <Backdrop />
       {/* ดาว: กระจายอยู่บนทรงกลมรัศมี 120 รอบฉาก, fade = ดาวขอบๆ จางลง */}
       <Stars radius={120} depth={40} count={6000} factor={5} saturation={0} fade speed={0.4} />
 
-      {/* ไฟของสินค้า: ไฟหลักจากหน้าซ้าย + ไฟขอบจากฝั่งดวงอาทิตย์ (ทิศเดียวกับแสงบนโลก) */}
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[-4, 5, 6]} intensity={2} />
-      <directionalLight position={SUN_DIR.clone().multiplyScalar(10)} intensity={3} color="#cfe0ff" />
+      {/* ไฟของสินค้า: ไฟหลักจากหน้าซ้าย + ไฟจากฝั่งดวงอาทิตย์ขวาบน (ทิศเดียวกับแสงบนโลก) */}
+      <ambientLight intensity={0.35} />
+      <directionalLight position={[-4, 5, 6]} intensity={2.2} />
+      <directionalLight position={SUN_DIR.clone().multiplyScalar(10)} intensity={2.4} color="#dce8ff" />
       {/* Environment = ภาพรอบตัวที่ใช้ทำแสงสะท้อนบนโลหะ สร้างจากแผ่นไฟ (Lightformer) ในฉากเอง ไม่ต้องโหลดไฟล์ */}
-      <Environment resolution={256}>
+      <Environment resolution={256} environmentIntensity={1.25}>
         <Lightformer
           form="rect"
           intensity={2}
@@ -91,12 +93,12 @@ function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants
     2 * view.pos.z * Math.tan(THREE.MathUtils.degToRad(view.fov / 2)) * (size.width / size.height);
   // คอม: ชิ้นหน้าสุดต้องไม่ชนหัวเว็บ (สูง ~190px) และแผงรายละเอียด (~220px) ที่สูงคงที่เป็น px
   // แต่ฉาก 3D ย่อ/ขยายตามความสูงจอ → จอเตี้ยต้องลดขนาดชิ้นหน้าสุดลง
-  // (1 หน่วยในฉาก = ความสูงจอ / 5.65 px, สินค้าสูงสุด 1.9 หน่วย + ป้าย "Click to enter" ~40px)
-  const fit = ((size.height - 450) * 5.65) / (1.9 * size.height);
+  // (1 หน่วยในฉาก = ความสูงจอ / 5.65 px, สินค้าสูงสุด 1.9 หน่วย, เผื่อป้าย "Click to enter" + ระยะห่างอีก ~110px)
+  const fit = ((size.height - 520) * 5.65) / (1.9 * size.height);
   // rx = รัศมีแนวกว้าง (ตามความกว้างจอ), rz = ความลึก, front/side = ขนาดชิ้นหน้าสุด/ชิ้นด้านหลัง
   // มือถือ: ชิ้นด้านข้างโผล่ขอบจอพอให้รู้ว่ามีอีก / คอม: เห็นครบทุกชิ้น
   const layout = narrow
-    ? { rx: viewWidth * 0.62, rz: 2, y: 0.3, front: 1.1, side: 0.7 }
+    ? { rx: viewWidth * 0.62, rz: 2, y: 0.12, front: 1.1, side: 0.7 }
     : {
         rx: THREE.MathUtils.clamp(viewWidth * 0.4, 2.8, 4.4),
         rz: 2,

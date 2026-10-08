@@ -137,7 +137,7 @@ export default function FloatingProduct({
           {active ? (
             <div
               aria-hidden
-              className="whitespace-nowrap rounded-full border px-4 py-1.5 text-[10px] uppercase tracking-[0.3em] motion-safe:animate-fade-in"
+              className="whitespace-nowrap rounded-full border bg-black/40 px-4 py-1.5 text-[10px] uppercase tracking-[0.3em] backdrop-blur-sm motion-safe:animate-fade-in"
               style={{ borderColor: variant.accent, color: variant.accent }}
             >
               Click to enter

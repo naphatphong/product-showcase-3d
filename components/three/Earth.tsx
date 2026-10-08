@@ -6,11 +6,12 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
 // ตำแหน่งและขนาดโลกในฉาก — โลกใหญ่มากและอยู่ต่ำ/ไกลกว่าสินค้า
-// กล้องจึงเห็นแค่ส่วนบนของโลกเป็นขอบฟ้าโค้งๆ ด้านล่างจอ
-export const EARTH_CENTER = new THREE.Vector3(0, -17, -16);
+// กล้องจึงเห็นแค่ส่วนบนของโลกเป็นขอบฟ้าโค้งๆ ครึ่งล่างของจอ (y ยิ่งมาก โลกยิ่งโผล่สูงขึ้น)
+export const EARTH_CENTER = new THREE.Vector3(0, -15, -16);
 export const EARTH_RADIUS = 12;
 // ทิศที่แสงอาทิตย์ส่องมา (ใช้ทั้ง shader ของโลกและไฟของสินค้า ให้แสงไปทางเดียวกัน)
-export const SUN_DIR = new THREE.Vector3(1, 0.45, -0.35).normalize();
+// มาจากด้านขวา ค่อนมาทางกล้องนิดหน่อย → โลกที่เราเห็นเป็นกลางวันราว 2 ใน 3 (ขวา) ฝั่งซ้ายเป็นกลางคืนมีไฟเมือง
+export const SUN_DIR = new THREE.Vector3(0.9, 0.4, 0.15).normalize();
 
 // แปลงละติจูด/ลองจิจูด เป็นเวกเตอร์ทิศบนลูกโลก (ก่อนหมุน)
 // สูตรนี้ตรงกับวิธีที่ SphereGeometry ของ three.js แปะภาพแผนที่โลกแบบ equirectangular
