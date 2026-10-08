@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import Lenis, { type VirtualScrollData } from "lenis";
-import "lenis/dist/lenis.css";
 import {
   useCallback,
   useEffect,
@@ -388,8 +387,10 @@ export default function Fizz() {
   const onReady = useCallback(() => setReady(true), []);
   const onProgress = useCallback((p: number) => setProgress(p), []);
   // หน้าโหลดจางหายแล้ว → กระป๋องเริ่มร่วงลงมาจากฟ้า + ข้อความหน้าแรกเริ่มเลื่อนขึ้นมา
+  // (ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": กระป๋องอยู่ในแถวเลย ไม่ต้องร่วง)
   const onLoaded = useCallback(() => {
-    motion.current.introAt = performance.now();
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    motion.current.introAt = performance.now() - (still ? 60_000 : 0);
     setStarted(true);
   }, []);
 
