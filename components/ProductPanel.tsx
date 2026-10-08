@@ -9,17 +9,18 @@ type Props = {
   narrow: boolean;
   onEnter: (index: number) => void;
   onStep: (dir: 1 | -1) => void; // เลื่อนไปชิ้นก่อนหน้า/ถัดไป
+  hidden: boolean; // ซ่อนตอนกำลังดำดิ่งเข้าหน้าสินค้า
 };
 
 // แผงรายละเอียดด้านล่างจอ: เปลี่ยนตามสินค้าที่ชี้ (คอม) หรือชิ้นที่อยู่ตรงกลาง (มือถือ)
-export default function ProductPanel({ index, narrow, onEnter, onStep }: Props) {
+export default function ProductPanel({ index, narrow, onEnter, onStep, hidden }: Props) {
   const p = index === null ? null : products[index];
 
   return (
     <section
       aria-label="Product details"
       aria-live="polite"
-      className="pointer-events-auto fixed inset-x-4 bottom-8 z-20 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-black/45 p-5 backdrop-blur-md"
+      className={`fixed inset-x-4 bottom-8 z-20 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-black/45 p-5 backdrop-blur-md transition-opacity duration-500 ${hidden ? "pointer-events-none opacity-0" : "pointer-events-auto"}`}
     >
       {!p || index === null ? (
         <p className="py-3 text-center text-[11px] uppercase tracking-[0.3em] text-white/50">
@@ -53,7 +54,8 @@ export default function ProductPanel({ index, narrow, onEnter, onStep }: Props) 
             </Link>
           </div>
 
-          <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4">
+          {/* จอเตี้ย (เช่นโน้ตบุ๊ก 1280×720) ซ่อนแถวสเปก ให้แผงไม่บังสินค้า */}
+          <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 [@media(max-height:760px)]:hidden">
             {p.specs.map((s) => (
               <div key={s.label}>
                 <dt className="text-[10px] uppercase tracking-[0.22em] text-white/40">{s.label}</dt>
