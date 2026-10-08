@@ -6,13 +6,14 @@ import { faq } from "@/config/fizz";
 // คำถามที่พบบ่อย: <details> + <summary> ของ HTML กดเปิด/ปิดได้เอง ใช้คีย์บอร์ดได้ และ screen reader รู้จัก
 export function Faq() {
   return (
-    <div className="pointer-events-auto mx-auto max-w-5xl px-6 pt-32 pb-24 md:px-[60px] md:pt-40">
+    <div className="pointer-events-auto mx-auto max-w-4xl px-6 pt-32 pb-24 md:px-[60px] md:pt-40">
       <h2 className="fizz-title text-[clamp(3rem,9vw,7.5rem)] leading-[0.88]">
         Got
         <br />
         questions?
       </h2>
-      <div className="mt-12 md:ml-[30%]">
+      {/* รายการคำถามชิดซ้ายตรงกับหัวข้อ */}
+      <div className="mt-12">
         {faq.map((x) => (
           <details key={x.q} className="faq-item group border-b border-white/15 first:border-t">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[15px] text-white/90 hover:text-white">

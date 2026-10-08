@@ -169,6 +169,16 @@ html.lenis body {
   opacity: 1;
   background: linear-gradient(180deg, #050505, #1c1c1f 60%, #08080a);
 }
+/* แถบจางด้านบนจอ: แสดงเฉพาะส่วนที่เลื่อนอ่านอิสระ (FAQ/ท้ายเว็บ) ให้ข้อความจางก่อนถึงแถบเมนู */
+.fizz-topfade {
+  opacity: 0;
+  background: linear-gradient(180deg, #050505 35%, transparent);
+  transition: opacity 0.6s ease;
+}
+[data-section="faq"] .fizz-topfade,
+[data-section="finale"] .fizz-topfade {
+  opacity: 1;
+}
 @keyframes fizz-drift {
   to {
     transform: translate3d(4%, -3%, 0) scale(1.08) rotate(6deg);

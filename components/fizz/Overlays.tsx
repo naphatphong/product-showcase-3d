@@ -42,29 +42,29 @@ export function HeroOverlay({
 
   return (
     <div data-active={active} className="overlay pointer-events-none fixed inset-0 z-[3]">
-      {/* ลูกศรซ้าย/ขวา ข้างกระป๋องที่อยู่ตรงกลาง */}
+      {/* ลูกศรซ้าย/ขวา: มือถือ = ข้างกระป๋องที่อยู่ตรงกลาง, คอม = ขอบจอซ้าย/ขวา (ไม่บังกระป๋อง) */}
       {(
         [
-          [-1, "Previous can", "left-[calc(50%-9.5rem)] md:left-[calc(50%-10rem)]", "‹"],
-          [1, "Next can", "right-[calc(50%-9.5rem)] md:right-[calc(50%-10rem)]", "›"],
+          [-1, "Previous can", "left-[calc(50%-9.5rem)] md:left-[60px]", "‹"],
+          [1, "Next can", "right-[calc(50%-9.5rem)] md:right-[60px]", "›"],
         ] as const
       ).map(([dir, label, side, icon]) => (
         <button
           key={dir}
           aria-label={label}
           onClick={() => onStep(dir)}
-          className={`pointer-events-auto absolute top-[36%] grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/25 pb-0.5 text-2xl text-white/80 backdrop-blur-sm transition hover:bg-white hover:text-black md:top-1/2 ${side}`}
+          className={`pointer-events-auto absolute top-[36%] grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/25 pb-0.5 text-2xl text-white/80 backdrop-blur-sm transition hover:bg-white hover:text-black md:top-1/2 md:h-12 md:w-12 md:border md:border-white/20 ${side}`}
         >
           {icon}
         </button>
       ))}
 
-      <div className="absolute inset-x-0 bottom-[6%] flex flex-col items-center px-6 text-center">
+      <div className="absolute inset-x-0 bottom-[5%] flex flex-col items-center px-6 text-center">
         <p className="text-[11px] uppercase tracking-[0.3em] text-white/60">
           {pad(brand + 1)} / {pad(brands.length)} · {brandStories[b.id].taste}
         </p>
         {/* key: เปลี่ยนยี่ห้อ = สร้างตัวอักษรใหม่ แอนิเมชันเลื่อนขึ้นเล่นใหม่ */}
-        <h2 key={b.id} className="fizz-title mt-2 text-[clamp(2.6rem,7vw,5.5rem)] leading-[0.92]">
+        <h2 key={b.id} className="fizz-title mt-2 text-[clamp(2.4rem,6vw,4.75rem)] leading-[0.92]">
           <Reveal text={b.name} />
         </h2>
 

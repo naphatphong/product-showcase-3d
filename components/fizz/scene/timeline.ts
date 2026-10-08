@@ -46,7 +46,7 @@ const HERO: Pose = {
   camRZ: 0,
   fov: 20,
   canX: 0,
-  canY: 0.15,
+  canY: 0.55, // ยกแถวกระป๋องขึ้น เว้นที่ให้ชื่อยี่ห้อด้านล่างไม่ทับกระป๋อง
   canZ: 0.6,
   canRX: -8 * deg,
   canRY: 0,

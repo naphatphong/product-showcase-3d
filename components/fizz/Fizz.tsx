@@ -479,6 +479,8 @@ export default function Fizz() {
         ))}
       </main>
 
+      {/* แถบไล่สีจางด้านบนจอ (FAQ/ท้ายเว็บ): ข้อความที่เลื่อนขึ้นไปจะจางหายก่อนถึงโลโก้ ไม่ทับกัน */}
+      <div aria-hidden className="fizz-topfade pointer-events-none fixed inset-x-0 top-0 z-[4] h-36" />
       <Hud bar={bar} sound={sound} onSound={toggleSound} onLogo={() => goTo(0)} />
       <Loader progress={progress} ready={ready} onDone={onLoaded} />
     </div>
