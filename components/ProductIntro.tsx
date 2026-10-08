@@ -52,8 +52,11 @@ export default function ProductIntro({ slug }: { slug: Product["slug"] }) {
       >
         ← Back to orbit
       </Link>
-      <p className="absolute inset-x-0 bottom-4 text-[10px] text-white/30">
-        {p.note ?? "Concept project — not a real product."}
+      <p className="absolute inset-x-0 bottom-4 px-4 text-[10px] text-white/30">
+        {p.note ?? "Concept project — not a real product."} ·{" "}
+        <Link href="/credits" className="underline underline-offset-2 hover:text-white/60">
+          Credits
+        </Link>
       </p>
     </main>
   );

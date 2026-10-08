@@ -25,8 +25,12 @@ export default function Home() {
         </div>
       </Showroom>
 
+      {/* เครดิตเต็ม (ผู้สร้างโมเดล + license) อยู่ที่หน้า /credits — ท้ายจอมีแค่ลิงก์ ไม่ให้รก */}
       <p className="pointer-events-none fixed inset-x-0 bottom-2.5 z-10 text-center text-[10px] text-white/35">
-        Concept projects · Earth: NASA · F1 models: Dave Love, CC BY 4.0
+        Concept projects — not real products ·{" "}
+        <Link href="/credits" className="pointer-events-auto underline underline-offset-2 hover:text-white/70">
+          Credits
+        </Link>
       </p>
 
       {/* รายการสินค้าแบบ HTML ล้วน: มองไม่เห็นบนจอ แต่ screen reader และ Google อ่านได้ */}
