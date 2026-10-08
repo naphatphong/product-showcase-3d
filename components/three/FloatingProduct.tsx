@@ -5,7 +5,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Center, Html, Resize, useCursor, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { Product, Variant } from "@/config/products";
-import { DrinkPlaceholder, WatchPlaceholder } from "./placeholders";
+import { WatchPlaceholder } from "./placeholders";
 
 // ขนาดเริ่มต้นของสินค้า: ด้านที่ยาวที่สุดจะยาวเท่านี้ (หน่วยในฉาก) ทุกชิ้นจึงดูใหญ่พอๆ กัน
 // (สินค้าแต่ละชิ้นปรับเองได้ด้วย size ใน config เช่น รถยาวๆ ให้ใหญ่ขึ้น)
@@ -119,13 +119,7 @@ export default function FloatingProduct({
             {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
             <Center key={variantId ?? "base"} onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
               <Resize>
-                {variant ? (
-                  <GltfModel url={variant.model} />
-                ) : product.slug === "drink" ? (
-                  <DrinkPlaceholder accent={product.accent} />
-                ) : (
-                  <WatchPlaceholder />
-                )}
+                {variant ? <GltfModel url={variant.model} /> : <WatchPlaceholder />}
               </Resize>
             </Center>
           </Suspense>

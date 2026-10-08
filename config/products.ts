@@ -1,6 +1,6 @@
 // ข้อมูลสินค้าทั้งหมดของโชว์รูม — แก้ชื่อ รายละเอียด สี ได้ที่ไฟล์นี้ที่เดียว
 // เก็บเป็นข้อมูลล้วน (ไม่มีโค้ด 3D ปน) เพื่อให้ย้ายไปเก็บใน Supabase ได้ในเฟสร้านค้า
-// ชื่อสินค้าทั้ง 3 ยังรอยืนยัน
+// ชื่อสินค้า (FIZZ / ORLÉ / GRID 26) แก้ได้ที่นี่ที่เดียว
 
 type Place = { city: string; lat: number; lon: number };
 
@@ -27,19 +27,40 @@ export type Product = {
   variants?: Variant[]; // ถ้ามี: เลือกแบบได้ และใช้โมเดล/สี/เมืองของแบบที่เลือก
 };
 
+// เมืองที่ใช้ซ้ำหลายแบบ
+const ATLANTA: Place = { city: "Atlanta", lat: 33.75, lon: -84.39 }; // Coca-Cola (1886)
+const NEW_BERN: Place = { city: "New Bern", lat: 35.11, lon: -77.04 }; // Pepsi (1893)
+
 export const products: Product[] = [
   {
     slug: "drink",
-    name: "VOLTRA",
-    category: "Energy drink",
-    tagline: "Unleash the edge.",
-    accent: "#ff3b2f",
+    name: "FIZZ",
+    category: "Soft drinks",
+    tagline: "Six classics. Ice cold.",
+    accent: "#8fd8ff",
     specs: [
-      { label: "Caffeine", value: "160 mg" },
       { label: "Volume", value: "500 ml" },
-      { label: "Flavors", value: "3" },
+      { label: "Brands", value: "6" },
+      { label: "Best served", value: "4 °C" },
     ],
-    origin: { city: "Los Angeles", lat: 34.05, lon: -118.24 },
+    origin: ATLANTA,
+    note: "Fan concept — not affiliated with The Coca-Cola Company, PepsiCo or Keurig Dr Pepper. 3D model by Mark Peters (CC BY-NC 4.0).",
+    // กระป๋อง 6 ยี่ห้อ = 6 แบบ (โมเดลต้นฉบับมี 6 กระป๋องในไฟล์เดียว แยกออกมาไฟล์ละยี่ห้อ จะได้โหลดทีละกระป๋อง)
+    // เมืองบ้านเกิด = เมืองที่ยี่ห้อนั้นเริ่มต้น (สูตร Zero ใช้เมืองเดียวกับยี่ห้อหลัก, Sprite ใช้ Atlanta ที่ตั้งของ Coca-Cola)
+    variants: [
+      { id: "coca-cola", name: "Coca-Cola", model: "/models/soda/coca-cola.glb", accent: "#f40009", origin: ATLANTA },
+      { id: "coke-zero", name: "Coke Zero", model: "/models/soda/coca-cola-zero.glb", accent: "#ff4f4f", origin: ATLANTA },
+      { id: "sprite", name: "Sprite", model: "/models/soda/sprite.glb", accent: "#1fbf5c", origin: ATLANTA },
+      { id: "pepsi", name: "Pepsi", model: "/models/soda/pepsi.glb", accent: "#2f6fe0", origin: NEW_BERN },
+      { id: "pepsi-zero", name: "Pepsi Zero", model: "/models/soda/pepsi-zero.glb", accent: "#4aa3ff", origin: NEW_BERN },
+      {
+        id: "dr-pepper",
+        name: "Dr Pepper",
+        model: "/models/soda/dr-pepper.glb",
+        accent: "#c8324f",
+        origin: { city: "Waco", lat: 31.55, lon: -97.15 },
+      },
+    ],
   },
   {
     slug: "watch",

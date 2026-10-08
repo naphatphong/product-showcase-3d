@@ -7,6 +7,7 @@
 export const LICENSES = {
   "Public domain": "https://earthobservatory.nasa.gov/image-use-policy",
   "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/",
+  "CC BY-NC 4.0": "https://creativecommons.org/licenses/by-nc/4.0/",
 } as const;
 
 export type Credit = {
@@ -56,9 +57,19 @@ export const credits: Credit[] = [
     license: "CC BY 4.0",
     changes: "Compressed for the web (WebP textures, meshopt geometry), ~31 MB → ~3.9 MB.",
   },
+  {
+    usedFor: "FIZZ — all six cans",
+    title: "Soda Cans - 500ml | Free Download",
+    author: "Mark Peters",
+    authorUrl: "https://sketchfab.com/mark-peters",
+    source: "https://sketchfab.com/3d-models/soda-cans-500ml-free-download-84452c6420a44ea4be84c49fc6b2df6c",
+    license: "CC BY-NC 4.0",
+    changes: "Split into one file per can, then compressed for the web (WebP textures, meshopt geometry), ~2.2 MB → ~250 KB per can.",
+  },
 ];
 
 // ชื่อแบรนด์/โลโก้ที่ปรากฏในโมเดล เป็นของเจ้าของ — บอกไว้ชัดๆ ว่าเว็บนี้ไม่เกี่ยวข้องกับเขา
 export const trademarks = [
   "Formula 1, Mercedes-AMG Petronas F1, Scuderia Ferrari, Oracle Red Bull Racing and their sponsors",
+  "The Coca-Cola Company, PepsiCo and Keurig Dr Pepper",
 ];
