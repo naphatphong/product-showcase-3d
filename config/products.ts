@@ -10,6 +10,7 @@ export type Variant = {
   name: string;
   model: string; // ไฟล์ .glb ในโฟลเดอร์ public/
   accent: string; // สีของแบบนี้: แสงขอบสินค้า, ปุ่ม Enter, จุดบอกตำแหน่ง
+  swatch?: string; // สีของปุ่มเลือกแบบ (CSS background) ถ้าไม่ตรงกับ accent เช่น กระป๋องสีดำ
   origin: Place;
 };
 
@@ -52,15 +53,30 @@ export const products: Product[] = [
     // เมืองบ้านเกิด = เมืองที่ยี่ห้อนั้นเริ่มต้น (สูตร Zero ใช้เมืองเดียวกับยี่ห้อหลัก, Sprite ใช้ Atlanta ที่ตั้งของ Coca-Cola)
     variants: [
       { id: "coca-cola", name: "Coca-Cola", model: "/models/soda/coca-cola.glb", accent: "#f40009", origin: ATLANTA },
-      { id: "coke-zero", name: "Coke Zero", model: "/models/soda/coca-cola-zero.glb", accent: "#ff4f4f", origin: ATLANTA },
+      {
+        id: "coke-zero",
+        name: "Coke Zero",
+        model: "/models/soda/coca-cola-zero.glb",
+        accent: "#ff4f4f",
+        swatch: "linear-gradient(135deg, #f40009 50%, #111 50%)", // กระป๋องแดง ตัวหนังสือดำ
+        origin: ATLANTA,
+      },
       { id: "sprite", name: "Sprite", model: "/models/soda/sprite.glb", accent: "#1fbf5c", origin: ATLANTA },
       { id: "pepsi", name: "Pepsi", model: "/models/soda/pepsi.glb", accent: "#2f6fe0", origin: NEW_BERN },
-      { id: "pepsi-zero", name: "Pepsi Zero", model: "/models/soda/pepsi-zero.glb", accent: "#4aa3ff", origin: NEW_BERN },
+      {
+        id: "pepsi-zero",
+        name: "Pepsi Zero",
+        model: "/models/soda/pepsi-zero.glb",
+        accent: "#4aa3ff",
+        swatch: "linear-gradient(135deg, #111 50%, #2f6fe0 50%)", // กระป๋องดำ โลโก้น้ำเงิน
+        origin: NEW_BERN,
+      },
       {
         id: "dr-pepper",
         name: "Dr Pepper",
         model: "/models/soda/dr-pepper.glb",
         accent: "#c8324f",
+        swatch: "#6d0f22", // สีกระป๋องจริงเข้มกว่า accent (accent สว่างขึ้นให้อ่านบนพื้นดำได้)
         origin: { city: "Waco", lat: 31.55, lon: -97.15 },
       },
     ],
@@ -78,6 +94,7 @@ export const products: Product[] = [
     ],
     origin: CUPERTINO,
     note: "Fan concept — not affiliated with Apple. 3D model by zhe_kan (CC BY-NC-SA 4.0).",
+    size: 1.7, // มือถือ 2 เครื่องวางคู่กันเป็นสี่เหลี่ยมเกือบจัตุรัส ดูใหญ่กว่ากระป๋อง จึงย่อลงนิดหน่อย
     // โมเดลวางมือถือ 2 เครื่องคู่กัน (ด้านหลัง + หน้าจอ) ตามที่ผู้สร้างจัดไว้
     variants: [
       {
@@ -85,6 +102,7 @@ export const products: Product[] = [
         name: "iPhone 17 Pro",
         model: "/models/phone/iphone-17-pro.glb",
         accent: "#7d8cff",
+        swatch: "#34406e", // สี Deep Blue ของตัวเครื่อง
         origin: CUPERTINO,
       },
     ],

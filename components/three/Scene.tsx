@@ -1,6 +1,6 @@
 "use client"; // ใช้ WebGL และ hooks ของ React จึงต้องรันฝั่งเบราว์เซอร์ (Client Component)
 
-import { Suspense, useEffect, useRef, type RefObject } from "react";
+import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, Stars } from "@react-three/drei";
@@ -16,10 +16,15 @@ const VIEWS = {
   narrow: { pos: new THREE.Vector3(0, 0.8, 9.5), look: new THREE.Vector3(0, -0.3, 0), fov: 46 },
 };
 
+// ตำแหน่งวงแหวนที่ต้องหมุนไปหา (หน่วย = จำนวนชิ้น เช่น 1.4 = เลยชิ้นที่ 2 ไปเกือบครึ่งทาง)
+// เป็น ref เพราะเปลี่ยนทุกครั้งที่นิ้ว/เมาส์ขยับตอนลาก — ฉากอ่านค่าเองทุกเฟรม ไม่ต้อง render ใหม่
+export type Ring = { goal: number };
+
 export type SceneProps = {
   narrow: boolean;
-  active: number | null;
-  onHover: (index: number) => void;
+  front: number; // สินค้าที่อยู่หน้าสุดของวงแหวน
+  ring: RefObject<Ring>;
+  onHover: (index: number | null) => void;
   onSelect: (index: number) => void;
   onReady: () => void; // เรียกเมื่อภาพโลกโหลดเสร็จ (ใช้ซ่อนข้อความ loading)
   labelLayer: RefObject<HTMLDivElement | null>; // ชั้น HTML สำหรับป้ายชื่อสินค้า
@@ -66,7 +71,7 @@ export default function Scene(props: SceneProps) {
         />
       </Environment>
 
-      <Products {...props} />
+      <Carousel {...props} />
       {/* Suspense: รอภาพโลกโหลดเสร็จก่อนค่อยแสดง (ระหว่างนั้นเห็นดาวกับสินค้าไปก่อน) */}
       <Suspense fallback={null}>
         <Earth focus={props.diveTo} />
@@ -76,43 +81,67 @@ export default function Scene(props: SceneProps) {
   );
 }
 
-// จัดตำแหน่งสินค้า 3 ชิ้น
-function Products({ narrow, active, onHover, onSelect, labelLayer, variants }: SceneProps) {
+// วงแหวนสินค้า (carousel แบบหมุนรอบ): สินค้าเรียงบนวงรีที่นอนราบ ชิ้นหน้าสุดอยู่กลางจอ ใหญ่และใกล้กล้องที่สุด
+// ชิ้นอื่นอยู่ลึกเข้าไปด้านหลังซ้าย/ขวา — หมุนวงแหวน = ทุกชิ้นเลื่อนไปตามเส้นวงรีพร้อมกัน
+function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants }: SceneProps) {
   const size = useThree((s) => s.size);
   const view = narrow ? VIEWS.narrow : VIEWS.wide;
   // ความกว้างของภาพที่ระยะของสินค้า (z = 0) คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ
   const viewWidth =
     2 * view.pos.z * Math.tan(THREE.MathUtils.degToRad(view.fov / 2)) * (size.width / size.height);
-  const spacing = THREE.MathUtils.clamp(viewWidth * 0.31, 2.6, 3.8);
+  // คอม: ชิ้นหน้าสุดต้องไม่ชนหัวเว็บ (สูง ~190px) และแผงรายละเอียด (~220px) ที่สูงคงที่เป็น px
+  // แต่ฉาก 3D ย่อ/ขยายตามความสูงจอ → จอเตี้ยต้องลดขนาดชิ้นหน้าสุดลง
+  // (1 หน่วยในฉาก = ความสูงจอ / 5.65 px, สินค้าสูงสุด 1.9 หน่วย + ป้าย "Click to enter" ~40px)
+  const fit = ((size.height - 450) * 5.65) / (1.9 * size.height);
+  // rx = รัศมีแนวกว้าง (ตามความกว้างจอ), rz = ความลึก, front/side = ขนาดชิ้นหน้าสุด/ชิ้นด้านหลัง
+  // มือถือ: ชิ้นด้านข้างโผล่ขอบจอพอให้รู้ว่ามีอีก / คอม: เห็นครบทุกชิ้น
+  const layout = narrow
+    ? { rx: viewWidth * 0.62, rz: 2, y: 0.3, front: 1.1, side: 0.7 }
+    : {
+        rx: THREE.MathUtils.clamp(viewWidth * 0.4, 2.8, 4.4),
+        rz: 2,
+        y: 0.45,
+        front: THREE.MathUtils.clamp(fit, 0.85, 1.2),
+        side: 0.75,
+      };
+  const items = useRef<(THREE.Group | null)[]>([]);
+  const pos = useRef<number | null>(null); // ตำแหน่งวงแหวนที่แสดงอยู่ตอนนี้ (ไล่ตาม ring.goal แบบนุ่มๆ)
+  // ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": วงแหวนกระโดดไปเลย ไม่หมุนให้เห็น
+  const [reduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
-  return products.map((product, i) => {
-    let position: [number, number, number];
-    let scale = 1;
-    if (narrow) {
-      // มือถือ: carousel — k = -1 ซ้าย, 0 กลาง, 1 ขวา (วนรอบได้)
-      const k = ((i - (active ?? 0) + 4) % 3) - 1;
-      position = [k * viewWidth * 0.62, 0.4, -Math.abs(k) * 1.5];
-      scale = k === 0 ? 1 : 0.7;
-    } else {
-      // คอม: เรียงเป็นแนวโค้ง ชิ้นกลางอยู่ใกล้สุด
-      position = [(i - 1) * spacing, 0.4, -Math.abs(i - 1) * 0.9];
-    }
-    return (
+  useFrame((_, dt) => {
+    const goal = ring.current.goal;
+    const p = pos.current === null || reduced ? goal : THREE.MathUtils.damp(pos.current, goal, 6, dt);
+    pos.current = p;
+    const n = products.length;
+    items.current.forEach((g, i) => {
+      if (!g) return;
+      // มุมของชิ้นนี้บนวงแหวน: 0 = หน้าสุด, ชิ้นถัดไปอยู่ทางขวา (+), ชิ้นก่อนหน้าอยู่ทางซ้าย (−)
+      const a = ((i - p) / n) * Math.PI * 2;
+      const near = (Math.cos(a) + 1) / 2; // 1 = หน้าสุด → 0 = หลังสุด
+      g.position.set(layout.rx * Math.sin(a), layout.y, layout.rz * (Math.cos(a) - 1));
+      g.scale.setScalar(layout.side + (layout.front - layout.side) * near * near);
+    });
+  });
+
+  return products.map((product, i) => (
+    <group
+      key={product.slug}
+      ref={(el) => {
+        items.current[i] = el;
+      }}
+    >
       <FloatingProduct
-        key={product.slug}
         product={product}
         index={i}
-        position={position}
-        scale={scale}
-        active={active === i}
-        dimmed={active !== null && active !== i}
+        active={front === i}
         variant={look(product, variants[i]).variant}
         labelLayer={narrow ? null : labelLayer} // มือถือมีแผงรายละเอียดแล้ว ไม่ต้องมีป้าย
         onHover={onHover}
         onSelect={onSelect}
       />
-    );
-  });
+    </group>
+  ));
 }
 
 // กล้อง:

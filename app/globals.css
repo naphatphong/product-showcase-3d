@@ -41,3 +41,29 @@ body {
 .font-display {
   font-variant-numeric: lining-nums;
 }
+
+/* แผงรายละเอียดสินค้า (ProductPanel): ตั้งชื่อช่องของ grid ไว้ แต่ละส่วนในแผงบอกแค่ว่าอยู่ช่องไหน
+   มือถือ: เรียงลงเป็นแถว / คอม: 2 คอลัมน์ ซ้าย = ชื่อ + เลือกแบบ, ขวา = เมือง + สเปก + ปุ่ม Enter
+   อยู่ใน @layer components → คลาสของ Tailwind (อยู่ชั้น utilities) ยังใช้ทับได้ตามปกติ */
+@layer components {
+  .panel-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 1rem;
+    grid-template-areas:
+      "head city"
+      "title enter"
+      "pick pick"
+      "specs specs"
+      "nav nav";
+  }
+  @media (min-width: 768px) {
+    .panel-grid {
+      column-gap: 2.5rem;
+      grid-template-areas:
+        "head city"
+        "title specs"
+        "pick enter";
+    }
+  }
+}
