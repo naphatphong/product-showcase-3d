@@ -20,7 +20,7 @@ function GltfModel({ url }: { url: string }) {
 type Props = {
   product: Product;
   index: number;
-  active: boolean; // อยู่หน้าสุดของวงแหวน = สินค้าที่แผงรายละเอียดกำลังแสดง
+  active: boolean; // จอดอยู่ตรงกลาง = สินค้าที่รายละเอียดกำลังแสดง
   variant: Variant; // แบบที่เลือกอยู่ (โมเดล + สี)
   // ชั้น HTML (อยู่นอก Canvas) ที่ใช้วางป้ายชื่อ — null = ไม่แสดงป้าย
   labelLayer: RefObject<HTMLDivElement | null> | null;
@@ -29,7 +29,7 @@ type Props = {
 };
 
 // สินค้า 1 ชิ้นลอยอยู่กลางอวกาศ (ไม่มีฐาน) + แสงขอบสีประจำสินค้า + ป้ายชื่อด้านล่าง
-// ตำแหน่งบนวงแหวนและขนาด (ใกล้/ไกล) ถูกกำหนดจาก Scene — ไฟล์นี้ดูแลแค่ตัวสินค้าเอง
+// ตำแหน่งบนวงโคจรและขนาดถูกกำหนดจาก Scene — ไฟล์นี้ดูแลแค่ตัวสินค้าเอง
 export default function FloatingProduct({
   product,
   index,
@@ -57,7 +57,7 @@ export default function FloatingProduct({
     if (variantId !== firstVariant.current) spin.current += Math.PI * 2;
   }, [variantId]);
 
-  // สินค้าที่หมุนมาอยู่หน้าสุด → โหลดไฟล์ของแบบอื่นรอไว้ กดเปลี่ยนแล้วขึ้นทันที
+  // สินค้าที่มาจอดตรงกลาง → โหลดไฟล์ของแบบอื่นรอไว้ กดเปลี่ยนแล้วขึ้นทันที
   useEffect(() => {
     if (active) product.variants.forEach((v) => useGLTF.preload(v.model));
   }, [active, product]);
@@ -66,13 +66,13 @@ export default function FloatingProduct({
     const m = model.current;
     if (!m) return;
     const damp = THREE.MathUtils.damp; // ค่อยๆ เข้าใกล้ค่าเป้าหมาย (ยิ่งตัวเลขที่ 3 มาก ยิ่งเร็ว)
-    // ลอยขึ้นลงช้าๆ (แต่ละชิ้นจังหวะไม่ตรงกัน) + ยกสูงขึ้นเมื่ออยู่หน้าสุด + หมุนรอบตัวเอง
+    // ลอยขึ้นลงช้าๆ (แต่ละชิ้นจังหวะไม่ตรงกัน) + ยกสูงขึ้นเมื่อจอดอยู่ + หมุนรอบตัวเอง
     lift.current = damp(lift.current, active ? 0.12 : 0, 4, dt);
     m.position.y = lift.current + Math.sin(state.clock.elapsedTime * 1.1 + index * 2) * 0.08;
     const extra = spin.current * (1 - Math.exp(-5 * dt)); // หมุนเพิ่มแบบเร็วตอนแรกแล้วค่อยๆ ช้าลง
     spin.current -= extra;
     m.rotation.y += dt * (active ? 0.5 : 0.2) + extra;
-    // แสงขอบสีประจำสินค้า: สว่างสุดเมื่ออยู่หน้าสุด, ชิ้นด้านข้างสว่างขึ้นเมื่อเอาเมาส์ชี้ (บอกว่าคลิกได้)
+    // แสงขอบสีประจำสินค้า: สว่างสุดเมื่อจอดอยู่, ชิ้นอื่นสว่างขึ้นเมื่อเอาเมาส์ชี้ (บอกว่าคลิกได้)
     if (rim.current) rim.current.intensity = damp(rim.current.intensity, active ? 22 : hovered ? 12 : 4, 6, dt);
   });
 
@@ -87,7 +87,7 @@ export default function FloatingProduct({
   };
   const click = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    if (e.delta > 8) return; // ลากไปไกล = กำลังหมุนวงแหวน ไม่ใช่การคลิก
+    if (e.delta > 8) return; // ลากไปไกล = กำลังลากเปลี่ยนชิ้น ไม่ใช่การคลิก
     onSelect(index);
   };
 

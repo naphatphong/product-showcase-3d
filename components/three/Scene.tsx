@@ -47,13 +47,13 @@ function orbitPoint(a: number, out: THREE.Vector3) {
     .addScaledVector(ALONG, ORBIT_RADIUS * Math.sin(a));
 }
 
-// ตำแหน่งวงแหวนที่ต้องหมุนไปหา (หน่วย = จำนวนชิ้น เช่น 1.4 = เลยชิ้นที่ 2 ไปเกือบครึ่งทาง)
+// ตำแหน่งวงโคจรที่ต้องเลื่อนไปหา (หน่วย = จำนวนชิ้น เช่น 1.4 = เลยชิ้นที่ 2 ไปเกือบครึ่งทาง)
 // เป็น ref เพราะเปลี่ยนทุกครั้งที่นิ้ว/เมาส์ขยับตอนลาก — ฉากอ่านค่าเองทุกเฟรม ไม่ต้อง render ใหม่
 export type Ring = { goal: number };
 
 export type SceneProps = {
   narrow: boolean;
-  front: number; // สินค้าที่อยู่หน้าสุดของวงแหวน
+  front: number; // สินค้าที่จอดอยู่ตรงกลาง
   ring: RefObject<Ring>;
   onHover: (index: number | null) => void;
   onSelect: (index: number) => void;

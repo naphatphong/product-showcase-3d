@@ -46,10 +46,10 @@ const N = products.length;
 // หารเอาเศษแบบไม่ติดลบ เช่น mod(-1, 3) = 2 (ตัว % ของ JavaScript จะได้ -1)
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 
-// ข้อมูลระหว่างลากหมุนวงแหวน
+// ข้อมูลระหว่างลากเปลี่ยนชิ้นบนวงโคจร
 type Drag = {
   x: number; // ตำแหน่งนิ้ว/เมาส์ตอนเริ่มกด
-  from: number; // ตำแหน่งวงแหวนตอนเริ่มกด
+  from: number; // ตำแหน่งวงโคจรตอนเริ่มกด
   moved: boolean; // ลากไกลพอจะนับเป็นการลากหรือยัง (ยัง = อาจเป็นแค่การคลิก)
   lastX: number;
   lastT: number;
@@ -68,8 +68,8 @@ const ARRIVE_UI_DELAY = 1300;
 export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo: ReactNode; intro: ReactNode }) {
   const narrow = useNarrow();
   const router = useRouter();
-  // turn = วงแหวนหมุนมาแล้วกี่ชิ้น (นับต่อเนื่อง ไม่วนกลับ เช่น 0, 1, 2, 3 หรือติดลบ)
-  // สินค้าที่อยู่หน้าสุด = turn หารจำนวนสินค้าเอาเศษ → หมุนวนได้เรื่อยๆ ไม่สะดุดตอนครบรอบ
+  // turn = วงโคจรเลื่อนมาแล้วกี่ชิ้น (นับต่อเนื่อง ไม่วนกลับ เช่น 0, 1, 2, 3 หรือติดลบ)
+  // สินค้าที่จอดอยู่ตรงกลาง = turn หารจำนวนสินค้าเอาเศษ → วนได้เรื่อยๆ ไม่สะดุดตอนครบรอบ
   const [turn, setTurn] = useState(0);
   const front = mod(turn, N);
   // ตำแหน่งที่ฉาก 3D ต้องหมุนไปหา (ค่าเดียวกับ turn แต่ระหว่างลากเป็นทศนิยมตามนิ้ว)
@@ -134,7 +134,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     }
   }, []);
 
-  // หมุนวงแหวนไปตำแหน่ง t: ฉาก 3D อ่านจาก ref ทันที, แผงรายละเอียดอัปเดตจาก state
+  // เลื่อนวงโคจรไปตำแหน่ง t: ฉาก 3D อ่านจาก ref ทันที, รายละเอียดสินค้าอัปเดตจาก state
   const rotateTo = useCallback((t: number) => {
     ring.current.goal = t;
     setTurn(t);
@@ -148,7 +148,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     [busy, started, rotateTo],
   );
 
-  // หมุนเอาชิ้น index มาไว้หน้าสุด ทางที่ใกล้ที่สุด (3 ชิ้น: หมุนไปทางซ้ายหรือขวา 1 ชิ้นเสมอ)
+  // เลื่อนเอาชิ้น index มาจอดตรงกลาง ทางที่ใกล้ที่สุด (3 ชิ้น: ไปทางซ้ายหรือขวา 1 ชิ้นเสมอ)
   const bringToFront = useCallback(
     (index: number) => {
       const cur = Math.round(ring.current.goal);
@@ -176,8 +176,8 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
   );
 
   // คลิก/แตะสินค้า:
-  // - ชิ้นที่อยู่หน้าสุด → เข้าหน้าสินค้า
-  // - ชิ้นอื่น → หมุนมาไว้หน้าสุดก่อน (คลิกอีกครั้งถึงเข้า)
+  // - ชิ้นที่จอดอยู่ → เข้าหน้าสินค้า
+  // - ชิ้นอื่น (โผล่ขอบจอระหว่างเลื่อน) → เลื่อนมาจอดก่อน (คลิกอีกครั้งถึงเข้า)
   // - คลิกที่ 2 ของดับเบิลคลิกไม่นับ (สินค้ากำลังหมุนหนี อาจไปโดนชิ้นอื่น) ให้ onDoubleClick จัดการแทน
   const select = (index: number) => {
     if (busy || !started) return; // หน้าเปิด: สินค้ายังซ่อนอยู่ แต่กล่องรับคลิกยังอยู่ในฉาก → ไม่นับ
@@ -194,7 +194,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     if (index >= 0 && performance.now() - t < 700) enter(index);
   };
 
-  // ---------- ลากเพื่อหมุนวงแหวน (เมาส์และนิ้วใช้โค้ดเดียวกัน ผ่าน Pointer Events) ----------
+  // ---------- ลากเพื่อเปลี่ยนชิ้น (เมาส์และนิ้วใช้โค้ดเดียวกัน ผ่าน Pointer Events) ----------
   // ระยะลากต่อ 1 ชิ้น: ประมาณระยะที่สินค้าเลื่อนบนจอจริง สินค้าจึงเลื่อนตามนิ้วพอดี
   const pxPerItem = () => Math.min(640, Math.max(220, window.innerWidth * (narrow ? 0.6 : 0.4)));
 
@@ -221,7 +221,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
       e.currentTarget.setPointerCapture(e.pointerId);
     }
     const per = pxPerItem();
-    // ลากไปทางซ้าย = ชิ้นทางขวาเลื่อนเข้ามาหน้าสุด (เหมือนปัดรูปในมือถือ)
+    // ลากไปทางซ้าย = ชิ้นถัดไปเลื่อนเข้ามาจากขวาบน (เหมือนปัดรูปในมือถือ)
     const goal = d.from - dx / per;
     const dt = (e.timeStamp - d.lastT) / 1000;
     if (dt > 0) d.v = 0.7 * d.v + 0.3 * (-(e.clientX - d.lastX) / per / dt); // เฉลี่ยให้นิ่ง ไม่กระตุก
@@ -302,7 +302,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     lastTurn.current = turn;
   }, [turn]);
 
-  // คีย์บอร์ด: ← → หมุนวงแหวน, Enter เข้าหน้าสินค้าที่อยู่หน้าสุด
+  // คีย์บอร์ด: ← → เปลี่ยนชิ้น, Enter เข้าหน้าสินค้าที่จอดอยู่
   // หน้าเปิด: Enter / เว้นวรรค / ↓ / → = เริ่ม (ถ้ากำลัง focus ปุ่ม/ลิงก์อยู่ ปล่อยให้ปุ่มนั้นทำงานเอง)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
