@@ -12,11 +12,31 @@ import Backdrop from "./Backdrop";
 import Earth, { EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
 import FloatingProduct from "./FloatingProduct";
 
-// มุมกล้องปกติ 2 แบบ: จอกว้าง (คอม) / จอแคบ (มือถือแนวตั้ง ต้องถอยออกและมุมกว้างขึ้นให้สินค้าพอดีจอ)
+// มุมกล้องปกติ 2 แบบ (มองตรงไปทาง −z เสมอ): จอกว้าง (คอม) / จอแคบ (มือถือแนวตั้ง ถอยออกและมุมกว้างขึ้น)
+// จุด SLOT (0,0,0) = ที่จอดของสินค้าชิ้นที่เลือก — คอมเยื้องขวาบนนิดหน่อย (ชื่อสินค้าอยู่ซ้ายล่าง), มือถืออยู่กลางค่อนบน
 const VIEWS = {
-  wide: { pos: new THREE.Vector3(0, 0.6, 8.2), look: new THREE.Vector3(0, 0.25, 0), fov: 38 },
-  narrow: { pos: new THREE.Vector3(0, 0.8, 9.5), look: new THREE.Vector3(0, -0.3, 0), fov: 46 },
+  wide: { pos: new THREE.Vector3(-0.8, -0.3, 8), look: new THREE.Vector3(-0.8, -0.3, 0), fov: 38 },
+  narrow: { pos: new THREE.Vector3(0, -1.2, 11), look: new THREE.Vector3(0, -1.2, 0), fov: 52 },
 };
+
+// ---------- วงโคจรของสินค้า ----------
+// สินค้าทุกชิ้นเป็นเหมือนดาวเทียมบนวงโคจรเดียวกันรอบโลก (วงกลมรอบศูนย์กลางโลก ผ่านจุด SLOT)
+// ตรง SLOT สินค้าเคลื่อนเฉียงขึ้นขวาตามแนวขอบโลก: ชิ้นถัดไปรออยู่นอกจอมุมขวาบน ชิ้นก่อนหน้าอยู่นอกจอมุมซ้ายล่าง
+const SLOT = new THREE.Vector3(0, 0, 0);
+const ORBIT_RADIUS = SLOT.distanceTo(EARTH_CENTER);
+const RADIAL = SLOT.clone().sub(EARTH_CENTER).normalize(); // ทิศจากศูนย์กลางโลกออกมาที่ SLOT
+const PATH_ANGLE = THREE.MathUtils.degToRad(33); // มุมเฉียงของเส้นทางบนจอ (0 = แนวนอน)
+// ทิศที่สินค้าเคลื่อนผ่าน SLOT: เฉียงขึ้นขวาบนจอ แล้วปรับให้ตั้งฉากกับแนวรัศมี (สัมผัสวงโคจรพอดี)
+const ALONG = new THREE.Vector3(Math.cos(PATH_ANGLE), Math.sin(PATH_ANGLE), 0);
+ALONG.addScaledVector(RADIAL, -ALONG.dot(RADIAL)).normalize();
+
+// ตำแหน่งบนวงโคจรที่มุม a (เรเดียน) นับจาก SLOT: บวก = ไปทางขวาบน, ลบ = ไปทางซ้ายล่าง
+function orbitPoint(a: number, out: THREE.Vector3) {
+  return out
+    .copy(EARTH_CENTER)
+    .addScaledVector(RADIAL, ORBIT_RADIUS * Math.cos(a))
+    .addScaledVector(ALONG, ORBIT_RADIUS * Math.sin(a));
+}
 
 // ตำแหน่งวงแหวนที่ต้องหมุนไปหา (หน่วย = จำนวนชิ้น เช่น 1.4 = เลยชิ้นที่ 2 ไปเกือบครึ่งทาง)
 // เป็น ref เพราะเปลี่ยนทุกครั้งที่นิ้ว/เมาส์ขยับตอนลาก — ฉากอ่านค่าเองทุกเฟรม ไม่ต้อง render ใหม่
@@ -87,46 +107,51 @@ export default function Scene(props: SceneProps) {
   );
 }
 
-// วงแหวนสินค้า (carousel แบบหมุนรอบ): สินค้าเรียงบนวงรีที่นอนราบ ชิ้นหน้าสุดอยู่กลางจอ ใหญ่และใกล้กล้องที่สุด
-// ชิ้นอื่นอยู่ลึกเข้าไปด้านหลังซ้าย/ขวา — หมุนวงแหวน = ทุกชิ้นเลื่อนไปตามเส้นวงรีพร้อมกัน
+// สินค้าบนวงโคจร: เห็นทีละชิ้นที่ SLOT — หมุนวงโคจร = ชิ้นเดิมเลื่อนออกไปมุมหนึ่ง ชิ้นใหม่เลื่อนเข้ามาจากอีกมุม
+// ระยะห่างระหว่างชิ้นคำนวณจากขนาดจอ ให้ชิ้นข้างเคียงอยู่พ้นขอบจอพอดี (ลากค้างไว้ = เห็นชิ้นเดิมออก ชิ้นใหม่เข้าพร้อมกัน)
+// วนได้ไม่สิ้นสุด: ตำแหน่งของแต่ละชิ้นนับห่างจากชิ้นตรงกลางไม่เกินครึ่งวง (3 ชิ้น = −1.5 ถึง 1.5 ชิ้น)
+// ชิ้นที่ข้ามจากฝั่งหนึ่งไปอีกฝั่งจะกระโดดตอนอยู่นอกจอ ผู้ใช้จึงไม่เห็น
 function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants }: SceneProps) {
   const size = useThree((s) => s.size);
   const view = narrow ? VIEWS.narrow : VIEWS.wide;
-  // ความกว้างของภาพที่ระยะของสินค้า (z = 0) คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ
-  const viewWidth =
-    2 * view.pos.z * Math.tan(THREE.MathUtils.degToRad(view.fov / 2)) * (size.width / size.height);
-  // คอม: ชิ้นหน้าสุดต้องไม่ชนหัวเว็บ (สูง ~190px) และแผงรายละเอียด (~220px) ที่สูงคงที่เป็น px
-  // แต่ฉาก 3D ย่อ/ขยายตามความสูงจอ → จอเตี้ยต้องลดขนาดชิ้นหน้าสุดลง
-  // (1 หน่วยในฉาก = ความสูงจอ / 5.65 px, สินค้าสูงสุด 1.9 หน่วย, เผื่อป้าย "Click to enter" + ระยะห่างอีก ~110px)
-  const fit = ((size.height - 520) * 5.65) / (1.9 * size.height);
-  // rx = รัศมีแนวกว้าง (ตามความกว้างจอ), rz = ความลึก, front/side = ขนาดชิ้นหน้าสุด/ชิ้นด้านหลัง
-  // มือถือ: ชิ้นด้านข้างโผล่ขอบจอพอให้รู้ว่ามีอีก / คอม: เห็นครบทุกชิ้น
-  const layout = narrow
-    ? { rx: viewWidth * 0.62, rz: 2, y: 0.12, front: 1.1, side: 0.7 }
-    : {
-        rx: THREE.MathUtils.clamp(viewWidth * 0.4, 2.8, 4.4),
-        rz: 2,
-        y: 0.45,
-        front: THREE.MathUtils.clamp(fit, 0.85, 1.2),
-        side: 0.75,
-      };
+  // ครึ่งความกว้าง/สูงของภาพที่ระยะของ SLOT (คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ)
+  const halfH = view.pos.z * Math.tan(THREE.MathUtils.degToRad(view.fov / 2));
+  const halfW = (halfH * size.width) / size.height;
+  const scale = narrow ? 1 : 1.2; // ขนาดสินค้า
+  // ระยะที่ต้องเลื่อนจนสินค้าพ้นขอบจอ (เผื่อครึ่งตัวสินค้า + ป้ายใต้สินค้า) ทั้งทางขวาบนและซ้ายล่าง เอาทางที่ไกลกว่า
+  const sx = SLOT.x - view.look.x;
+  const sy = SLOT.y - view.look.y;
+  const m = 1.6 * scale;
+  const cos = Math.cos(PATH_ANGLE);
+  const sin = Math.sin(PATH_ANGLE);
+  const out = Math.max(
+    Math.min((halfW + m - sx) / cos, (halfH + m - sy) / sin),
+    Math.min((halfW + m + sx) / cos, (halfH + m + sy) / sin),
+  );
+  const spacing = out / ORBIT_RADIUS; // มุมระหว่างสินค้า 2 ชิ้นบนวงโคจร (เรเดียน)
+
   const items = useRef<(THREE.Group | null)[]>([]);
-  const pos = useRef<number | null>(null); // ตำแหน่งวงแหวนที่แสดงอยู่ตอนนี้ (ไล่ตาม ring.goal แบบนุ่มๆ)
-  // ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": วงแหวนกระโดดไปเลย ไม่หมุนให้เห็น
+  const pos = useRef<number | null>(null); // ตำแหน่งวงโคจรที่แสดงอยู่ตอนนี้ (ไล่ตาม ring.goal แบบนุ่มๆ)
+  const bank = useRef(0); // มุมเอียงตอนเคลื่อนที่ (เหมือนเครื่องบินเอียงตอนเลี้ยว)
+  const point = useRef(new THREE.Vector3());
+  // ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": สินค้ากระโดดไปเลย ไม่เลื่อนให้เห็น
   const [reduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   useFrame((_, dt) => {
     const goal = ring.current.goal;
-    const p = pos.current === null || reduced ? goal : THREE.MathUtils.damp(pos.current, goal, 6, dt);
+    const prev = pos.current ?? goal;
+    const p = pos.current === null || reduced ? goal : THREE.MathUtils.damp(prev, goal, 5, dt);
     pos.current = p;
+    // ความเร็ว (ชิ้นต่อวินาที) → เอียงตัวไปทางที่เคลื่อน
+    const v = dt > 0 ? (p - prev) / dt : 0;
+    bank.current = THREE.MathUtils.damp(bank.current, THREE.MathUtils.clamp(v * 0.18, -0.4, 0.4), 6, dt);
     const n = products.length;
     items.current.forEach((g, i) => {
       if (!g) return;
-      // มุมของชิ้นนี้บนวงแหวน: 0 = หน้าสุด, ชิ้นถัดไปอยู่ทางขวา (+), ชิ้นก่อนหน้าอยู่ทางซ้าย (−)
-      const a = ((i - p) / n) * Math.PI * 2;
-      const near = (Math.cos(a) + 1) / 2; // 1 = หน้าสุด → 0 = หลังสุด
-      g.position.set(layout.rx * Math.sin(a), layout.y, layout.rz * (Math.cos(a) - 1));
-      g.scale.setScalar(layout.side + (layout.front - layout.side) * near * near);
+      const k = mod(i - p + n / 2, n) - n / 2; // ห่างจากชิ้นตรงกลางกี่ชิ้น: −n/2 ถึง n/2
+      g.position.copy(orbitPoint(k * spacing, point.current));
+      g.rotation.z = bank.current;
+      g.scale.setScalar(scale);
     });
   });
 
@@ -149,6 +174,9 @@ function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants
     </group>
   ));
 }
+
+// หารเอาเศษแบบไม่ติดลบ เช่น mod(-1, 3) = 2
+const mod = (a: number, n: number) => ((a % n) + n) % n;
 
 // กล้อง:
 // - ปกติ: ค่อยๆ เข้าหามุมปกติ + ขยับตามเมาส์เล็กน้อย (parallax) ให้ฉากดูมีมิติ

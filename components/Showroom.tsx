@@ -148,7 +148,7 @@ export default function Showroom({ children }: { children: ReactNode }) {
 
   // ---------- ลากเพื่อหมุนวงแหวน (เมาส์และนิ้วใช้โค้ดเดียวกัน ผ่าน Pointer Events) ----------
   // ระยะลากต่อ 1 ชิ้น: ประมาณระยะที่สินค้าเลื่อนบนจอจริง สินค้าจึงเลื่อนตามนิ้วพอดี
-  const pxPerItem = () => Math.min(420, Math.max(160, window.innerWidth * (narrow ? 0.45 : 0.28)));
+  const pxPerItem = () => Math.min(640, Math.max(220, window.innerWidth * (narrow ? 0.6 : 0.4)));
 
   const pointerDown = (e: PointerEvent) => {
     if (busy || (e.pointerType === "mouse" && e.button !== 0)) return; // เมาส์: เฉพาะปุ่มซ้าย
