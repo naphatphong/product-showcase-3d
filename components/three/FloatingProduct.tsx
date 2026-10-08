@@ -1,14 +1,21 @@
 "use client";
 
-import { useRef, useState, type RefObject } from "react";
+import { Suspense, useRef, useState, type RefObject } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { Center, Html, Resize, useCursor } from "@react-three/drei";
+import { Center, Html, Resize, useCursor, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import type { Product } from "@/config/products";
-import { CarPlaceholder, DrinkPlaceholder, WatchPlaceholder } from "./placeholders";
+import type { Product, Variant } from "@/config/products";
+import { DrinkPlaceholder, WatchPlaceholder } from "./placeholders";
 
-// ขนาดของสินค้าทุกชิ้น: ด้านที่ยาวที่สุดจะยาวเท่านี้ (หน่วยในฉาก) ทุกชิ้นจึงดูใหญ่พอๆ กัน
+// ขนาดเริ่มต้นของสินค้า: ด้านที่ยาวที่สุดจะยาวเท่านี้ (หน่วยในฉาก) ทุกชิ้นจึงดูใหญ่พอๆ กัน
+// (สินค้าแต่ละชิ้นปรับเองได้ด้วย size ใน config เช่น รถยาวๆ ให้ใหญ่ขึ้น)
 const SIZE = 1.9;
+
+// โหลดไฟล์ .glb (drei จะแคชไว้ โหลดซ้ำไม่เสียเวลา และถอดไฟล์ที่บีบแบบ meshopt ให้เอง)
+function GltfModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  return <primitive object={scene} />;
+}
 
 type Props = {
   product: Product;
@@ -17,6 +24,7 @@ type Props = {
   scale: number;
   active: boolean; // สินค้าที่กำลังแสดงรายละเอียด
   dimmed: boolean; // มีชิ้นอื่น active อยู่ → ชิ้นนี้หรี่ลง
+  variant: Variant | null; // แบบที่เลือกอยู่ (ถ้าสินค้ามีหลายแบบ)
   // ชั้น HTML (อยู่นอก Canvas) ที่ใช้วางป้ายชื่อ — null = ไม่แสดงป้าย
   labelLayer: RefObject<HTMLDivElement | null> | null;
   onHover: (index: number) => void;
@@ -31,6 +39,7 @@ export default function FloatingProduct({
   scale,
   active,
   dimmed,
+  variant,
   labelLayer,
   onHover,
   onSelect,
@@ -41,6 +50,10 @@ export default function FloatingProduct({
   const lift = useRef(0); // ความสูงที่ยกขึ้นตอนนี้ (ค่อยๆ เปลี่ยน)
   const [hovered, setHovered] = useState(false);
   useCursor(hovered); // เปลี่ยนเมาส์เป็นรูปมือเมื่อชี้สินค้า
+  const size = product.size ?? SIZE;
+  const accent = variant?.accent ?? product.accent;
+  // ความสูงครึ่งหนึ่งของสินค้าจริง (รู้หลังวัดขนาดโมเดล) ใช้วางป้ายชื่อให้อยู่ใต้สินค้าพอดี
+  const [halfHeight, setHalfHeight] = useState(size / 2);
 
   useFrame((state, dt) => {
     const r = root.current;
@@ -75,31 +88,31 @@ export default function FloatingProduct({
     <group ref={root} position={position}>
       {/* กล่องล่องหนครอบตัวสินค้า ใช้รับเมาส์/นิ้ว (ชี้โดนง่ายกว่าเล็งตัวสินค้าตรงๆ) */}
       <mesh visible={false} onPointerOver={over} onPointerOut={() => setHovered(false)} onClick={click}>
-        <cylinderGeometry args={[1.05, 1.05, 2.1, 16]} />
+        <cylinderGeometry args={[size / 2 + 0.1, size / 2 + 0.1, Math.max(halfHeight * 2 + 0.3, 1), 16]} />
       </mesh>
 
       {/* ไฟดวงเล็กสีประจำสินค้า วางไว้ด้านหลัง ทำให้ขอบสินค้าเรืองสีนั้น (rim light) */}
-      <pointLight
-        ref={rim}
-        color={product.accent}
-        intensity={6}
-        distance={3}
-        decay={2}
-        position={[0, 0.3, -1]}
-      />
+      <pointLight ref={rim} color={accent} intensity={6} distance={3} decay={2} position={[0, 0.3, -1]} />
 
-      {/* ตัวสินค้า (ตอนนี้เป็นโมเดลชั่วคราว รอโมเดลจริง)
+      {/* ตัวสินค้า: ไฟล์ .glb ถ้ามี / ไม่งั้นใช้โมเดลชั่วคราวที่สร้างด้วยโค้ด
           Resize = ย่อ/ขยายให้ด้านที่ยาวสุดยาว 1 หน่วย, Center = เลื่อนให้จุดกึ่งกลางอยู่ที่ (0,0,0)
-          โมเดลจริงที่ได้มาจะขนาดเท่าไรก็ตาม จะถูกจัดให้ขนาดและตำแหน่งเท่ากันหมด */}
+          โมเดลจะขนาดเท่าไรก็ตาม จะถูกจัดให้ขนาดและตำแหน่งเท่ากันหมด
+          Suspense อยู่นอก Center: Center จะวัดขนาดหลังไฟล์โหลดเสร็จแล้วเท่านั้น */}
       <group ref={model}>
-        <group scale={SIZE}>
-          <Center>
-            <Resize>
-              {product.slug === "drink" && <DrinkPlaceholder accent={product.accent} />}
-              {product.slug === "watch" && <WatchPlaceholder />}
-              {product.slug === "car" && <CarPlaceholder />}
-            </Resize>
-          </Center>
+        <group scale={size}>
+          <Suspense fallback={null}>
+            <Center onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
+              <Resize>
+                {variant ? (
+                  <GltfModel url={variant.model} />
+                ) : product.slug === "drink" ? (
+                  <DrinkPlaceholder accent={product.accent} />
+                ) : (
+                  <WatchPlaceholder />
+                )}
+              </Resize>
+            </Center>
+          </Suspense>
         </group>
       </group>
 
@@ -109,7 +122,7 @@ export default function FloatingProduct({
       {labelLayer && (
         <Html
           portal={labelLayer as RefObject<HTMLElement>}
-          position={[0, -SIZE / 2 - 0.2, 0]}
+          position={[0, -halfHeight - 0.25, 0]}
           center
           pointerEvents="none"
           zIndexRange={[5, 0]}

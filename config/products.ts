@@ -2,16 +2,29 @@
 // เก็บเป็นข้อมูลล้วน (ไม่มีโค้ด 3D ปน) เพื่อให้ย้ายไปเก็บใน Supabase ได้ในเฟสร้านค้า
 // ชื่อสินค้าทั้ง 3 ยังรอยืนยัน
 
+type Place = { city: string; lat: number; lon: number };
+
+// แบบย่อยของสินค้า (เช่น รถ 3 ทีม) — แต่ละแบบมีโมเดล สี และเมืองบ้านเกิดของตัวเอง
+export type Variant = {
+  id: string;
+  name: string;
+  model: string; // ไฟล์ .glb ในโฟลเดอร์ public/
+  accent: string;
+  origin: Place;
+};
+
 export type Product = {
-  slug: "drink" | "watch" | "car"; // ใช้เป็น URL ของหน้าสินค้า เช่น /watch
+  slug: "drink" | "watch" | "f1"; // ใช้เป็น URL ของหน้าสินค้า เช่น /watch
   name: string;
   category: string;
   tagline: string;
   accent: string; // สีประจำสินค้า: แสงวงแหวนที่แท่น + ปุ่ม
   specs: { label: string; value: string }[];
   // จุด "บ้านเกิด" บนโลก ตอนกดเข้า กล้องจะพุ่งเข้าหาจุดนี้ (lat บวก = เหนือ, lon บวก = ตะวันออก)
-  origin: { city: string; lat: number; lon: number };
+  origin: Place;
   note?: string; // ข้อความเล็กๆ ท้ายหน้าสินค้า (ถ้าไม่มี ใช้ข้อความ concept project)
+  size?: number; // ขนาดในโชว์รูม (ความยาวด้านที่ยาวที่สุด) ค่าเริ่มต้น 1.9 — ของยาวๆ อย่างรถให้ใหญ่ขึ้น
+  variants?: Variant[]; // ถ้ามี: เลือกแบบได้ และใช้โมเดล/สี/เมืองของแบบที่เลือก
 };
 
 export const products: Product[] = [
@@ -42,17 +55,42 @@ export const products: Product[] = [
     origin: { city: "Geneva", lat: 46.2, lon: 6.14 },
   },
   {
-    slug: "car",
-    name: "GT-R R35",
-    category: "Sports car",
-    tagline: "Precision at full speed.",
-    accent: "#7fb2ff",
+    slug: "f1",
+    name: "GRID 26",
+    category: "1:18 scale model",
+    tagline: "Three rivals. One new era.",
+    accent: "#e10600",
     specs: [
-      { label: "Engine", value: "3.8 L V6 TT" },
-      { label: "Power", value: "565 hp" },
-      { label: "0–100", value: "2.9 s" },
+      { label: "Scale", value: "1:18" },
+      { label: "Length", value: "30 cm" },
+      { label: "Teams", value: "3" },
     ],
-    origin: { city: "Tokyo", lat: 35.68, lon: 139.69 },
-    note: "Fan concept — not affiliated with or endorsed by Nissan.",
+    origin: { city: "Monaco", lat: 43.74, lon: 7.42 },
+    note: "Fan concept — not affiliated with Formula 1 or any team. 3D models by Dave Love (CC BY 4.0).",
+    size: 2.6,
+    // เมืองบ้านเกิด = ที่ตั้งโรงงานของแต่ละทีม
+    variants: [
+      {
+        id: "mercedes-w17",
+        name: "Mercedes W17",
+        model: "/models/f1/mercedes-w17.glb",
+        accent: "#00d7b6",
+        origin: { city: "Brackley", lat: 52.03, lon: -1.15 },
+      },
+      {
+        id: "ferrari-sf26",
+        name: "Ferrari SF-26",
+        model: "/models/f1/ferrari-sf26.glb",
+        accent: "#ff2a2a",
+        origin: { city: "Maranello", lat: 44.53, lon: 10.86 },
+      },
+      {
+        id: "redbull-rb22",
+        name: "Red Bull RB22",
+        model: "/models/f1/redbull-rb22.glb",
+        accent: "#4f7bff",
+        origin: { city: "Milton Keynes", lat: 52.04, lon: -0.76 },
+      },
+    ],
   },
 ];

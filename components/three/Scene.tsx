@@ -105,6 +105,7 @@ function Products({ narrow, active, onHover, onSelect, labelLayer }: SceneProps)
         scale={scale}
         active={active === i}
         dimmed={active !== null && active !== i}
+        variant={product.variants?.[0] ?? null}
         labelLayer={narrow ? null : labelLayer} // มือถือมีแผงรายละเอียดแล้ว ไม่ต้องมีป้าย
         onHover={onHover}
         onSelect={onSelect}
