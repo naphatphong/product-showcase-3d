@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState, type RefObject } from "react";
+import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Center, Html, Resize, useCursor, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -48,12 +48,25 @@ export default function FloatingProduct({
   const model = useRef<THREE.Group>(null);
   const rim = useRef<THREE.PointLight>(null);
   const lift = useRef(0); // ความสูงที่ยกขึ้นตอนนี้ (ค่อยๆ เปลี่ยน)
+  const spin = useRef(0); // มุมที่ยังต้องหมุนเพิ่ม (ใช้ตอนเปลี่ยนแบบ)
   const [hovered, setHovered] = useState(false);
   useCursor(hovered); // เปลี่ยนเมาส์เป็นรูปมือเมื่อชี้สินค้า
   const size = product.size ?? SIZE;
   const accent = variant?.accent ?? product.accent;
   // ความสูงครึ่งหนึ่งของสินค้าจริง (รู้หลังวัดขนาดโมเดล) ใช้วางป้ายชื่อให้อยู่ใต้สินค้าพอดี
   const [halfHeight, setHalfHeight] = useState(size / 2);
+
+  // เปลี่ยนแบบ (เช่นเปลี่ยนทีม) → หมุนโชว์ 1 รอบ
+  const variantId = variant?.id;
+  const firstVariant = useRef(variantId);
+  useEffect(() => {
+    if (variantId !== firstVariant.current) spin.current += Math.PI * 2;
+  }, [variantId]);
+
+  // ชี้/เลื่อนมาที่สินค้าที่มีหลายแบบ → โหลดไฟล์ของแบบอื่นรอไว้ กดเปลี่ยนแล้วขึ้นทันที
+  useEffect(() => {
+    if (active) product.variants?.forEach((v) => useGLTF.preload(v.model));
+  }, [active, product]);
 
   useFrame((state, dt) => {
     const r = root.current;
@@ -68,7 +81,9 @@ export default function FloatingProduct({
     // ลอยขึ้นลงช้าๆ (แต่ละชิ้นจังหวะไม่ตรงกัน) + ยกสูงขึ้นเมื่อ active + หมุนรอบตัวเอง
     lift.current = damp(lift.current, active ? 0.15 : 0, 4, dt);
     m.position.y = lift.current + Math.sin(state.clock.elapsedTime * 1.1 + index * 2) * 0.08;
-    m.rotation.y += dt * (active ? 0.6 : 0.2);
+    const extra = spin.current * (1 - Math.exp(-5 * dt)); // หมุนเพิ่มแบบเร็วตอนแรกแล้วค่อยๆ ช้าลง
+    spin.current -= extra;
+    m.rotation.y += dt * (active ? 0.6 : 0.2) + extra;
     // แสงขอบสีประจำสินค้า สว่างขึ้นเมื่อ active
     if (rim.current) rim.current.intensity = damp(rim.current.intensity, active ? 25 : dimmed ? 2 : 6, 6, dt);
   });
@@ -101,7 +116,8 @@ export default function FloatingProduct({
       <group ref={model}>
         <group scale={size}>
           <Suspense fallback={null}>
-            <Center onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
+            {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
+            <Center key={variantId ?? "base"} onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
               <Resize>
                 {variant ? (
                   <GltfModel url={variant.model} />

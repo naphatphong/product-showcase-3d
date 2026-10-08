@@ -94,3 +94,9 @@ export const products: Product[] = [
     ],
   },
 ];
+
+// ค่าที่ใช้แสดงจริงของสินค้า: ถ้ามีหลายแบบ ใช้สี/เมือง/โมเดลของแบบที่เลือก ไม่งั้นใช้ค่าของสินค้า
+export function look(product: Product, variant = 0) {
+  const v = product.variants?.[variant] ?? null;
+  return { variant: v, accent: v?.accent ?? product.accent, origin: v?.origin ?? product.origin };
+}

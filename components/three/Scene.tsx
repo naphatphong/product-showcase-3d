@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, Stars } from "@react-three/drei";
 import * as THREE from "three";
-import { products } from "@/config/products";
+import { look, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import Earth, { EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
 import FloatingProduct from "./FloatingProduct";
@@ -23,6 +23,7 @@ export type SceneProps = {
   onSelect: (index: number) => void;
   onReady: () => void; // เรียกเมื่อภาพโลกโหลดเสร็จ (ใช้ซ่อนข้อความ loading)
   labelLayer: RefObject<HTMLDivElement | null>; // ชั้น HTML สำหรับป้ายชื่อสินค้า
+  variants: number[]; // สินค้าแต่ละชิ้นเลือกแบบที่เท่าไรอยู่ (ใช้กับสินค้าที่มีหลายแบบ)
   diveTo: { lat: number; lon: number } | null; // มีค่า = กำลังดำดิ่งเข้าหาจุดนี้บนโลก
 };
 
@@ -76,7 +77,7 @@ export default function Scene(props: SceneProps) {
 }
 
 // จัดตำแหน่งสินค้า 3 ชิ้น
-function Products({ narrow, active, onHover, onSelect, labelLayer }: SceneProps) {
+function Products({ narrow, active, onHover, onSelect, labelLayer, variants }: SceneProps) {
   const size = useThree((s) => s.size);
   const view = narrow ? VIEWS.narrow : VIEWS.wide;
   // ความกว้างของภาพที่ระยะของสินค้า (z = 0) คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ
@@ -105,7 +106,7 @@ function Products({ narrow, active, onHover, onSelect, labelLayer }: SceneProps)
         scale={scale}
         active={active === i}
         dimmed={active !== null && active !== i}
-        variant={product.variants?.[0] ?? null}
+        variant={look(product, variants[i]).variant}
         labelLayer={narrow ? null : labelLayer} // มือถือมีแผงรายละเอียดแล้ว ไม่ต้องมีป้าย
         onHover={onHover}
         onSelect={onSelect}

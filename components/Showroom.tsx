@@ -11,7 +11,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { products } from "@/config/products";
+import { look, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
 import ProductPanel from "./ProductPanel";
@@ -41,6 +41,8 @@ export default function Showroom({ children }: { children: ReactNode }) {
   const narrow = useNarrow();
   const router = useRouter();
   const [active, setActive] = useState<number | null>(null);
+  // แบบที่เลือกของสินค้าแต่ละชิ้น (เริ่มที่แบบแรกทุกชิ้น) เช่น [0, 0, 1] = ชิ้นที่ 3 เลือกแบบที่ 2
+  const [variants, setVariants] = useState(() => products.map(() => 0));
   const [ready, setReady] = useState(false); // ภาพโลกโหลดเสร็จหรือยัง
   const [entering, setEntering] = useState<number | null>(null); // กำลังดำดิ่งเข้าสินค้าชิ้นไหน
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -129,7 +131,8 @@ export default function Showroom({ children }: { children: ReactNode }) {
           onSelect={select}
           onReady={onReady}
           labelLayer={labelLayer}
-          diveTo={entering === null ? null : products[entering].origin}
+          diveTo={entering === null ? null : look(products[entering], variants[entering]).origin}
+          variants={variants}
         />
       </div>
       <div
@@ -145,12 +148,21 @@ export default function Showroom({ children }: { children: ReactNode }) {
 
       <div className={`transition-opacity duration-500 ${busy ? "opacity-0" : ""}`}>{children}</div>
 
-      <ProductPanel index={shown} narrow={narrow} onEnter={enter} onStep={step} hidden={busy} />
+      <ProductPanel
+        index={shown}
+        narrow={narrow}
+        onEnter={enter}
+        onStep={step}
+        hidden={busy}
+        variant={shown === null ? 0 : variants[shown]}
+        onVariant={(v) => shown !== null && setVariants((cur) => cur.map((x, i) => (i === shown ? v : x)))}
+      />
 
       {/* ระหว่างดำดิ่ง: บอกปลายทาง แล้วจอค่อยๆ มืดลงช่วงท้าย ต่อด้วยหน้าสินค้าที่ค่อยๆ สว่างขึ้น */}
       {entering !== null && (
         <p className="pointer-events-none fixed inset-x-0 top-1/2 z-40 -translate-y-1/2 text-center text-[11px] uppercase tracking-[0.35em] text-white/80 motion-safe:animate-fade-in">
-          Descending to {products[entering].origin.city} · {formatCoords(products[entering].origin)}
+          Descending to {look(products[entering], variants[entering]).origin.city} ·{" "}
+          {formatCoords(look(products[entering], variants[entering]).origin)}
         </p>
       )}
       <div

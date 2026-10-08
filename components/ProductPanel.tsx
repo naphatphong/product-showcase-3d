@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { products } from "@/config/products";
+import { look, products } from "@/config/products";
 import { formatCoords } from "@/lib/format";
 
 type Props = {
@@ -10,11 +10,14 @@ type Props = {
   onEnter: (index: number) => void;
   onStep: (dir: 1 | -1) => void; // เลื่อนไปชิ้นก่อนหน้า/ถัดไป
   hidden: boolean; // ซ่อนตอนกำลังดำดิ่งเข้าหน้าสินค้า
+  variant: number; // แบบที่เลือกอยู่ของสินค้าชิ้นนี้
+  onVariant: (variant: number) => void;
 };
 
 // แผงรายละเอียดด้านล่างจอ: เปลี่ยนตามสินค้าที่ชี้ (คอม) หรือชิ้นที่อยู่ตรงกลาง (มือถือ)
-export default function ProductPanel({ index, narrow, onEnter, onStep, hidden }: Props) {
+export default function ProductPanel({ index, narrow, onEnter, onStep, hidden, variant, onVariant }: Props) {
   const p = index === null ? null : products[index];
+  const { accent, origin } = p ? look(p, variant) : { accent: "", origin: null };
 
   return (
     <section
@@ -32,7 +35,7 @@ export default function ProductPanel({ index, narrow, onEnter, onStep, hidden }:
             <span>
               0{index + 1} · {p.category}
             </span>
-            <span>{narrow ? p.origin.city : `${p.origin.city} · ${formatCoords(p.origin)}`}</span>
+            <span>{narrow || !origin ? origin?.city : `${origin.city} · ${formatCoords(origin)}`}</span>
           </div>
 
           <div className="mt-2 flex items-end justify-between gap-4">
@@ -48,14 +51,33 @@ export default function ProductPanel({ index, narrow, onEnter, onStep, hidden }:
                 onEnter(index);
               }}
               className="shrink-0 rounded-full border px-5 py-2.5 text-[11px] uppercase tracking-[0.25em] transition-colors hover:bg-white/10"
-              style={{ borderColor: p.accent, color: p.accent }}
+              style={{ borderColor: accent, color: accent }}
             >
               Enter →
             </Link>
           </div>
 
-          {/* จอเตี้ย (เช่นโน้ตบุ๊ก 1280×720) ซ่อนแถวสเปก ให้แผงไม่บังสินค้า */}
-          <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 [@media(max-height:760px)]:hidden">
+          {/* สินค้าที่มีหลายแบบ: ปุ่มเลือกแบบ (มีจุดสีประจำแบบ) */}
+          {p.variants && (
+            <div role="group" aria-label="Choose a version" className="mt-3 flex flex-wrap gap-2">
+              {p.variants.map((v, i) => (
+                <button
+                  key={v.id}
+                  aria-pressed={i === variant}
+                  onClick={() => onVariant(i)}
+                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] transition-colors ${i === variant ? "border-white/40 text-white" : "border-white/10 text-white/50 hover:text-white/80"}`}
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ background: v.accent }} />
+                  {v.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* จอเตี้ย ซ่อนแถวสเปก ให้แผงไม่บังสินค้า (สินค้าที่มีปุ่มเลือกแบบ แผงสูงกว่า จึงซ่อนเร็วกว่า) */}
+          <dl
+            className={`mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 ${p.variants ? "[@media(max-height:960px)]:hidden" : "[@media(max-height:760px)]:hidden"}`}
+          >
             {p.specs.map((s) => (
               <div key={s.label}>
                 <dt className="text-[10px] uppercase tracking-[0.22em] text-white/40">{s.label}</dt>
@@ -79,7 +101,7 @@ export default function ProductPanel({ index, narrow, onEnter, onStep, hidden }:
                   <span
                     key={q.slug}
                     className={`h-1.5 rounded-full transition-all ${i === index ? "w-6" : "w-1.5 bg-white/30"}`}
-                    style={i === index ? { background: p.accent } : undefined}
+                    style={i === index ? { background: accent } : undefined}
                   />
                 ))}
               </div>
