@@ -16,6 +16,7 @@ import {
 import { look, productHref, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
+import * as sfx from "@/lib/orbitSound";
 import { site } from "@/config/site";
 import OrbitLoader from "./OrbitLoader";
 import OrbitPanel from "./OrbitPanel";
@@ -86,6 +87,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
   const [started, setStarted] = useState(false); // ผ่านหน้าเปิดแล้วหรือยัง (false = ยังอยู่หน้าเปิด)
   const [arrived, setArrived] = useState(false); // สินค้าชิ้นแรกบินมาถึงแล้ว → แสดงรายละเอียด
   const [entering, setEntering] = useState<number | null>(null); // กำลังดำดิ่งเข้าสินค้าชิ้นไหน
+  const [sound, setSound] = useState(false); // เปิดเสียงไหม (ปิดไว้ก่อนเสมอ ผู้ใช้เลือกเปิดเอง)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const labelLayer = useRef<HTMLDivElement>(null); // ชั้นวางป้ายชื่อสินค้า (drei จะใส่ป้ายลงในนี้)
 
@@ -120,9 +122,11 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     return () => clearTimeout(t);
   }, [started]);
 
-  // ออกจากหน้าเปิด → สินค้าชิ้นแรกบินเข้ามา
+  // ออกจากหน้าเปิด → สินค้าชิ้นแรกบินเข้ามา (เปิดเสียงอยู่: กริ๊ง + ลมวูบยาวๆ ตามจังหวะที่บินเข้ามา)
   const start = useCallback(() => {
     setStarted(true);
+    sfx.chime();
+    sfx.whoosh(1, true);
     try {
       sessionStorage.setItem(SEEN, "1");
     } catch {
@@ -164,6 +168,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return router.push(href);
       bringToFront(index);
       setEntering(index);
+      sfx.dive(DIVE_SECONDS);
       router.prefetch(href); // โหลดหน้าปลายทางรอไว้ระหว่างแอนิเมชัน
       timer.current = setTimeout(() => router.push(href), DIVE_SECONDS * 1000);
     },
@@ -266,6 +271,37 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     if (skipIntro.current) setStarted(true);
   }, []);
 
+  // ---------- เสียง (ปิดไว้ก่อน) ----------
+  // เปิดเสียง: ต้องปลุกระบบเสียงตอนผู้ใช้กดปุ่มเท่านั้น (กฎของเบราว์เซอร์) จึงเรียก unlock ในตัวจัดการคลิกเลย
+  const toggleSound = () => {
+    if (!sound) sfx.unlock();
+    setSound(!sound);
+  };
+  useEffect(() => {
+    if (sound) sfx.unlock(); // กลับมาจากหน้าอื่น/แท็บอื่น: ปลุกระบบเสียงให้ทำงานต่อ
+    sfx.setEnabled(sound);
+  }, [sound]);
+  // ซ่อนแท็บ = พักเสียง, กลับมา = ทำงานต่อ (ถ้าเปิดอยู่) / ออกจากหน้า = ปิดเสียงและพักระบบ
+  const soundOn = useRef(sound);
+  useEffect(() => {
+    soundOn.current = sound;
+  }, [sound]);
+  useEffect(() => {
+    const onVis = () => (document.hidden ? sfx.sleep() : soundOn.current && sfx.unlock());
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      sfx.setEnabled(false);
+      sfx.sleep();
+    };
+  }, []);
+  // เปลี่ยนชิ้น (ปุ่ม/ลาก/ล้อเมาส์) → ลมวูบตามทิศที่สินค้าบิน
+  const lastTurn = useRef(turn);
+  useEffect(() => {
+    if (turn !== lastTurn.current) sfx.whoosh(turn > lastTurn.current ? 1 : -1);
+    lastTurn.current = turn;
+  }, [turn]);
+
   // คีย์บอร์ด: ← → หมุนวงแหวน, Enter เข้าหน้าสินค้าที่อยู่หน้าสุด
   // หน้าเปิด: Enter / เว้นวรรค / ↓ / → = เริ่ม (ถ้ากำลัง focus ปุ่ม/ลิงก์อยู่ ปล่อยให้ปุ่มนั้นทำงานเอง)
   useEffect(() => {
@@ -341,6 +377,22 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
       >
         {cart}
         <div className="absolute left-1/2 -translate-x-1/2">{logo}</div>
+        {/* ปุ่มเสียง: แท่งเสียง 4 แท่งขยับเมื่อเปิดเสียง (คลาส sound-bars ใน globals.css) */}
+        <button
+          onClick={toggleSound}
+          aria-pressed={sound}
+          aria-label={sound ? "Turn sound off" : "Turn sound on"}
+          className="orbit-mono pointer-events-auto flex items-center gap-2 text-[10px] tracking-[0.25em] text-white/70 uppercase hover:text-white"
+        >
+          <span className="hidden sm:inline">Sound</span>
+          <span>{sound ? "On" : "Off"}</span>
+          <span className={`sound-bars ${sound ? "is-on" : ""}`} aria-hidden>
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+        </button>
       </header>
 
       {/* หน้าเปิด: หัวข้อ + ปุ่มเริ่ม กลางจอ (class overlay = ค่อยๆ โผล่/จางตาม data-active, ตัวอักษรเลื่อนขึ้นตอนโผล่) */}
@@ -355,11 +407,24 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
           <button onClick={start} className="orbit-cta reveal-fade pointer-events-auto mt-9">
             {site.cta}
           </button>
+          <p className="orbit-mono reveal-fade mt-5 flex items-center justify-center gap-3 text-[9px] tracking-[0.3em] text-white/45 uppercase">
+            <span className="scroll-hint" aria-hidden />
+            or scroll / press Enter
+          </p>
         </div>
-        <p className="orbit-mono reveal-fade absolute bottom-12 flex items-center gap-3 text-[9px] tracking-[0.3em] text-white/50 uppercase">
-          <span className="scroll-hint" aria-hidden />
-          Scroll or press Enter
-        </p>
+        {/* ชวนเปิดเสียง (แบบ "Experience with headphones" ของต้นแบบ) — กดแล้วเปิด/ปิดเสียงได้เลย */}
+        <button
+          onClick={toggleSound}
+          aria-pressed={sound}
+          className="orbit-mono reveal-fade pointer-events-auto absolute bottom-12 flex flex-col items-center gap-2 text-[9px] tracking-[0.3em] text-white/55 uppercase transition-colors hover:text-white"
+        >
+          <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.3">
+            <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
+            <rect x="3" y="14" width="4" height="6" rx="1.5" />
+            <rect x="17" y="14" width="4" height="6" rx="1.5" />
+          </svg>
+          {sound ? "Sound on" : "Experience with sound"}
+        </button>
       </div>
 
       {/* คอม: ปุ่มเปลี่ยนชิ้นซ้าย/ขวาที่ขอบจอ (มือถืออยู่ข้างปุ่มเข้าในแผงรายละเอียด) */}
@@ -386,7 +451,10 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
         onEnter={enter}
         onStep={step}
         variant={variants[front]}
-        onVariant={(v) => setVariants((cur) => cur.map((x, i) => (i === front ? v : x)))}
+        onVariant={(v) => {
+          sfx.blip(v);
+          setVariants((cur) => cur.map((x, i) => (i === front ? v : x)));
+        }}
       />
 
       {/* ระหว่างดำดิ่ง: บอกปลายทาง แล้วจอค่อยๆ มืดลงช่วงท้าย ต่อด้วยหน้าสินค้าที่ค่อยๆ สว่างขึ้น */}

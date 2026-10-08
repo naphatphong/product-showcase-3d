@@ -7,6 +7,8 @@
 //   whoosh   = ลมวูบเบาๆ ตอนเปลี่ยน section
 // เบราว์เซอร์ไม่ยอมให้เว็บเปิดเสียงเองก่อนผู้ใช้กดอะไร → ต้องเรียก unlock() ในตอนที่ผู้ใช้กดปุ่มเท่านั้น
 
+import { burst as synthBurst, whiteNoise, type BurstOptions } from "./synth";
+
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null; // ปุ่มปรับเสียงหลัก (ปิด = 0)
 let bed: GainNode | null = null; // ความดังของเสียงซ่าพื้นหลัง
@@ -22,13 +24,6 @@ function crackleBuffer(c: AudioContext, seconds: number) {
     tail *= 0.93;
     d[i] = (Math.random() * 2 - 1) * (tail + 0.035);
   }
-  return buf;
-}
-
-function whiteNoise(c: AudioContext, seconds: number) {
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * seconds), c.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   return buf;
 }
 
@@ -77,33 +72,9 @@ export function setFizz(level: number) {
   bed.gain.setTargetAtTime(level * 0.5, ctx.currentTime, 0.4);
 }
 
-// ชิ้นเสียงซ่าที่ผ่านตัวกรอง พร้อมกำหนดความดังตามเวลา (attack = ดังขึ้น, release = จางลง)
-function burst(opts: {
-  at?: number;
-  type: BiquadFilterType;
-  freq: number;
-  freqTo?: number;
-  q?: number;
-  peak: number;
-  attack: number;
-  release: number;
-}) {
-  if (!ctx || !master || !noise) return;
-  const t = (opts.at ?? 0) + ctx.currentTime;
-  const src = ctx.createBufferSource();
-  src.buffer = noise;
-  const f = ctx.createBiquadFilter();
-  f.type = opts.type;
-  f.Q.value = opts.q ?? 1;
-  f.frequency.setValueAtTime(opts.freq, t);
-  if (opts.freqTo) f.frequency.exponentialRampToValueAtTime(opts.freqTo, t + opts.attack + opts.release);
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(opts.peak, t + opts.attack);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + opts.attack + opts.release);
-  src.connect(f).connect(g).connect(master);
-  src.start(t, Math.random()); // เริ่มที่จุดสุ่มใน noise แต่ละครั้งจะได้ไม่ซ้ำกัน
-  src.stop(t + opts.attack + opts.release + 0.05);
+// ชิ้นเสียงซ่าที่ผ่านตัวกรอง (ดู lib/synth.ts) ส่งเข้าปุ่มปรับเสียงหลักของหน้านี้
+function burst(opts: BurstOptions) {
+  if (ctx && master && noise) synthBurst(ctx, master, noise, opts);
 }
 
 // เสียงเปิดกระป๋อง: แกร๊ก (โลหะงัด) → ฟู่ (แก๊สพุ่ง) → ซ่าเป๊าะแป๊ะดังขึ้นช่วงหนึ่ง
