@@ -17,6 +17,7 @@ import { look, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
 import ProductPanel from "./ProductPanel";
+import Safe from "./Safe";
 import type { Ring } from "./three/Scene";
 
 // โหลดฉาก 3D แบบ dynamic import + ssr: false
@@ -245,17 +246,20 @@ export default function Showroom({ children }: { children: ReactNode }) {
         onWheel={onWheel}
         onDoubleClick={doubleClick}
       >
-        <Scene
-          narrow={narrow}
-          front={front}
-          ring={ring}
-          onHover={narrow ? () => {} : setHovered}
-          onSelect={select}
-          onReady={onReady}
-          labelLayer={labelLayer}
-          diveTo={entering === null ? null : look(products[entering], variants[entering]).origin}
-          variants={variants}
-        />
+        {/* กันพังชั้นนอกสุด: ถ้าฉาก 3D พังทั้งฉาก หัวเว็บ แผงรายละเอียด และปุ่ม Enter ยังใช้ได้ */}
+        <Safe onError={onReady}>
+          <Scene
+            narrow={narrow}
+            front={front}
+            ring={ring}
+            onHover={narrow ? () => {} : setHovered}
+            onSelect={select}
+            onReady={onReady}
+            labelLayer={labelLayer}
+            diveTo={entering === null ? null : look(products[entering], variants[entering]).origin}
+            variants={variants}
+          />
+        </Safe>
       </div>
       <div
         ref={labelLayer}

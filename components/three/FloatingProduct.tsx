@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Center, Html, Resize, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import Safe from "@/components/Safe";
 import type { Product, Variant } from "@/config/products";
 
 // ขนาดเริ่มต้นของสินค้า: ด้านที่ยาวที่สุดจะยาวเท่านี้ (หน่วยในฉาก) ทุกชิ้นจึงดูใหญ่พอๆ กัน
@@ -111,14 +112,17 @@ export default function FloatingProduct({
           Suspense อยู่นอก Center: Center จะวัดขนาดหลังไฟล์โหลดเสร็จแล้วเท่านั้น */}
       <group ref={model}>
         <group scale={size}>
-          <Suspense fallback={null}>
-            {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
-            <Center key={variantId} onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
-              <Resize>
-                <GltfModel url={variant.model} />
-              </Resize>
-            </Center>
-          </Suspense>
+          {/* Safe: ไฟล์โมเดลโหลดไม่สำเร็จ → ซ่อนเฉพาะชิ้นนี้ (key = เปลี่ยนแบบแล้วลองใหม่ได้) */}
+          <Safe key={variantId}>
+            <Suspense fallback={null}>
+              {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
+              <Center key={variantId} onCentered={({ height }) => setHalfHeight((height * size) / 2)}>
+                <Resize>
+                  <GltfModel url={variant.model} />
+                </Resize>
+              </Center>
+            </Suspense>
+          </Safe>
         </group>
       </group>
 

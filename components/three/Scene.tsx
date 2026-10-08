@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, Stars } from "@react-three/drei";
 import * as THREE from "three";
+import Safe from "@/components/Safe";
 import { look, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import Backdrop from "./Backdrop";
@@ -74,11 +75,14 @@ export default function Scene(props: SceneProps) {
       </Environment>
 
       <Carousel {...props} />
-      {/* Suspense: รอภาพโลกโหลดเสร็จก่อนค่อยแสดง (ระหว่างนั้นเห็นดาวกับสินค้าไปก่อน) */}
-      <Suspense fallback={null}>
-        <Earth focus={props.diveTo} />
-        <Ready onReady={props.onReady} />
-      </Suspense>
+      {/* Suspense: รอภาพโลกโหลดเสร็จก่อนค่อยแสดง (ระหว่างนั้นเห็นดาวกับสินค้าไปก่อน)
+          Safe: ถ้าโหลดภาพโลกไม่สำเร็จ ไม่มีโลกแต่หน้ายังใช้ได้ (และบอกว่าพร้อมแล้ว ฉากจะได้ไม่ค้างที่ loading) */}
+      <Safe onError={props.onReady}>
+        <Suspense fallback={null}>
+          <Earth focus={props.diveTo} />
+          <Ready onReady={props.onReady} />
+        </Suspense>
+      </Safe>
     </Canvas>
   );
 }
