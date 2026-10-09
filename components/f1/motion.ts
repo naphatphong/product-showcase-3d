@@ -2,19 +2,39 @@
 // หน้าเว็บเขียนค่า (ตำแหน่งเลื่อนจอ, เมาส์) ฉาก 3D อ่านค่าทุกเฟรม — ไม่ใช้ React state เพราะเปลี่ยนทุกเฟรม
 // (แนวเดียวกับหน้า FIZZ: components/fizz/motion.ts)
 
-import { CHAPTERS } from "@/config/f1";
+import { CHAPTERS, DESIGN_CALLOUTS, SPEED } from "@/config/f1";
 
-// section ตามลำดับในหน้า: หน้าแรก → แยกชิ้นทั้งคัน → 8 บท (บทละชิ้นส่วน) → ประกอบกลับ → ไปโชว์รูม
-// ลำดับต้องตรงกับท่ากล้องใน scene/timeline.ts
-export const SECTIONS = ["hero", "explode", ...CHAPTERS.map((c) => c.id), "assemble", "outro"];
-export const FIRST_CHAPTER = 2; // section แรกที่เป็นบทชิ้นส่วน
+// section ตามลำดับในหน้า: หน้าแรก → ความเร็ว → ประวัติ → ความสวย → แยกชิ้นทั้งคัน → 8 บท (บทละชิ้นส่วน)
+// → ประกอบกลับ → ไปโชว์รูม — ลำดับต้องตรงกับท่ากล้องใน scene/timeline.ts
+export const SECTIONS = [
+  "hero",
+  "speed",
+  "heritage",
+  "design",
+  "explode",
+  ...CHAPTERS.map((c) => c.id),
+  "assemble",
+  "outro",
+];
+export const SPEED_I = SECTIONS.indexOf("speed");
+export const HERITAGE_I = SECTIONS.indexOf("heritage");
+export const DESIGN_I = SECTIONS.indexOf("design");
+export const EXPLODE_I = SECTIONS.indexOf("explode");
+export const FIRST_CHAPTER = SECTIONS.indexOf(CHAPTERS[0].id); // section แรกที่เป็นบทชิ้นส่วน
 export const ASSEMBLE = SECTIONS.indexOf("assemble");
+
+// section ที่ไม่ใช้ฉาก 3D (ซ่อนฉากแล้วหยุดวาด ประหยัดแบตเครื่อง): หน้าประวัติ (รูปถ่าย)
+// และหน้าความเร็วเมื่อมีวิดีโอแล้ว (ยังไม่มีวิดีโอ = รถ 3D อยู่ในครึ่งวงกลมแทน)
+export const NO_3D = new Set([HERITAGE_I, ...(SPEED.video ? [SPEED_I] : [])]);
 
 export type Motion = {
   scroll: number; // ตำแหน่งเลื่อนจอ (px)
   tops: number[]; // ขอบบนของแต่ละ section (px)
   pointerX: number; // ตำแหน่งเมาส์ −1 (ซ้าย) ถึง 1 (ขวา)
   pointerY: number;
+  // ทางกลับ: ฉาก 3D เขียน ตำแหน่งบนจอของจุดที่ป้ายในหน้าความสวยชี้ไป ให้หน้าเว็บวาดเส้นของป้ายตาม
+  // ทีละ 3 ค่าต่อป้าย: x, y (px จากมุมซ้ายบนของจอ), มองเห็นไหม (1/0)
+  anchors: Float32Array;
 };
 
 export const createMotion = (): Motion => ({
@@ -22,6 +42,7 @@ export const createMotion = (): Motion => ({
   tops: SECTIONS.map(() => 0),
   pointerX: 0,
   pointerY: 0,
+  anchors: new Float32Array(DESIGN_CALLOUTS.length * 3),
 });
 
 // ตำแหน่งเลื่อนจอ → เลข section แบบทศนิยม เช่น 2.5 = เลื่อนจาก section 2 ไป 3 ได้ครึ่งทาง

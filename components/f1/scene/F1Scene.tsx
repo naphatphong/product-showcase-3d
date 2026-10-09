@@ -1,16 +1,17 @@
 "use client"; // WebGL มีแค่ในเบราว์เซอร์
 
 import { Suspense, useEffect, useMemo, useRef, type RefObject } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, Lightformer, useGLTF, useProgress } from "@react-three/drei";
 import * as THREE from "three";
-import { CHAPTERS, EXPLODE, EXPLODE_ORDER, FOCUS, STORY_CAR, type PartId } from "@/config/f1";
-import { FIRST_CHAPTER, sectionProgress, type Motion } from "../motion";
+import { CHAPTERS, DESIGN_CALLOUTS, EXPLODE, EXPLODE_ORDER, FOCUS, STORY_CAR, type PartId } from "@/config/f1";
+import { DESIGN_I, FIRST_CHAPTER, sectionProgress, type Motion } from "../motion";
 import { blankPose, DESIGN_ASPECT, POSES, POSES_NARROW, sample, type Pose } from "./timeline";
 
 export type SceneProps = {
   motion: RefObject<Motion>;
   narrow: boolean;
+  hidden: boolean; // section ที่แสดงอยู่ไม่ใช้ฉาก 3D (หน้าเว็บซ่อนฉากไว้) → หยุดวาด
   onReady: () => void; // โหลดโมเดลครบแล้ว
   onProgress: (percent: number) => void; // ความคืบหน้าการโหลดไฟล์จริง 0–100
 };
@@ -28,6 +29,7 @@ export default function F1Scene(props: SceneProps) {
       fallback={<NoWebGL onReady={props.onReady} />}
     >
       <Progress onProgress={props.onProgress} />
+      <Pause hidden={props.hidden} />
       <Director motion={props.motion} narrow={props.narrow} pose={pose} />
       <Lights />
       <Suspense fallback={null}>
@@ -61,6 +63,21 @@ function NoWebGL({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+// ฉากถูกซ่อน (หน้าประวัติ/หน้าวิดีโอ): หยุดวาดหลังฉากจางหายหมดแล้ว ไม่ให้การ์ดจอทำงานเปล่าๆ ระหว่างเล่นวิดีโอ
+// กลับมาแสดง: วาดต่อทันที
+function Pause({ hidden }: { hidden: boolean }) {
+  const setFrameloop = useThree((s) => s.setFrameloop);
+  useEffect(() => {
+    if (!hidden) {
+      setFrameloop("always");
+      return;
+    }
+    const t = setTimeout(() => setFrameloop("never"), 700); // รอให้ฉากจางหายก่อน (CSS 0.5 วินาที)
+    return () => clearTimeout(t);
+  }, [hidden, setFrameloop]);
+  return null;
+}
+
 // อยู่ใน Suspense เดียวกับรถ → mount หลังโมเดลโหลดครบเท่านั้น
 function Ready({ onReady }: { onReady: () => void }) {
   useEffect(() => onReady(), [onReady]);
@@ -79,9 +96,10 @@ function Director({ motion, narrow, pose }: { motion: RefObject<Motion>; narrow:
     const { width: w, height: h } = state.size;
     // จอแคบกว่าที่ออกแบบท่าไว้: ถอยกล้องออก ให้เห็นความกว้างเท่าเดิม (ชิ้นส่วนไม่ล้นขอบจอซ้ายขวา)
     const dist = p.dist * Math.max(1, (narrow ? DESIGN_ASPECT.narrow : DESIGN_ASPECT.wide) / (w / h));
-    // กล้องหมุนรอบจุดที่มอง + ขยับตามเมาส์เล็กน้อย (parallax)
-    const az = p.az + look.current.x * 0.06;
-    const el = p.el - look.current.y * 0.035;
+    // กล้องหมุนรอบจุดที่มอง + ขยับตามเมาส์เล็กน้อย (parallax) + ลอยวนช้าๆ ตามเวลา (ท่าที่มี drift)
+    const time = state.clock.elapsedTime;
+    const az = p.az + look.current.x * 0.06 + p.drift * Math.sin(time * 0.17) * 0.1;
+    const el = p.el - look.current.y * 0.035 + p.drift * Math.sin(time * 0.11) * 0.025;
     target.set(p.tx, p.ty, p.tz);
     const cam = state.camera as THREE.PerspectiveCamera;
     cam.position.set(
@@ -141,6 +159,7 @@ const STAGGER = 0.035; // หน่วงการออกตัวของแ
 const SPAN = 1 - STAGGER * (EXPLODE_ORDER.length - 1);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const offset = new THREE.Vector3();
+const anchor = new THREE.Vector3();
 
 // รถ: เตรียมชิ้นส่วนครั้งเดียว แล้วทุกเฟรมเลื่อนแต่ละชิ้นตามระยะแยกชิ้นของท่า + ทำชิ้นที่ไม่ได้เน้นให้จาง
 function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose> }) {
@@ -196,6 +215,19 @@ function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose
     // หน้าแรก: รถส่ายไปมาช้าๆ เหมือนวางบนแท่นหมุน (เลื่อนออกจากหน้าแรกแล้วค่อยๆ หยุด)
     const hero = Math.max(0, 1 - t);
     car.rotation.y = Math.sin(state.clock.elapsedTime * 0.35) * 0.14 * hero;
+
+    // หน้าความสวย: แปลงจุดบนตัวรถที่ป้ายชี้ไป เป็นตำแหน่งบนจอ แล้วส่งกลับไปให้หน้าเว็บวาดเส้น/กล่องข้อความตาม
+    const out = motion.current.anchors;
+    const near = Math.abs(t - DESIGN_I) < 0.5;
+    const { width: w, height: h } = state.size;
+    car.updateWorldMatrix(true, false);
+    state.camera.updateMatrixWorld(); // กล้องเพิ่งขยับในเฟรมนี้ (Director) → อัปเดตก่อนคำนวณ ไม่ให้ป้ายตามหลังรถ 1 เฟรม
+    DESIGN_CALLOUTS.forEach((c, i) => {
+      anchor.set(...c.anchor).applyMatrix4(car.matrixWorld).project(state.camera);
+      out[i * 3] = (anchor.x * 0.5 + 0.5) * w;
+      out[i * 3 + 1] = (-anchor.y * 0.5 + 0.5) * h;
+      out[i * 3 + 2] = near && anchor.z < 1 ? 1 : 0; // z ≥ 1 = จุดอยู่หลังกล้อง
+    });
   });
 
   return (

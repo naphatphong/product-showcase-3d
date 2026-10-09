@@ -13,7 +13,7 @@ page. Optional synthesized sound and a lens flare from the sun complete the scen
 |---|---|---|---|
 | 1 | FIZZ — soft drinks, 6 cans (Coca-Cola, Coke Zero, Sprite, Pepsi, Pepsi Zero, Dr Pepper) — full scroll page | `/drink` | `public/models/soda` |
 | 2 | SIGNAL — smartphones (iPhone 17 Pro) | `/phone` | `public/models/phone` |
-| 3 | GRID 26 — 1:18 F1 scale models, 3 teams (Mercedes W17, Ferrari SF-26, Red Bull RB22) — scroll story: the RB22 comes apart part by part, then goes back together | `/f1` | `public/models/f1` |
+| 3 | GRID 26 — 1:18 F1 scale models, 3 teams (Mercedes W17, Ferrari SF-26, Red Bull RB22) — scroll story: speed dial, team history, design close-up, then the RB22 comes apart part by part and goes back together | `/f1` | `public/models/f1` |
 
 Every product has one or more variants (a can, a team, a phone). Pick one with the colour buttons under the product
 name and the model, accent colour and the city the camera dives to all follow it. The FIZZ page opens on the same can.
@@ -60,11 +60,11 @@ coming back to the home page in the same tab skips it.
 | `components/three/LensFlare.tsx` | Screen-space lens flare from the sun (glow, ghosts, rainbow arc), hidden when the Earth blocks it |
 | `components/three/FloatingProduct.tsx` | One floating product: loads its `.glb`, size/centre normalisation, hover glow, HUD label |
 | `components/fizz/` | FIZZ page: Lenis scroll paging, 3D cans on a scroll timeline, bubbles, HUD, loader, FAQ |
-| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, part chapters, HUD, loader |
+| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, speed dial (`SpeedSection`), history timeline (`HeritageSection`), design close-up with callouts that follow the car (`DesignSection`), part chapters, HUD, loader |
 | `config/site.ts` | Site name, headline, intro text |
 | `config/products.ts` | Product data: name, category, tagline, specs, variants (model, colour, home city) |
 | `config/fizz.ts` | FIZZ copy: brand stories, soda facts, FAQ |
-| `config/f1.ts` | GRID 26: the car in the story, part names, where each part flies to, the 8 part chapters (text and stats) |
+| `config/f1.ts` | GRID 26: the car in the story, part names, where each part flies to, the 8 part chapters (text and stats), speed stats and video, history years and photos, design callouts |
 | `config/credits.ts` | Authors and licences of the Earth imagery and 3D models |
 | `lib/orbitSound.ts`, `lib/fizzSound.ts`, `lib/synth.ts` | Web Audio sound for each page + shared synth pieces |
 | `lib/dive.ts`, `lib/format.ts`, `lib/useNarrow.ts` | Dive duration, coordinate formatting, phone-width check |
@@ -77,6 +77,9 @@ coming back to the home page in the same tab skips it.
 - Where the Earth sits, the sun direction: `components/three/Earth.tsx`; camera views, orbit path: `components/three/Scene.tsx`
 - Product name, specs or tagline: `config/products.ts`
 - A product's variants (model file, colour, colour button, home city): `variants` in `config/products.ts`
+- GRID 26 camera angles for each section: `components/f1/scene/timeline.ts`
+- GRID 26 racing video on the speed dial: put the files in `public/video/f1/` and set `SPEED.video` in `config/f1.ts`
+  (until then the 3D car sits inside the dial). History photos: `public/photos/f1/` and `photo` on each year in `HERITAGE`
 
 ## Adding a 3D model
 

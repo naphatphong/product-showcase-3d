@@ -211,3 +211,111 @@ export const CHAPTERS: Chapter[] = [
     parts: ["wFL", "wFR", "wRL", "wRR", "suspF", "suspR"],
   },
 ];
+
+// ---------- หน้าความเร็ว: หน้าปัดครึ่งวงกลม + ตัวเลข 3 ช่อง (แบบส่วน TECH ของเว็บ Aevion) ----------
+// ตัวเลขเป็นค่าประมาณของรถ F1 ปี 2026 (ทีมไม่เปิดเผยตัวเลขจริง จึงมี ≈ นำหน้า)
+// ช่องที่เลือกอยู่จะนับตัวเลขขึ้นในวงกลมกลางหน้าปัด พร้อมเข็มความเร็ววิ่งไปที่ needle (กม./ชม.) ในเวลา time วินาที
+// ช่อง 0–100 กม./ชม. เข็มเริ่มจาก 0 แล้ววิ่งถึง 100 ใน 2.6 วินาทีจริงๆ (เร็วเท่ารถจริง)
+export type SpeedStat = {
+  value: number; // ตัวเลขในช่อง
+  decimals: number; // ทศนิยมกี่ตำแหน่ง
+  unit: string;
+  label: string;
+  needle: number; // ความเร็วที่เข็มไปหยุด (กม./ชม.)
+  time: number; // วินาทีที่เข็มใช้วิ่งไปถึง
+  fromZero: boolean; // เข็มกลับไปเริ่มที่ 0 ก่อนออกตัว
+};
+
+export const SPEED = {
+  max: 360, // ปลายหน้าปัด (กม./ชม.)
+  // วิดีโอรถแข่งในครึ่งวงกลม (ไฟล์ใน public/video/f1/) — ยังไม่มีไฟล์ = แสดงรถ 3D ในครึ่งวงกลมแทน แบบโดรนของ Aevion
+  video: null as null | { wide: string; tall: string; poster: string },
+  stats: [
+    { value: 350, decimals: 0, unit: "km/h", label: "Top speed", needle: 350, time: 1.8, fromZero: false },
+    { value: 2.6, decimals: 1, unit: "s", label: "0–100 km/h", needle: 100, time: 2.6, fromZero: true },
+    { value: 1000, decimals: 0, unit: "hp", label: "Peak power", needle: 320, time: 1.4, fromZero: false },
+  ] satisfies SpeedStat[],
+};
+
+// ---------- หน้าประวัติ: ไทม์ไลน์ทีม Red Bull Racing (แบบโปสเตอร์ของเว็บ Longbow) ----------
+// photo = รูปจริงในโฟลเดอร์ public/photos/f1/ (ยังไม่มี = กรอบลายเส้นแบบแบบวิศวกรรมแทนรูป)
+export type Era = {
+  year: string;
+  car: string;
+  title: string;
+  text: string;
+  photo?: { src: string; alt: string };
+};
+
+export const HERITAGE: Era[] = [
+  {
+    year: "2005",
+    car: "RB1",
+    title: "First race",
+    text: "Red Bull's first Formula 1 car, built by the team it bought from Jaguar.",
+  },
+  {
+    year: "2010",
+    car: "RB6",
+    title: "First titles",
+    text: "Sebastian Vettel and Red Bull win both championships, then three more years in a row.",
+  },
+  {
+    year: "2021",
+    car: "RB16B",
+    title: "Max's first title",
+    text: "The first of four drivers' titles in a row for Max Verstappen.",
+  },
+  {
+    year: "2023",
+    car: "RB19",
+    title: "21 of 22",
+    text: "The most dominant season in Formula 1 history: 21 wins from 22 races.",
+  },
+  {
+    year: "2026",
+    car: "RB22",
+    title: "Own engine",
+    text: "The first Red Bull with an engine of its own, the Red Bull Ford DM01.",
+  },
+];
+
+// ---------- หน้าความสวย: กล้องเข้าใกล้รถ 3D พร้อมป้ายชี้จุดเด่น (แบบป้าย HUD ของเว็บ Aevion) ----------
+// anchor = จุดบนตัวรถที่เส้นของป้ายชี้ไป (เมตร พิกัดเดียวกับโมเดล: x ด้านข้าง, y ขึ้น, z ไปทางหน้ารถ)
+// dx, dy = ตำแหน่งกล่องข้อความเทียบกับจุดนั้น (px บนจอคอมขนาด 1440×900, ค่าลบ = ซ้าย/ขึ้น)
+//   จอขนาดอื่นระยะจะย่อ/ขยายตามขนาดรถบนจอเอง (ดู --u ของ .f1-pin ใน globals.css)
+export type Callout = {
+  label: string;
+  text: string;
+  short: string; // ข้อความสั้นในตาราง 3 ช่องบนมือถือ (มือถือไม่มีป้ายชี้บนรถ)
+  anchor: [number, number, number];
+  dx: number;
+  dy: number;
+};
+
+export const DESIGN_CALLOUTS: Callout[] = [
+  {
+    label: "Matte livery",
+    text: "Navy blue, red and yellow since 2005, in matte paint since 2016.",
+    short: "Matte since 2016",
+    anchor: [0.65, 0.52, 0.25], // โลโก้บนไซด์พอด (พ้นล้อหน้าแม้กล้องลอยไปสุด) → กล่องอยู่ขวาล่าง ไม่ทับเส้นของป้าย 02
+    dx: 16,
+    dy: 215,
+  },
+  {
+    label: "Smaller car",
+    text: "10 cm narrower and 20 cm shorter between the wheels than in 2025.",
+    short: "1,900 mm wide",
+    anchor: [0.9, 0.18, 2.35],
+    dx: -100,
+    dy: 140,
+  },
+  {
+    label: "Red Bull Ford",
+    text: "Ford is back in Formula 1 for the first time since 2004.",
+    short: "Ford is back",
+    anchor: [0.12, 0.92, -0.75],
+    dx: -70,
+    dy: -125,
+  },
+];

@@ -629,6 +629,286 @@ html.lenis body {
     height: 5px;
     background: var(--f1-red);
   }
+
+  /* ---------- หน้าความเร็ว (SpeedSection.tsx): หน้าปัดครึ่งวงกลม + วงกลมตัวเลข + 3 ช่อง ---------- */
+  .f1-speed {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 6.25rem 1.25rem 1.25rem;
+  }
+  .f1-speed-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+  @media (min-width: 768px) {
+    .f1-speed {
+      gap: 0;
+      padding: 7.5rem 60px 4.25rem;
+    }
+    /* คอม: หัวเรื่องลอยอยู่มุมซ้ายบน/ขวาบน (ตรงมุมที่ว่างนอกครึ่งวงกลม) ให้ครึ่งวงกลมใหญ่ได้เต็มที่ */
+    .f1-speed-head {
+      position: absolute;
+      top: 7.5rem;
+      left: 60px;
+      right: 60px;
+    }
+  }
+  .f1-dial-line {
+    fill: none;
+    stroke: rgba(18, 18, 18, 0.22);
+  }
+  .f1-dial-minor {
+    stroke: rgba(18, 18, 18, 0.22);
+  }
+  .f1-dial-major {
+    stroke: rgba(18, 18, 18, 0.55);
+  }
+  .f1-dial-num {
+    fill: var(--f1-faint);
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+  .f1-dial-arc {
+    fill: none;
+    stroke: var(--f1-red);
+    stroke-width: 2;
+  }
+  .f1-dial-tip {
+    fill: var(--f1-red);
+  }
+  /* วงกลมตรงฐานครึ่งวงกลม ครึ่งหนึ่งทับเส้นบนของแถวตัวเลข (แบบวงกลมจุดของเว็บ Aevion) */
+  .f1-hub {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: clamp(78px, 8.6vw, 124px);
+    aspect-ratio: 1;
+    transform: translate(-50%, 50%);
+    border: 1px solid var(--f1-line);
+    border-radius: 50%;
+    background: var(--f1-paper);
+  }
+  .f1-hub-num {
+    font-weight: 300;
+    font-size: clamp(1.2rem, 2vw, 1.9rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .f1-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-block: 1px solid var(--f1-line);
+  }
+  /* ช่องที่ไม่ได้เลือกเป็นสีจาง ช่องที่เลือกเป็นสีเข้ม (สีของตัวเลขและป้ายเปลี่ยนตาม) */
+  .f1-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3.1rem 0.25rem 1rem;
+    text-align: center;
+    color: rgba(18, 18, 18, 0.26);
+    transition: color 0.5s ease;
+  }
+  .f1-stat + .f1-stat {
+    border-left: 1px solid var(--f1-line);
+  }
+  .f1-stat:hover {
+    color: rgba(18, 18, 18, 0.55);
+  }
+  .f1-stat[aria-pressed="true"] {
+    color: var(--f1-ink);
+  }
+  .f1-stat .f1-label {
+    color: inherit;
+  }
+  .f1-stat-num {
+    font-weight: 300;
+    font-size: clamp(1.75rem, 4.4vw, 4.3rem);
+    letter-spacing: -0.045em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  /* มือถือ: หน่วยลงบรรทัดใหม่ตัวเล็ก (3 ช่องแคบ ใส่ตัวเลขกับหน่วยบรรทัดเดียวไม่พอ) */
+  .f1-stat-unit {
+    display: block;
+    margin-top: 0.3em;
+    font-size: 0.42em;
+    letter-spacing: 0;
+  }
+  @media (min-width: 768px) {
+    .f1-stat {
+      height: clamp(8.5rem, 23svh, 13rem);
+      padding-top: 2.6rem;
+    }
+    .f1-stat-unit {
+      display: inline;
+      margin: 0;
+      font-size: 1em;
+      letter-spacing: inherit;
+    }
+  }
+
+  /* ---------- หน้าประวัติ (HeritageSection.tsx): หัวข้อตัวใหญ่ + 5 ปีสำคัญ ---------- */
+  .f1-heritage {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 6.25rem 1.25rem 1.5rem;
+  }
+  .f1-eras {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .f1-era {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    align-items: center;
+    gap: 0.9rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--f1-line);
+  }
+  .f1-photo {
+    position: relative;
+    height: 72px;
+    overflow: hidden;
+    background: rgba(18, 18, 18, 0.04);
+  }
+  /* รูปขาวดำ (โทนเดียวกับหน้า) ชี้เมาส์แล้วเป็นสีและขยายเล็กน้อย */
+  .f1-photo img {
+    filter: grayscale(1) contrast(1.05);
+    transition:
+      filter 0.6s ease,
+      transform 0.9s cubic-bezier(0.2, 0.75, 0.2, 1);
+  }
+  .f1-era:hover .f1-photo img {
+    filter: none;
+    transform: scale(1.04);
+  }
+  /* ยังไม่มีรูป: ลายเส้นเฉียงแบบพื้นที่ตัดในแบบวิศวกรรม + ชื่อรถตัวโปร่ง */
+  .f1-photo-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: repeating-linear-gradient(135deg, rgba(18, 18, 18, 0.07) 0 1px, transparent 1px 9px);
+    font-weight: 800;
+    font-stretch: 72%;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(18, 18, 18, 0.32);
+  }
+  @media (min-width: 768px) {
+    .f1-heritage {
+      gap: 2rem;
+      padding: 7.5rem 60px 4.5rem;
+    }
+    /* 5 คอลัมน์ คั่นด้วยเส้นกริดบางๆ ยาวตลอดคอลัมน์ (แบบเส้นกริดของเว็บ Longbow) */
+    .f1-eras {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--f1-line);
+    }
+    .f1-era {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.1rem;
+      padding: 1.25rem 1.25rem 0;
+      border-top: 0;
+      border-left: 1px solid var(--f1-line);
+      pointer-events: auto;
+    }
+    .f1-era:first-child {
+      padding-left: 0;
+      border-left: 0;
+    }
+    .f1-era:last-child {
+      padding-right: 0;
+    }
+    .f1-photo {
+      height: clamp(150px, 36svh, 380px);
+    }
+    .f1-photo-empty {
+      font-size: clamp(2rem, 3.6vw, 3.6rem);
+    }
+  }
+  /* มือถือจอเตี้ย: ซ่อนคำอธิบายยาว ให้รายการพอดีจอ */
+  @media (max-width: 767px) and (max-height: 740px) {
+    .f1-heritage-intro,
+    .f1-era-text {
+      display: none;
+    }
+  }
+
+  /* ---------- หน้าความสวย (DesignSection.tsx): ป้ายชี้จุดบนรถ (คอมเท่านั้น) ---------- */
+  /* ตัวครอบขนาด 0×0 อยู่ตรงจุดบนรถ (ย้ายด้วย transform ทุกเฟรม) จุด เส้น และกล่องข้อความวางรอบจุดนั้น */
+  .f1-pin {
+    /* 1 หน่วยของระยะป้าย = 1px ที่จอ 1440×900 แล้วย่อ/ขยายตามขนาดรถบนจอ: รถโตตามความสูงจอ
+       แต่จอที่แคบกว่า 16:10 ฉาก 3D ถอยกล้องออก รถจึงโตตามความกว้างแทน (DESIGN_ASPECT ใน scene/timeline.ts) */
+    --u: min(calc(100svh / 900), calc(100svw / 1440));
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  @media (min-width: 768px) {
+    .f1-pin {
+      display: block;
+    }
+  }
+  .f1-pin > * {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  [data-active="true"] .f1-pin[data-on="true"] > * {
+    opacity: 1;
+    transition: opacity 0.7s ease var(--d, 0s);
+  }
+  .f1-pin-dot {
+    position: absolute;
+    left: -4px;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    background: var(--f1-red);
+    box-shadow: 0 0 0 5px rgba(225, 6, 0, 0.16);
+  }
+  .f1-pin-line {
+    position: absolute;
+    border: 0 solid rgba(18, 18, 18, 0.5);
+  }
+  .f1-pin-box {
+    position: absolute;
+    width: clamp(11.5rem, calc(var(--u) * 216), 13.5rem);
+    padding: 0.65rem 0.85rem 0.75rem;
+    transform: translateY(-50%);
+    border: 1px solid var(--f1-line);
+    background: rgba(236, 235, 231, 0.84);
+    backdrop-filter: blur(4px);
+  }
 }
 
 /* ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": แสดงข้อความทันที ไม่มีตัวอักษรวิ่ง/พื้นหลังขยับ */

@@ -16,13 +16,26 @@ export type Pose = {
   shift: number; // เลื่อนภาพไปทางขวา (สัดส่วนความกว้างจอ) เว้นที่ด้านซ้ายให้ข้อความ
   lift: number; // เลื่อนภาพขึ้น (สัดส่วนความสูงจอ) เว้นที่ด้านล่างให้ข้อความ (มือถือ)
   ex: number; // ระยะแยกชิ้น 0 = ประกอบครบ, 1 = แยกเต็มที่ (ตำแหน่งตาม EXPLODE ใน config/f1.ts)
+  drift: number; // กล้องลอยวนช้าๆ เองตามเวลา (0 = นิ่ง, 1 = เต็มที่) แบบถ่ายโฆษณารถ
 };
 
 const deg = Math.PI / 180;
 const from = (base: Pose, change: Partial<Pose>): Pose => ({ ...base, ...change });
 
 // หน้าแรก: รถประกอบครบ มุมเฉียงหน้า-ข้าง
-const HERO: Pose = { tx: 0, ty: 0.5, tz: 0.25, az: 49 * deg, el: 11 * deg, dist: 9.4, fov: 30, shift: 0, lift: 0, ex: 0 };
+const HERO: Pose = { tx: 0, ty: 0.5, tz: 0.25, az: 49 * deg, el: 11 * deg, dist: 9.4, fov: 30, shift: 0, lift: 0, ex: 0, drift: 0 };
+
+// ความเร็ว: รถเล็กลงไปอยู่ในครึ่งวงกลมของหน้าปัด (แบบโดรนในเว็บ Aevion) — ใช้ตอนยังไม่มีวิดีโอ
+// (มีวิดีโอแล้ว ฉาก 3D จะถูกซ่อนในหน้านี้ ดู NO_3D ใน motion.ts)
+const SPEED = from(HERO, { az: 34 * deg, el: 9 * deg, dist: 13.6, lift: 0.05 });
+
+// ความสวย: กล้องต่ำ มุมเฉียงหน้า เลนส์ยาว (fov แคบ ภาพไม่บิดเหมือนถ่ายรถในสตูดิโอ) ลอยวนช้าๆ เหมือนถ่ายโฆษณารถ
+// รถอยู่ขวา ข้อความอยู่ซ้าย
+const DESIGN = from(HERO, { ty: 0.42, tz: 0.2, az: 26 * deg, el: 5 * deg, dist: 12, fov: 20, shift: 0.2, drift: 1 });
+
+// ประวัติ: หน้านี้เป็นรูปถ่าย ฉาก 3D ถูกซ่อน — กล้องรออยู่ห่างจากท่าความสวยนิดหน่อย
+// พอเลื่อนต่อ รถจะค่อยๆ โผล่ขึ้นมาพร้อมกล้องเลื่อนเข้าหา
+const HERITAGE = from(DESIGN, { az: 30 * deg, dist: 11, drift: 0 });
 
 // แยกชิ้นทั้งคัน: ถอยกล้องให้เห็นทุกชิ้น
 const EXPLODE = from(HERO, { ty: 1.25, tz: 0.3, az: 43 * deg, el: 21 * deg, dist: 15, shift: 0.16, ex: 1 });
@@ -48,8 +61,24 @@ const ASSEMBLE = from(HERO, { az: -49 * deg, el: 14 * deg, dist: 9.6, shift: 0.1
 const OUTRO = from(HERO, { az: -86 * deg, el: 6 * deg, dist: 9.2, lift: 0.1 });
 
 // ท่าตอนที่ section แต่ละอันอยู่เต็มจอ (ลำดับต้องตรงกับ SECTIONS ใน motion.ts)
-// hero, explode, front, cockpit, chassis, power, sidepods, floor, rear, wheels, assemble, outro
-export const POSES: Pose[] = [HERO, EXPLODE, FRONT, COCKPIT, CHASSIS, POWER, SIDEPODS, FLOOR, REAR, WHEELS, ASSEMBLE, OUTRO];
+// hero, speed, heritage, design, explode, front, cockpit, chassis, power, sidepods, floor, rear, wheels, assemble, outro
+export const POSES: Pose[] = [
+  HERO,
+  SPEED,
+  HERITAGE,
+  DESIGN,
+  EXPLODE,
+  FRONT,
+  COCKPIT,
+  CHASSIS,
+  POWER,
+  SIDEPODS,
+  FLOOR,
+  REAR,
+  WHEELS,
+  ASSEMBLE,
+  OUTRO,
+];
 
 // จอแคบ (มือถือแนวตั้ง): ภาพแคบกว่าจอคอมมาก → เปิดมุมกว้างขึ้น ไม่เลื่อนภาพไปทางขวา (ข้อความอยู่ด้านล่าง)
 // ยกภาพขึ้นครึ่งบนของจอ และตั้งระยะกล้องใหม่ทีละท่า ให้ชิ้นส่วนทั้งชิ้นพอดีความกว้างจอมือถือ
@@ -57,6 +86,9 @@ export const POSES: Pose[] = [HERO, EXPLODE, FRONT, COCKPIT, CHASSIS, POWER, SID
 // หน้าแรก/ประกอบกลับ/ท้ายหน้า หันรถเข้าหากล้องมากขึ้น (มุมเฉียงแคบกว่า) รถจะได้ไม่เล็กเกินไป
 const NARROW: Partial<Pose>[] = [
   { az: 34 * deg, dist: 15.5, lift: 0.12 }, // hero (เผื่อรถส่ายไปมา)
+  { dist: 19, lift: -0.13 }, // speed (รถอยู่ในกรอบโค้งครึ่งล่างของจอ)
+  { dist: 18 }, // heritage (ฉาก 3D ถูกซ่อน)
+  { az: 34 * deg, el: 7 * deg, dist: 16, shift: 0.05 }, // design
   { az: 28 * deg, dist: 20 }, // explode
   { dist: 7.9 }, // front
   { dist: 5.2 }, // cockpit

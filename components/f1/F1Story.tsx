@@ -8,10 +8,24 @@ import { archivo, plexMono } from "@/components/fonts";
 import { CHAPTERS, STORY_CAR } from "@/config/f1";
 import { products } from "@/config/products";
 import { useNarrow } from "@/lib/useNarrow";
+import DesignSection from "./DesignSection";
+import HeritageSection from "./HeritageSection";
 import Hud from "./Hud";
 import Loader from "./Loader";
-import { ASSEMBLE, createMotion, FIRST_CHAPTER, sectionProgress, SECTIONS } from "./motion";
+import {
+  ASSEMBLE,
+  createMotion,
+  DESIGN_I,
+  EXPLODE_I,
+  FIRST_CHAPTER,
+  HERITAGE_I,
+  NO_3D,
+  sectionProgress,
+  SECTIONS,
+  SPEED_I,
+} from "./motion";
 import { AssembleOverlay, ChapterNav, ChapterOverlay, ExplodeOverlay, GhostText, HeroOverlay, Outro } from "./Overlays";
+import SpeedSection from "./SpeedSection";
 
 // ฉาก 3D โหลดแยกไฟล์ทีหลัง (three.js ใหญ่) และรันเฉพาะในเบราว์เซอร์ — ข้อความในหน้าขึ้นก่อนได้เลย
 const F1Scene = dynamic(() => import("./scene/F1Scene"), { ssr: false });
@@ -21,16 +35,17 @@ const car = f1.variants.find((v) => v.name === STORY_CAR.name) ?? f1.variants[0]
 const LAST = SECTIONS.length - 1;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-// ช่วงที่รถแยกชิ้น (หน้าแรก ↔ แยกชิ้น) และประกอบกลับ (บทล้อ ↔ ประกอบกลับ): เลื่อนช้ากว่าปกติ
+// ช่วงที่รถแยกชิ้น (หน้าความสวย ↔ แยกชิ้น) และประกอบกลับ (บทล้อ ↔ ประกอบกลับ): เลื่อนช้ากว่าปกติ
 // ให้เห็นชิ้นส่วนลอยออก/บินกลับเข้าที่ทีละชิ้น
 const SLOW: [number, number][] = [
-  [0, 1],
+  [DESIGN_I, EXPLODE_I],
   [ASSEMBLE - 1, ASSEMBLE],
 ];
 const isSlow = (from: number, to: number) =>
   SLOW.some(([a, b]) => Math.min(from, to) >= a - 0.01 && Math.max(from, to) <= b + 0.01);
 
-// หน้า GRID 26 (/f1): เลื่อนจอทีละ section (เหมือนเปิดทีละสไลด์) รถ RB22 แยกชิ้น → 8 บทชิ้นส่วน → ประกอบกลับ
+// หน้า GRID 26 (/f1): เลื่อนจอทีละ section (เหมือนเปิดทีละสไลด์)
+// หน้าแรก → ความเร็ว → ประวัติ → ความสวย → รถ RB22 แยกชิ้น → 8 บทชิ้นส่วน → ประกอบกลับ → ไปโชว์รูม
 // ไฟล์นี้เป็นตัวควบคุม: ตำแหน่งเลื่อนจอ, section ที่แสดงอยู่ แล้วส่งต่อให้ฉาก 3D และข้อความแต่ละส่วน
 // (โครงเดียวกับหน้า FIZZ: components/fizz/Fizz.tsx แต่ไม่มีเลือกยี่ห้อ/ไม่วนรอบ/ไม่มีเสียง)
 export default function F1Story() {
@@ -228,6 +243,7 @@ export default function F1Story() {
   const onProgress = useCallback((p: number) => setProgress(p), []);
   const onLoaded = useCallback(() => setStarted(true), []);
   const chapter = active - FIRST_CHAPTER; // บทที่แสดงอยู่ (ติดลบ/เกิน = ไม่ได้อยู่ในบทชิ้นส่วน)
+  const hidden = NO_3D.has(active); // section นี้ไม่ใช้ฉาก 3D (หน้าประวัติ/หน้าวิดีโอ) → ซ่อนฉาก
 
   return (
     <div className={`${archivo.variable} ${plexMono.variable} f1-root`}>
@@ -240,16 +256,23 @@ export default function F1Story() {
       {/* ตัวหนังสือใหญ่จางๆ ด้านหลังรถ ในหน้าแรก */}
       <GhostText active={started && active === 0} text={STORY_CAR.short} />
 
-      {/* ฉาก 3D (อยู่กับที่เต็มจอ) — touch-none: นิ้วบนฉากไม่ทำให้เบราว์เซอร์เลื่อน/ซูมเอง (เราจัดการเองทั้งหมด) */}
-      <div aria-hidden className="fixed inset-0 z-[2] touch-none">
+      {/* ฉาก 3D (อยู่กับที่เต็มจอ) — touch-none: นิ้วบนฉากไม่ทำให้เบราว์เซอร์เลื่อน/ซูมเอง (เราจัดการเองทั้งหมด)
+          section ที่ไม่ใช้ฉาก 3D: ฉากค่อยๆ จางหาย แล้วหยุดวาด (ดู Pause ใน F1Scene) */}
+      <div
+        aria-hidden
+        className={`fixed inset-0 z-[2] touch-none transition-opacity duration-500 ${hidden ? "opacity-0" : ""}`}
+      >
         <Safe onError={onReady}>
-          <F1Scene motion={motion} narrow={narrow} onReady={onReady} onProgress={onProgress} />
+          <F1Scene motion={motion} narrow={narrow} hidden={hidden} onReady={onReady} onProgress={onProgress} />
         </Safe>
       </div>
 
       {/* ข้อความของแต่ละ section (ลอยอยู่กับที่ เปลี่ยนตาม section ที่แสดง) */}
       <HeroOverlay active={started && active === 0} car={STORY_CAR.name} />
-      <ExplodeOverlay active={active === 1} />
+      <SpeedSection active={active === SPEED_I} near={Math.abs(active - SPEED_I) <= 1} narrow={narrow} />
+      <HeritageSection active={active === HERITAGE_I} />
+      <DesignSection active={active === DESIGN_I} motion={motion} />
+      <ExplodeOverlay active={active === EXPLODE_I} />
       {CHAPTERS.map((c, i) => (
         <ChapterOverlay key={c.id} active={chapter === i} chapter={c} index={i} />
       ))}

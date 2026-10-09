@@ -25,12 +25,12 @@ export function HeroOverlay({ active, car }: { active: boolean; car: string }) {
         </div>
         <div className="reveal-fade max-w-xs md:pb-3">
           <p className="text-sm leading-relaxed text-[var(--f1-muted)]">
-            Sixteen parts, one Formula 1 car. Scroll to pull it apart piece by piece, see what every part does, then
-            watch it go back together.
+            One Formula 1 car, sixteen parts. Scroll to see how fast it is and where it comes from, then pull it
+            apart piece by piece and watch it go back together.
           </p>
           <p className="f1-label mt-5 flex items-center gap-3">
             <span className="scroll-hint" aria-hidden />
-            Scroll to explode
+            Scroll down
           </p>
         </div>
       </div>
