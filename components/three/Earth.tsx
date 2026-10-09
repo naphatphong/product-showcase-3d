@@ -15,6 +15,11 @@ export const EARTH_RADIUS = 48;
 // ดวงอาทิตย์อยู่เหนือขอบจอด้านบนค่อนซ้าย อยู่หลังโลกเล็กน้อย (ย้อนแสง): แถวขอบโลกเป็นกลางวันสว่าง
 // ไล่มืดลงไปทางขวาล่างจนถึงช่วงพลบค่ำ (เห็นแสงไฟเมืองจางๆ) — ดูมีมิติกว่าโลกที่สว่างทั้งลูก
 export const SUN_DIR = new THREE.Vector3(-0.32, 0.58, -0.75).normalize();
+// ทิศแสงที่ใช้ระบายผิวโลกจริงๆ: เอียงจาก SUN_DIR มาทางกล้องราวครึ่งทาง (โลกในเว็บต้นแบบ edolus ก็สว่างทั้งลูกแบบนี้)
+// ถ้าใช้ SUN_DIR ตรงๆ โลกครึ่งที่เราเห็นจะโดนแดดแค่ครึ่งเดียว อีกครึ่งเป็นพลบค่ำ → มืดทึบ ไม่เหมือนรูปถ่ายจากอวกาศ
+// แบบนี้โลกส่วนที่เห็นสว่างทั้งหมด โดยขอบซ้ายบน (ฝั่งดวงอาทิตย์) ยังสว่างที่สุด ส่วนแฟลร์และฉากหลังยังใช้ SUN_DIR เหมือนเดิม
+const toCamera = new THREE.Vector3(-0.8, -0.3, 8).sub(EARTH_CENTER).normalize(); // ทิศจากศูนย์กลางโลกไปหากล้อง (จอกว้าง)
+export const EARTH_LIGHT = SUN_DIR.clone().addScaledVector(toCamera, 0.75).normalize(); // 0.75 = ยังเหลือเงามืดจางๆ ทางขวาล่าง โลกดูกลมมีมิติ
 
 // แปลงละติจูด/ลองจิจูด เป็นเวกเตอร์ทิศบนลูกโลก (ก่อนหมุน)
 // สูตรนี้ตรงกับวิธีที่ SphereGeometry ของ three.js แปะภาพแผนที่โลกแบบ equirectangular
@@ -31,13 +36,15 @@ export function facingRotation(lat: number, lon: number, azimuth: number) {
 }
 
 // ---------- shader ของผิวโลก ----------
-// vertex shader: ส่ง uv, normal และตำแหน่งในโลก (world space) ไปให้ fragment shader
+// vertex shader: ส่ง uv, normal (ทั้งของลูกโลกเอง และในโลก/world space) และตำแหน่งในโลก ไปให้ fragment shader
 const vertex = /* glsl */ `
   varying vec2 vUv;
+  varying vec3 vNormalO;
   varying vec3 vNormalW;
   varying vec3 vPosW;
   void main() {
     vUv = uv;
+    vNormalO = normal;
     vNormalW = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vPosW = wp.xyz;
@@ -53,8 +60,10 @@ const surfaceFragment = /* glsl */ `
   uniform vec2 uNightSize;  // ขนาดภาพ (พิกเซล) ใช้กับการกรองแบบ bicubic
   uniform vec2 uCloudsSize;
   uniform vec3 uSunDir;
+  uniform vec3 uSunObj;     // ทิศแสงอาทิตย์เทียบกับลูกโลก (หมุนตามโลก) ใช้หาว่าเงาเมฆตกไปทางไหนบนแผนที่
   uniform float uCloudShift;
   varying vec2 vUv;
+  varying vec3 vNormalO;
   varying vec3 vNormalW;
   varying vec3 vPosW;
 
@@ -86,45 +95,71 @@ const surfaceFragment = /* glsl */ `
     return mix(mix(s3, s2, sx), mix(s1, s0, sx), sy);
   }
 
+  // อ่านเมฆแบบ bicubic + unsharp mask (ลบภาพเบลอจาก mipmap เล็กกว่า 2 ขั้น ได้เฉพาะขอบ แล้วบวกกลับ) + ดึงคอนทราสต์
+  // ส่วนบางๆ ใสขึ้น ส่วนหนาขาวขึ้น เมฆจึงเป็นก้อนชัด ไม่เป็นหมอกฟุ้งทั้งลูก
+  float cloudAt(vec2 uv) {
+    float c = bicubic(uClouds, uv, uCloudsSize).r;
+    float b = texture2D(uClouds, uv, 2.0).r;
+    return smoothstep(0.06, 0.75, clamp(c + (c - b) * 0.8, 0.0, 1.0));
+  }
+
   void main() {
     vec3 n = normalize(vNormalW);
     vec3 v = normalize(cameraPosition - vPosW);
     float sun = dot(n, uSunDir);                 // 1 = แดดตรงหัว, ติดลบ = ด้านกลางคืน
+    float lit = max(sun, 0.0);
     float dayMix = smoothstep(-0.18, 0.28, sun); // เส้นแบ่งกลางวัน/กลางคืนแบบนุ่มๆ
+    float view = max(dot(n, v), 0.0);            // 1 = มองตรงลงไป, 0 = มองเฉียงเลียดขอบโลก
 
-    // ทำภาพให้คมขึ้นแบบ unsharp mask: เอาภาพปกติ ลบด้วยภาพเบลอ (อ่านจาก mipmap ที่เล็กกว่า 2 ขั้น ด้วย bias)
-    // ได้เฉพาะรายละเอียด/ขอบ แล้วบวกกลับเข้าไป — ชายฝั่ง ภูเขา และขอบเมฆจึงชัดขึ้น โดยไม่ต้องใช้ภาพที่ใหญ่ขึ้น
-    // bias -0.5 = อ่านภาพละเอียดกว่าที่ GPU เลือกให้นิดหน่อย ช่วยแถวขอบโลกที่มองเฉียงมากๆ ไม่ให้เบลอ
+    // ---------- พื้นโลก ----------
+    // unsharp mask แบบเบาๆ ให้ชายฝั่งและภูเขาคม / bias -0.5 = อ่านภาพละเอียดกว่าที่ GPU เลือกให้นิดหน่อย (แถวขอบโลก)
     vec3 day = texture2D(uDay, vUv, -0.5).rgb;
     vec3 dayBlur = texture2D(uDay, vUv, 2.0).rgb;
     day = clamp(day + (day - dayBlur) * 0.5, 0.0, 1.0);
-    // เพิ่มความอิ่มสีและคอนทราสต์เล็กน้อย (ภาพถ่ายดาวเทียมต้นฉบับค่อนข้างซีด)
+    float water = smoothstep(0.015, 0.07, day.b - day.r); // ทะเลในภาพเป็นสีน้ำเงินเข้ม (น้ำเงิน > แดง)
+    // มองจากอวกาศจริง แผ่นดินจะซีดและอมฟ้าเพราะอากาศหนาหลายสิบกิโลเมตรคั่นอยู่ → ลดความอิ่มสีแผ่นดินลงนิด
+    // ทะเลจริงเป็นน้ำเงินเข้มสด ไม่ใช่เกือบดำแบบในภาพ → ยกสีทะเลขึ้น
     float luma = dot(day, vec3(0.299, 0.587, 0.114));
-    day = clamp(mix(vec3(luma), day, 1.18) * 1.06 - 0.02, 0.0, 1.0);
-    vec3 night = bicubic(uNight, vUv, uNightSize).rgb;
+    day = mix(vec3(luma), day, 0.85);
+    day = mix(day, vec3(0.015, 0.07, 0.19), water * 0.55);
+
+    // ---------- เมฆ ----------
     vec2 cloudUv = vUv + vec2(uCloudShift, 0.0); // เมฆเลื่อนช้ากว่าพื้นโลก
-    float clouds = bicubic(uClouds, cloudUv, uCloudsSize).r;
-    float cloudBlur = texture2D(uClouds, cloudUv, 2.0).r;
-    // เมฆ: unsharp mask เหมือนพื้นโลก + ดึงคอนทราสต์ (ส่วนบางๆ ใสขึ้น ส่วนหนาขาวขึ้น) เมฆจึงไม่เป็นหมอกฟุ้งทั้งลูก
-    clouds = smoothstep(0.08, 0.9, clamp(clouds + (clouds - cloudBlur) * 0.8, 0.0, 1.0));
+    float clouds = cloudAt(cloudUv);
+    // ทิศของแสงอาทิตย์บนแผนที่ (ตะวันออก/เหนือ ณ จุดนี้) → ใช้ทำเงาเมฆ และทำให้เมฆดูเป็นก้อนนูน
+    vec3 no = normalize(vNormalO);
+    vec3 east = normalize(cross(vec3(0.0, 1.0, 0.0), no) + vec3(1e-5, 0.0, 0.0));
+    vec3 north = cross(no, east);
+    float cosLat = max(length(no.xz), 0.05);     // ใกล้ขั้วโลก ภาพแผนที่ถูกยืด → ระยะในแนวนอนต้องคูณชดเชย
+    vec2 sunUv = vec2(dot(uSunObj, east) / cosLat, dot(uSunObj, north) * 2.0) * 0.0012;
+    // เงาเมฆบนพื้น: เมฆที่อยู่ "ระหว่าง" จุดนี้กับดวงอาทิตย์บังแสง (ยิ่งแสงเฉียง เงายิ่งทอดยาว)
+    float shadow = cloudAt(cloudUv + sunUv * (1.0 + (1.0 - lit) * 2.0)) * (1.0 - clouds);
+    // ความนูนของเมฆ: ด้านที่หันเข้าหาดวงอาทิตย์สว่างกว่า ด้านหลังมืดกว่า (เทียบความหนาเมฆที่จุดนี้กับจุดเยื้องไปทางแสง)
+    float relief = clamp((clouds - cloudAt(cloudUv + sunUv * 0.6)) * 2.5, -1.0, 1.0);
 
-    // ด้านกลางวัน: พื้นโลกโดนแดด + เมฆสีขาว
-    vec3 dayCol = day * (0.08 + max(sun, 0.0) * 1.15);
-    dayCol = mix(dayCol, vec3(0.03 + max(sun, 0.0) * 1.05), clouds * 0.82);
-
-    // แสงแดดสะท้อนผิวน้ำ: ทะเลในภาพเป็นสีน้ำเงินเข้ม (น้ำเงิน > แดง) ใช้แยกน้ำออกจากแผ่นดิน
-    float water = smoothstep(0.015, 0.07, day.b - day.r) * (1.0 - clouds);
+    // ---------- แสงด้านกลางวัน ----------
+    vec3 ground = day * (0.06 + lit * 1.35) * (1.0 - shadow * 0.55);
+    vec3 cloudCol = vec3(1.0, 0.99, 0.97) * (0.05 + lit * 1.35) * (0.94 - relief * 0.2);
+    vec3 dayCol = mix(ground, cloudCol, clouds * 0.95);
+    // แสงแดดสะท้อนผิวน้ำ (เฉพาะทะเลที่ไม่มีเมฆบัง)
     float glint = pow(max(dot(n, normalize(uSunDir + v)), 0.0), 70.0);
-    dayCol += vec3(1.0, 0.92, 0.8) * glint * water * 0.7;
+    dayCol += vec3(1.0, 0.92, 0.8) * glint * water * (1.0 - clouds) * 0.7;
 
-    // ด้านกลางคืน: แสงไฟเมือง (โดนเมฆบังก็จางลง)
+    // ---------- ด้านกลางคืน: แสงไฟเมือง (โดนเมฆบังก็จางลง) ----------
+    vec3 night = bicubic(uNight, vUv, uNightSize).rgb;
     vec3 nightCol = night * 1.5 * (1.0 - clouds * 0.8);
 
     vec3 col = mix(nightCol, dayCol, dayMix);
 
-    // ขอบโลกมีสีฟ้าของชั้นบรรยากาศ (fresnel: ยิ่งมองเฉียงยิ่งสว่าง)
-    float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
-    col += vec3(0.3, 0.6, 1.0) * fres * (0.15 + 0.85 * smoothstep(-0.25, 0.6, sun));
+    // ---------- ชั้นบรรยากาศ (หัวใจของความสมจริง) ----------
+    // แสงแดดกระเจิงในอากาศเป็นสีฟ้า (เหตุผลเดียวกับที่ท้องฟ้าเป็นสีฟ้า) ทั้งลูกจึงมีม่านฟ้าบางๆ ทับอยู่
+    // และยิ่งมองเฉียงไปทางขอบโลก ยิ่งมองทะลุอากาศหนา ม่านฟ้ายิ่งทึบจนกลืนพื้นด้านล่าง
+    float airLit = smoothstep(-0.2, 0.6, sun);
+    float depth = pow(1.0 - view, 1.9);                    // ความหนาของอากาศที่มองทะลุ (0 ตรงกลาง → 1 ที่ขอบ)
+    vec3 airCol = mix(vec3(0.16, 0.36, 0.78), vec3(0.62, 0.8, 1.0), depth); // ฟ้าเข้มด้านใน → ฟ้าอ่อนเกือบขาวที่ขอบ
+    col = mix(col, airCol * airLit, clamp(0.06 + depth * 0.9, 0.0, 0.92) * airLit);
+    // แถบสว่างเส้นบางๆ เลียดขอบโลกพอดี
+    col += vec3(0.45, 0.68, 1.0) * pow(1.0 - view, 5.0) * (0.1 + 1.2 * airLit);
 
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
@@ -142,9 +177,10 @@ const atmosphereFragment = /* glsl */ `
     vec3 n = normalize(vNormalW);
     vec3 v = normalize(cameraPosition - vPosW);
     float d = dot(n, v);                                         // ใกล้ 0 = ขอบนอกสุดของวงแสง
-    float glow = pow(1.0 - smoothstep(-0.32, 0.0, d), 2.2);      // สว่างสุดชิดผิวโลก แล้วจางออก
+    float glow = pow(1.0 - smoothstep(-0.36, 0.0, d), 2.6);      // สว่างสุดชิดผิวโลก แล้วจางออก
     float lit = smoothstep(-0.45, 0.5, dot(n, uSunDir));         // ด้านโดนแดดสว่างกว่า
-    gl_FragColor = vec4(vec3(0.32, 0.62, 1.0) * glow * (0.12 + 1.3 * lit), 1.0);
+    vec3 c = mix(vec3(0.3, 0.58, 1.0), vec3(0.75, 0.88, 1.0), glow); // ชิดผิวโลกเกือบขาว ด้านนอกฟ้าเข้ม
+    gl_FragColor = vec4(c * glow * (0.12 + 1.9 * lit), 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -157,7 +193,8 @@ const sizeOf = (t: THREE.Texture) => {
 };
 
 // ค่าคงที่ ไม่เปลี่ยนเลย สร้างไว้นอก component ได้
-const atmosphereUniforms = { uSunDir: { value: SUN_DIR } };
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const atmosphereUniforms = { uSunDir: { value: EARTH_LIGHT } };
 
 type Props = {
   // ถ้ามีค่า = กำลังจะเข้าหน้าสินค้า: หมุนโลกให้จุดนี้หันมาหากล้อง
@@ -198,7 +235,8 @@ export default function Earth({ focus, narrow = false }: Props) {
       uClouds: { value: clouds },
       uNightSize: { value: sizeOf(night) },
       uCloudsSize: { value: sizeOf(clouds) },
-      uSunDir: { value: SUN_DIR },
+      uSunDir: { value: EARTH_LIGHT },
+      uSunObj: { value: EARTH_LIGHT.clone() },
       uCloudShift: { value: 0 },
     }),
     [day, night, clouds],
@@ -210,7 +248,11 @@ export default function Earth({ focus, narrow = false }: Props) {
   useFrame(({ camera }, dt) => {
     const g = group.current;
     if (!g) return;
-    if (surface.current) surface.current.uniforms.uCloudShift.value += dt * 0.0004;
+    if (surface.current) {
+      surface.current.uniforms.uCloudShift.value += dt * 0.0004;
+      // ทิศแสงอาทิตย์เทียบกับลูกโลก = หมุนย้อนกลับเท่าที่โลกหมุนไป (โลกหมุนแค่รอบแกน Y)
+      (surface.current.uniforms.uSunObj.value as THREE.Vector3).copy(EARTH_LIGHT).applyAxisAngle(Y_AXIS, -g.rotation.y);
+    }
 
     if (!focus) {
       targetRotation.current = null;
