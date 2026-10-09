@@ -10,10 +10,14 @@ export default function Loader({
   progress,
   ready,
   onDone,
+  label = "Assembling the RB22",
+  garage = false,
 }: {
   progress: number | null; // null = โค้ด 3D ยังโหลดไม่เสร็จ
   ready: boolean;
   onDone: () => void;
+  label?: string; // ข้อความหน้าตัวเลข %
+  garage?: boolean; // หน้าโชว์รูม: พื้นมืดแบบอู่รถ (หน้าเรื่องเล่า = กระดาษสีอ่อน)
 }) {
   const num = useRef<HTMLSpanElement>(null);
   const line = useRef<HTMLDivElement>(null);
@@ -55,14 +59,14 @@ export default function Loader({
     <div
       role="status"
       aria-label="Loading"
-      className={`f1-paper fixed inset-0 z-[5] flex flex-col items-center justify-center transition-opacity duration-700 ${fading ? "opacity-0" : ""}`}
+      className={`${garage ? "bg-[var(--f1-paper)]" : "f1-paper"} fixed inset-0 z-[5] flex flex-col items-center justify-center transition-opacity duration-700 ${fading ? "opacity-0" : ""}`}
     >
       <p className="f1-title flex items-center gap-4 text-6xl md:text-8xl">
         <span aria-hidden className="h-4 w-4 bg-[var(--f1-red)] md:h-5 md:w-5" />
         GRID 26
       </p>
       <p className="f1-label mt-6">
-        Assembling the RB22 · <span ref={num}>0</span>%
+        {label} · <span ref={num}>0</span>%
       </p>
       <div className="mt-4 h-px w-48 overflow-hidden bg-[var(--f1-line)]">
         <div ref={line} className="h-full origin-left scale-x-0 bg-[var(--f1-ink)]" />

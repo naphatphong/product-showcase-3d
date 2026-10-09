@@ -987,6 +987,262 @@ html.lenis body {
     }
   }
 
+  /* ---------- หน้าโชว์รูม (components/f1/showroom): อู่รถแข่ง โทนมืด ----------
+     ใช้คลาสเดียวกับหน้าเรื่องเล่า (f1-title, f1-label, f1-pill ...) แต่สลับสีในตัวแปร: พื้นมืด ตัวหนังสือขาว */
+  .f1-garage {
+    --f1-paper: #0c0d0f;
+    --f1-ink: #f1f1ee;
+    --f1-muted: #a7a9a3;
+    --f1-faint: #8a8c86;
+    --f1-line: rgba(255, 255, 255, 0.15);
+    background: var(--f1-paper);
+  }
+  .f1-garage .f1-pill {
+    background: rgba(12, 13, 15, 0.55);
+  }
+  /* ปุ่มที่เน้น (Explode): ขอบแดง */
+  .f1-garage .f1-pill-hot {
+    border-color: rgba(225, 6, 0, 0.7);
+  }
+  .f1-garage .f1-pill-hot:hover,
+  .f1-garage .f1-pill-hot[aria-pressed="true"] {
+    background: var(--f1-red);
+    color: #fff;
+  }
+  /* เงามืดไล่จากขอบบน/ล่าง (และซ้ายบนคอม) ให้ข้อความอ่านง่ายบนฉาก 3D */
+  .f1-garage-shade {
+    background:
+      linear-gradient(rgba(12, 13, 15, 0.7), transparent 24%),
+      linear-gradient(to top, rgba(12, 13, 15, 0.75), transparent 22%);
+  }
+  .f1-garage-copy {
+    left: 1.25rem;
+    right: 1.25rem;
+    top: 6rem;
+  }
+  @media (min-width: 768px) {
+    .f1-garage-shade {
+      background:
+        linear-gradient(rgba(12, 13, 15, 0.7), transparent 26%),
+        linear-gradient(to top, rgba(12, 13, 15, 0.7), transparent 24%),
+        radial-gradient(60% 55% at 0% 22%, rgba(12, 13, 15, 0.6), transparent);
+    }
+    .f1-garage-copy {
+      left: 60px;
+      right: auto;
+      top: 8.5rem;
+      max-width: 30rem;
+    }
+  }
+
+  /* ป้ายชื่อลอยเหนือรถ (ตอนมองรวม) — คันที่ชี้อยู่ขอบแดง */
+  .f1-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    white-space: nowrap;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(12, 13, 15, 0.6);
+    backdrop-filter: blur(4px);
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #d9dad6;
+    transition:
+      border-color 0.3s,
+      background-color 0.3s,
+      color 0.3s;
+    animation: f1-tag-in 0.7s ease 0.2s both;
+  }
+  .f1-tag[data-hot="true"] {
+    border-color: var(--f1-red);
+    background: rgba(225, 6, 0, 0.2);
+    color: #fff;
+  }
+  .f1-tag-num {
+    color: var(--f1-red);
+  }
+  @keyframes f1-tag-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  /* แผงชิ้นส่วน: มือถือ = แผ่นด้านล่าง (เลื่อนอ่านในแผงได้) / คอม = กล่องขวากลางจอ */
+  .f1-inspect {
+    left: 1.25rem;
+    right: 1.25rem;
+    bottom: 5.6rem;
+    max-height: 42svh;
+    overflow-y: auto;
+    padding: 1.1rem 1.15rem 1.2rem;
+    border: 1px solid var(--f1-line);
+    background: rgba(12, 13, 15, 0.8);
+    backdrop-filter: blur(8px);
+  }
+  .f1-inspect-in {
+    animation: f1-tag-in 0.5s ease both;
+  }
+  /* รายการชิ้นส่วน: มือถือ = แถวปุ่มเลื่อนซ้าย-ขวา (แผงเตี้ย เห็นรถมากขึ้น) / คอม = 2 คอลัมน์ */
+  .f1-inspect-list {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    margin-inline: -1.15rem;
+    padding-inline: 1.15rem;
+    scrollbar-width: none;
+  }
+  .f1-inspect-list li {
+    flex: none;
+  }
+  .f1-inspect-list button {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--f1-line);
+    font-size: 13px;
+    text-align: left;
+    transition:
+      color 0.2s,
+      border-color 0.2s;
+  }
+  .f1-inspect-list button:hover,
+  .f1-inspect-list button[data-hot="true"] {
+    color: var(--f1-red);
+    border-color: rgba(225, 6, 0, 0.6);
+  }
+  @media (min-width: 768px) {
+    .f1-inspect-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 1rem;
+      overflow: visible;
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+    .f1-inspect-list button {
+      width: 100%;
+      gap: 0.6rem;
+      padding: 0.55rem 0;
+      border: 0;
+      border-top: 1px solid var(--f1-line);
+      white-space: normal;
+    }
+    .f1-inspect-list button:hover,
+    .f1-inspect-list button[data-hot="true"] {
+      border-color: var(--f1-line);
+    }
+  }
+  .f1-inspect-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-block: 1px solid var(--f1-line);
+  }
+  .f1-inspect-stats > div {
+    padding: 0.7rem 0.6rem 0.75rem;
+    border-left: 1px solid var(--f1-line);
+  }
+  .f1-inspect-stats > div:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .f1-x {
+    width: 2rem;
+    height: 2rem;
+    margin: -0.4rem -0.4rem 0 0;
+    border: 1px solid var(--f1-line);
+    font-size: 18px;
+    line-height: 1;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+  }
+  .f1-x:hover {
+    background: var(--f1-ink);
+    color: var(--f1-paper);
+  }
+  @media (min-width: 768px) {
+    .f1-inspect {
+      left: auto;
+      right: 60px;
+      bottom: auto;
+      top: 50%;
+      transform: translateY(-46%);
+      width: 22.5rem;
+      max-height: 68svh;
+      padding: 1.5rem 1.5rem 1.6rem;
+    }
+  }
+
+  /* ปุ่มเลือกรถ 3 คัน: แถบสีทีมด้านซ้าย / คันที่เลือกอยู่ขอบเป็นสีทีม */
+  .f1-carbar {
+    left: 1.25rem;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  .f1-car {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    padding: 0.65rem 0.75rem 0.7rem 0.9rem;
+    border: 1px solid var(--f1-line);
+    background: rgba(12, 13, 15, 0.62);
+    backdrop-filter: blur(6px);
+    text-align: left;
+    transition:
+      border-color 0.3s,
+      background-color 0.3s;
+  }
+  .f1-car::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: -1px;
+    bottom: -1px;
+    width: 3px;
+    background: var(--accent);
+  }
+  .f1-car:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(28, 29, 33, 0.78);
+  }
+  .f1-car[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: rgba(28, 29, 33, 0.85);
+  }
+  .f1-car-name {
+    font-weight: 800;
+    font-stretch: 72%;
+    font-size: 1.05rem;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  @media (min-width: 768px) {
+    .f1-carbar {
+      left: 60px;
+      right: auto;
+      bottom: 2rem;
+      grid-template-columns: repeat(3, 13.5rem);
+      gap: 0.75rem;
+    }
+    .f1-car {
+      padding: 0.8rem 1rem 0.85rem 1.15rem;
+    }
+    .f1-car-name {
+      font-size: 1.4rem;
+    }
+  }
+
   /* ม่านกระดาษหลังแถบเมนูบน/ป้ายมุมล่าง ตอนเนื้อหาหน้าประวัติเลื่อนผ่าน (ตัวหนังสือไม่ทับโลโก้) */
   .f1-veil {
     position: fixed;

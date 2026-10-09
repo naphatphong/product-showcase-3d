@@ -384,3 +384,27 @@ export const DESIGN_CALLOUTS: Callout[] = [
     dy: -125,
   },
 ];
+
+// ---------- หน้าโชว์รูม (/f1/showroom): อู่รถแข่ง รถ 3 คันจอดเฉียงๆ ไม่เรียงแถว ----------
+// id = id ของแบบใน config/products.ts (ชื่อ สีทีม เมืองโรงงาน มาจากที่นั่น)
+// model = ไฟล์ที่แยกเป็น 16 ชิ้น (scripts/split-f1-parts.mjs) กดชิ้นไหนบนรถก็ได้ / short = ชื่อสั้นบนมือถือ
+// x, z = ตำแหน่งบนพื้นอู่ (เมตร, z บวก = ใกล้กล้อง), rot = หันหัวรถ (องศา: 0 = หันเข้าหากล้อง, บวก = หันไปทางขวา)
+// view = มุมกล้องตอนเลือกคันนี้ (องศา: 0 = มองจากด้านหน้าอู่ตรงๆ, บวก = กล้องอยู่ค่อนไปทางขวา)
+//        ตั้งให้ห่างจาก rot ราว 40° → เห็นหน้ารถเฉียงๆ กับด้านข้าง และกล้องอยู่ฝั่งเปิดของอู่เสมอ (ไม่ทะลุผนังหลัง)
+export type ShowroomCar = { id: string; model: string; short: string; x: number; z: number; rot: number; view: number };
+export const SHOWROOM_CARS: ShowroomCar[] = [
+  { id: "mercedes-w17", model: "/models/f1/mercedes-w17-parts.glb", short: "W17", x: -4.6, z: -1.6, rot: 38, view: -4 },
+  { id: "redbull-rb22", model: "/models/f1/redbull-rb22-parts.glb", short: "RB22", x: 0.3, z: 1.1, rot: -26, view: 16 },
+  {
+    id: "ferrari-sf26",
+    model: "/models/f1/ferrari-sf26-parts.glb",
+    short: "SF-26",
+    x: 5.0,
+    z: -1.2,
+    rot: -60,
+    view: -16,
+  },
+];
+
+// ตอนกดดูชิ้นส่วน (ยังไม่กดแยกชิ้นทั้งคัน) รถเปิดออกเท่านี้ (สัดส่วนของ EXPLODE) ให้เห็นชิ้นที่เลือกชัดๆ ไม่โดนชิ้นอื่นบัง
+export const SHOWROOM_OPEN = 0.5;

@@ -13,7 +13,7 @@ page. Optional synthesized sound and a lens flare from the sun complete the scen
 |---|---|---|---|
 | 1 | FIZZ — soft drinks, 6 cans (Coca-Cola, Coke Zero, Sprite, Pepsi, Pepsi Zero, Dr Pepper) — full scroll page | `/drink` | `public/models/soda` |
 | 2 | SIGNAL — smartphones (iPhone 17 Pro) | `/phone` | `public/models/phone` |
-| 3 | GRID 26 — 1:18 F1 scale models, 3 teams (Mercedes W17, Ferrari SF-26, Red Bull RB22) — scroll story: speed dial, team history, design close-up, then the RB22 comes apart part by part and goes back together | `/f1` | `public/models/f1` |
+| 3 | GRID 26 — 1:18 F1 scale models, 3 teams (Mercedes W17, Ferrari SF-26, Red Bull RB22) — scroll story: speed dial, team history, design close-up, then the RB22 comes apart part by part and goes back together; the garage (`/f1/showroom`) parks all 3 cars to pick, turn around, take apart and inspect part by part | `/f1`, `/f1/showroom` | `public/models/f1` |
 
 Every product has one or more variants (a can, a team, a phone). Pick one with the colour buttons under the product
 name and the model, accent colour and the city the camera dives to all follow it. The FIZZ page opens on the same can.
@@ -47,7 +47,7 @@ coming back to the home page in the same tab skips it.
 | `app/page.tsx` | Home page: logo, intro headline and product links (server-rendered) + `<Showroom />` |
 | `app/drink` | FIZZ: full scroll page (`components/fizz`) |
 | `app/phone` | SIGNAL (placeholder page for now) |
-| `app/f1` | GRID 26: scroll story (`components/f1`); `app/f1/showroom` is the 3D showroom (placeholder for now) |
+| `app/f1` | GRID 26: scroll story (`components/f1`); `app/f1/showroom` is the garage (`components/f1/showroom`) |
 | `app/credits` | Credits page, generated from `config/credits.ts` |
 | `components/Showroom.tsx` | Home state: loader → intro → orbit, drag / wheel / keyboard, sound, the dive into the Earth |
 | `components/OrbitLoader.tsx` | Loading screen: real %, then the black opens in two bands and the logo docks in the header |
@@ -60,11 +60,11 @@ coming back to the home page in the same tab skips it.
 | `components/three/LensFlare.tsx` | Screen-space lens flare from the sun (glow, ghosts, rainbow arc), hidden when the Earth blocks it |
 | `components/three/FloatingProduct.tsx` | One floating product: loads its `.glb`, size/centre normalisation, hover glow, HUD label |
 | `components/fizz/` | FIZZ page: Lenis scroll paging, 3D cans on a scroll timeline, bubbles, HUD, loader, FAQ |
-| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, speed dial (`SpeedSection`), long scrolling history page with a racing video and photos (`HeritageSection`), design close-up with callouts that follow the car (`DesignSection`), part chapters, HUD, loader |
+| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, speed dial (`SpeedSection`), long scrolling history page with a racing video and photos (`HeritageSection`), design close-up with callouts that follow the car (`DesignSection`), part chapters, HUD, loader. `showroom/` is the garage: the room built in code (`Garage.tsx`), cars, spotlights and camera (`ShowroomScene.tsx`), panels and buttons (`Showroom.tsx`) |
 | `config/site.ts` | Site name, headline, intro text |
 | `config/products.ts` | Product data: name, category, tagline, specs, variants (model, colour, home city) |
 | `config/fizz.ts` | FIZZ copy: brand stories, soda facts, FAQ |
-| `config/f1.ts` | GRID 26: the car in the story, part names, where each part flies to, the 8 part chapters (text and stats), speed stats and video, history years and photos, design callouts |
+| `config/f1.ts` | GRID 26: the car in the story, part names, where each part flies to, the 8 part chapters (text and stats), speed stats and video, history years and photos, design callouts, where each car is parked in the garage |
 | `config/credits.ts` | Authors and licences of the Earth imagery and 3D models |
 | `lib/orbitSound.ts`, `lib/fizzSound.ts`, `lib/synth.ts` | Web Audio sound for each page + shared synth pieces |
 | `lib/dive.ts`, `lib/format.ts`, `lib/useNarrow.ts` | Dive duration, coordinate formatting, phone-width check |
@@ -81,6 +81,9 @@ coming back to the home page in the same tab skips it.
 - GRID 26 history page: the racing video on its first screen is `HERITAGE_FILM` in `config/f1.ts` (a wide clip for desktop,
   a tall clip for phones, files in `public/video/f1/`); years, text and photos are `HERITAGE` (photos in `public/photos/f1/`). It is the one
   section longer than a screen: the story scrolls freely through it, then pages again (`freeRange` in `components/f1/F1Story.tsx`)
+- GRID 26 garage: where each car is parked, which way it faces and the camera angle when it is picked are `SHOWROOM_CARS`
+  in `config/f1.ts` (`x`, `z` in metres, `rot` and `view` in degrees); room size and props are in
+  `components/f1/showroom/Garage.tsx`. Keyboard: Esc steps back, ← / → switch car
 - Any new photo or video needs a credit in `config/credits.ts`
 
 ## Adding a 3D model
@@ -94,12 +97,13 @@ coming back to the home page in the same tab skips it.
 2. Add a variant pointing at it in `config/products.ts`.
 3. Add the author and licence to `config/credits.ts` (shown on `/credits`) and `public/models/CREDITS.md`.
 
-The GRID 26 story needs the car split into named parts (the Sketchfab files are grouped by material, not by part).
+The GRID 26 story and garage need each car split into named parts (the Sketchfab files are grouped by material, not by part).
 `scripts/split-f1-parts.mjs` regroups an original car `.glb` into 16 parts (front wing, halo, cockpit, chassis,
 sidepods, engine cover, power unit, floor, rear wing, suspension, 4 wheels) and compresses it:
 ```bash
 node scripts/split-f1-parts.mjs original.glb public/models/f1/redbull-rb22-parts.glb
 ```
+All 3 cars are split this way (`*-parts.glb`); the plain files are what the home page floats in orbit.
 
 `FloatingProduct` scales and centres any model to the same size, so the file's own units and origin don't matter.
 

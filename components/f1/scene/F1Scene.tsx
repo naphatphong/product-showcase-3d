@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { CHAPTERS, DESIGN_CALLOUTS, EXPLODE, EXPLODE_ORDER, FOCUS, STORY_CAR, type PartId } from "@/config/f1";
 import { DESIGN_I, FIRST_CHAPTER, sectionProgress, type Motion } from "../motion";
 import { blankPose, DESIGN_ASPECT, POSES, POSES_NARROW, sample, type Pose } from "./timeline";
+import { addTint, createTint } from "./tint";
 
 export type SceneProps = {
   motion: RefObject<Motion>;
@@ -134,24 +135,7 @@ function Lights() {
   );
 }
 
-// ---------- ชิ้นส่วนที่ "จาง" เป็นสีเทาอ่อน (ตอนเน้นชิ้นอื่น) ----------
-// แทรกโค้ดเล็กๆ ท้าย shader ของวัสดุเดิม: ผสมสีที่คำนวณแสงแล้วกับสีเทาอ่อนตามค่า uGhost (0 = สีจริง, 1 = เทาทั้งชิ้น)
-// ยังเห็นแสงเงา/รายละเอียดของชิ้นอยู่ เหมือนโมเดลดินปั้นในภาพเขียนแบบ
-function addGhost(material: THREE.Material, ghost: { value: number }) {
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uGhost = ghost;
-    shader.fragmentShader = shader.fragmentShader.replace("void main() {", "uniform float uGhost;\nvoid main() {").replace(
-      "#include <dithering_fragment>",
-      `#include <dithering_fragment>
-      float luma = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
-      gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.72 + 0.24 * luma), uGhost);`,
-    );
-  };
-  // ทุกวัสดุใช้โค้ดแทรกเดียวกัน → บอก three.js ว่าใช้ shader ชุดเดียวกันได้ (ไม่ต้องสร้างใหม่ทีละวัสดุ)
-  material.customProgramCacheKey = () => "f1-ghost";
-}
-
-// ข้อมูลของแต่ละชิ้นที่เก็บไว้ใน node.userData: ตำแหน่งตอนประกอบ, ค่าจางของชิ้น, ลำดับตอนแยกชิ้น,
+// ข้อมูลของแต่ละชิ้นที่เก็บไว้ใน node.userData: ตำแหน่งตอนประกอบ, ค่าจางของชิ้น (เป็นสีเทา ดู tint.ts), ลำดับตอนแยกชิ้น,
 // focus = ลอยออกมาแค่ไหนตอนบทของชิ้นนี้แสดงอยู่ (0–1 ค่อยๆ เปลี่ยน)
 type PartData = { base: THREE.Vector3; ghost: { value: number }; order: number; focus: number };
 
@@ -170,7 +154,8 @@ function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose
   const model = useMemo(() => {
     const root = scene.clone(true);
     for (const node of root.children) {
-      const ghost = { value: 0 };
+      const tint = createTint();
+      const ghost = tint.ghost;
       // ตำแหน่งเดิมของ node (ไฟล์ที่บีบแล้วเก็บตำแหน่ง/ขนาดของชิ้นไว้ที่ node) — ตอนแยกชิ้นจะบวกเพิ่มจากตรงนี้
       const data: PartData = {
         base: node.position.clone(),
@@ -184,7 +169,7 @@ function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose
         if (!mesh.isMesh) return;
         // วัสดุของแต่ละชิ้นแยกกัน (ชิ้นอื่นที่ใช้วัสดุเดียวกันจะได้ไม่จางตาม)
         mesh.material = (mesh.material as THREE.Material).clone();
-        addGhost(mesh.material, ghost);
+        addTint(mesh.material, tint);
       });
     }
     return root;
