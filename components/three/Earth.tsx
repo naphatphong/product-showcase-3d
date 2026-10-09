@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -97,7 +97,7 @@ const surfaceFragment = /* glsl */ `
     // bias -0.5 = อ่านภาพละเอียดกว่าที่ GPU เลือกให้นิดหน่อย ช่วยแถวขอบโลกที่มองเฉียงมากๆ ไม่ให้เบลอ
     vec3 day = texture2D(uDay, vUv, -0.5).rgb;
     vec3 dayBlur = texture2D(uDay, vUv, 2.0).rgb;
-    day = clamp(day + (day - dayBlur) * 0.9, 0.0, 1.0);
+    day = clamp(day + (day - dayBlur) * 0.5, 0.0, 1.0);
     // เพิ่มความอิ่มสีและคอนทราสต์เล็กน้อย (ภาพถ่ายดาวเทียมต้นฉบับค่อนข้างซีด)
     float luma = dot(day, vec3(0.299, 0.587, 0.114));
     day = clamp(mix(vec3(luma), day, 1.18) * 1.06 - 0.02, 0.0, 1.0);
@@ -162,20 +162,25 @@ const atmosphereUniforms = { uSunDir: { value: SUN_DIR } };
 type Props = {
   // ถ้ามีค่า = กำลังจะเข้าหน้าสินค้า: หมุนโลกให้จุดนี้หันมาหากล้อง
   focus?: { lat: number; lon: number } | null;
+  narrow?: boolean; // จอแคบ (มือถือ) → ใช้ภาพ 4K พอ ประหยัดเน็ตและหน่วยความจำ
 };
 
 // มุมเริ่มต้นของโลก: หมุนให้ยุโรป (ละติจูด 48° ลองจิจูด 15°) อยู่ใต้กล้อง — เห็นทั้งแผ่นดิน ทะเล และเมฆ
 const camAzimuth = Math.atan2(-0.8 - EARTH_CENTER.x, 8 - EARTH_CENTER.z); // ทิศของกล้องจอกว้าง มองจากศูนย์กลางโลก
 const START_ROTATION = facingRotation(48, 15, camAzimuth);
 
-export default function Earth({ focus }: Props) {
+export default function Earth({ focus, narrow = false }: Props) {
   const group = useRef<THREE.Group>(null);
   const targetRotation = useRef<number | null>(null);
+  // ภาพพื้นโลกกลางวัน/กลางคืนมี 2 ขนาด: 8K (8192×4096) สำหรับจอคอม โลกอยู่ใกล้กล้องมาก ภาพยิ่งละเอียดยิ่งคม
+  // และ 4K สำหรับมือถือ หรือการ์ดจอที่รับภาพกว้าง 8192 ไม่ได้ (maxTextureSize = ขนาดภาพใหญ่สุดที่การ์ดจอรับได้)
+  const maxSize = useThree((s) => s.gl.capabilities.maxTextureSize);
+  const hd = !narrow && maxSize >= 8192 ? "-8k" : "";
 
   // โหลดภาพ 3 ภาพพร้อมกัน (ระหว่างโหลด React Suspense จะรอให้ครบก่อน)
   // ฟังก์ชันที่ส่งเป็นตัวที่ 2 ทำงานครั้งเดียวตอนโหลดเสร็จ ใช้ตั้งค่าภาพ
   const [day, night, clouds] = useTexture(
-    ["/textures/earth-day.webp", "/textures/earth-night.webp", "/textures/earth-clouds.webp"],
+    [`/textures/earth-day${hd}.webp`, `/textures/earth-night${hd}.webp`, "/textures/earth-clouds.webp"],
     ([d, n, c]) => {
       d.colorSpace = THREE.SRGBColorSpace; // ภาพสีต้องบอกว่าเป็น sRGB สีจะได้ไม่ซีด
       n.colorSpace = THREE.SRGBColorSpace;

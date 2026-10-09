@@ -120,7 +120,7 @@ export default function Scene(props: SceneProps) {
           Safe: ถ้าโหลดภาพโลกไม่สำเร็จ ไม่มีโลกแต่หน้ายังใช้ได้ (และบอกว่าพร้อมแล้ว ฉากจะได้ไม่ค้างที่ loading) */}
       <Safe onError={props.onReady}>
         <Suspense fallback={null}>
-          <Earth focus={props.diveTo} />
+          <Earth focus={props.diveTo} narrow={props.narrow} />
           <Ready onReady={props.onReady} />
         </Suspense>
       </Safe>
