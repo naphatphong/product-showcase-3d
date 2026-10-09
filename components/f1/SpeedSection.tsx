@@ -110,8 +110,9 @@ export default function SpeedSection({
   }, [active, stat, size]);
 
   // วิดีโอ: โหลดเมื่อเลื่อนมาใกล้ เล่นเฉพาะตอน section นี้แสดงอยู่ (ไม่เปลืองเน็ต/แบต)
-  const clip = SPEED.video;
-  const src = clip && near ? (narrow ? clip.tall : clip.wide) : undefined;
+  // คอม = คลิปแนวนอน (Miami) / มือถือ = คลิปแนวตั้ง (Spa) แต่ละคลิปมีรูปปกของตัวเอง
+  const clip = SPEED.video && (narrow ? SPEED.video.tall : SPEED.video.wide);
+  const src = clip && near ? clip.src : undefined;
   useEffect(() => {
     const v = video.current;
     if (!v || !src) return;

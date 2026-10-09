@@ -226,10 +226,16 @@ export type SpeedStat = {
   fromZero: boolean; // เข็มกลับไปเริ่มที่ 0 ก่อนออกตัว
 };
 
+export type Clip = { src: string; poster: string };
+
 export const SPEED = {
   max: 360, // ปลายหน้าปัด (กม./ชม.)
-  // วิดีโอรถแข่งในครึ่งวงกลม (ไฟล์ใน public/video/f1/) — ยังไม่มีไฟล์ = แสดงรถ 3D ในครึ่งวงกลมแทน แบบโดรนของ Aevion
-  video: null as null | { wide: string; tall: string; poster: string },
+  // วิดีโอรถแข่งในครึ่งวงกลม (ไฟล์ใน public/video/f1/, ย่อด้วย ffmpeg แล้ว ไม่มีเสียง)
+  // wide = คอม (ครึ่งวงกลม 2:1), tall = มือถือ (ทรงประตู 1:1) — ตั้งเป็น null = แสดงรถ 3D ในครึ่งวงกลมแทน
+  video: {
+    wide: { src: "/video/f1/speed-wide.mp4", poster: "/video/f1/speed-wide.webp" }, // Miami, จากอัฒจันทร์
+    tall: { src: "/video/f1/speed-tall.mp4", poster: "/video/f1/speed-tall.webp" }, // Spa, Verstappen แซง
+  } as null | { wide: Clip; tall: Clip },
   stats: [
     { value: 350, decimals: 0, unit: "km/h", label: "Top speed", needle: 350, time: 1.8, fromZero: false },
     { value: 2.6, decimals: 1, unit: "s", label: "0–100 km/h", needle: 100, time: 2.6, fromZero: true },
@@ -237,14 +243,16 @@ export const SPEED = {
   ] satisfies SpeedStat[],
 };
 
-// ---------- หน้าประวัติ: ไทม์ไลน์ทีม Red Bull Racing (แบบโปสเตอร์ของเว็บ Longbow) ----------
-// photo = รูปจริงในโฟลเดอร์ public/photos/f1/ (ยังไม่มี = กรอบลายเส้นแบบแบบวิศวกรรมแทนรูป)
+// ---------- หน้าประวัติ: ไทม์ไลน์ทีม Red Bull Racing เลื่อนลงยาวๆ แบบหน้าเว็บ Longbow ----------
+// photos = รูปจริงในโฟลเดอร์ public/photos/f1/ (0–2 รูปต่อปี, ไม่มีรูป = ชื่อรถตัวโตแบบตัวหนังสือโปสเตอร์แทน)
+// caption = ที่และปีที่ถ่ายจริง (รูปบางรูปเป็นรถรุ่นหลัง ไม่ใช่รถของปีนั้น เช่น ทีมน้อง Racing Bulls ปี 2025)
+export type Photo = { src: string; alt: string; caption: string };
 export type Era = {
   year: string;
   car: string;
   title: string;
   text: string;
-  photo?: { src: string; alt: string };
+  photos?: Photo[];
 };
 
 export const HERITAGE: Era[] = [
@@ -253,6 +261,24 @@ export const HERITAGE: Era[] = [
     car: "RB1",
     title: "First race",
     text: "Red Bull's first Formula 1 car, built by the team it bought from Jaguar.",
+  },
+  {
+    year: "2006",
+    car: "STR1",
+    title: "A second team",
+    text: "Red Bull buys Minardi and turns it into a second team, Toro Rosso. It races today as Racing Bulls.",
+    photos: [
+      {
+        src: "/photos/f1/racing-bulls-2025-b.webp",
+        alt: "A white Racing Bulls car cornering at Interlagos",
+        caption: "Racing Bulls · São Paulo 2025",
+      },
+      {
+        src: "/photos/f1/racing-bulls-2025-a.webp",
+        alt: "A white Racing Bulls car at speed at Interlagos",
+        caption: "Racing Bulls · São Paulo 2025",
+      },
+    ],
   },
   {
     year: "2010",
@@ -271,6 +297,44 @@ export const HERITAGE: Era[] = [
     car: "RB19",
     title: "21 of 22",
     text: "The most dominant season in Formula 1 history: 21 wins from 22 races.",
+    photos: [
+      {
+        src: "/photos/f1/rb19-baku-2023.webp",
+        alt: "The Red Bull RB19 next to a Toyota Le Mans hypercar in front of the Heydar Aliyev Center",
+        caption: "RB19 · Baku 2023",
+      },
+    ],
+  },
+  {
+    year: "2024",
+    car: "RB20",
+    title: "From 17th to first",
+    text: "São Paulo in the rain: Max Verstappen starts 17th and wins, on his way to a fourth title in a row.",
+    photos: [
+      {
+        src: "/photos/f1/rb20-above-2024.webp",
+        alt: "The Red Bull RB20 seen from above on track",
+        caption: "RB20 · São Paulo 2024",
+      },
+      {
+        src: "/photos/f1/rb-pitstop-2024.webp",
+        alt: "The Red Bull pit crew working on the car in the wet pit lane",
+        caption: "Pit crew · São Paulo 2024",
+      },
+    ],
+  },
+  {
+    year: "2025",
+    car: "RB21",
+    title: "Last Honda year",
+    text: "The last season with Honda power before Red Bull builds an engine of its own.",
+    photos: [
+      {
+        src: "/photos/f1/rb21-interlagos-2025.webp",
+        alt: "The Red Bull RB21 on track at Interlagos",
+        caption: "RB21 · São Paulo 2025",
+      },
+    ],
   },
   {
     year: "2026",

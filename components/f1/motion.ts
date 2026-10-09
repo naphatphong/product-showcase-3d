@@ -46,11 +46,15 @@ export const createMotion = (): Motion => ({
 });
 
 // ตำแหน่งเลื่อนจอ → เลข section แบบทศนิยม เช่น 2.5 = เลื่อนจาก section 2 ไป 3 ได้ครึ่งทาง
+// section ที่ยาวกว่า 1 จอ (หน้าประวัติ) นับว่าอยู่ที่ section นั้นเต็มๆ จนถึงจอสุดท้ายของมัน
+// แล้วค่อยเริ่มเปลี่ยนไป section ถัดไป กล้องเลยไม่ขยับระหว่างที่ยังอ่านหน้ายาวอยู่
 export function sectionProgress({ scroll, tops }: Motion) {
   const last = tops.length - 1;
   if (scroll >= tops[last]) return last;
   let i = 0;
   while (i < last - 1 && scroll >= tops[i + 1]) i++;
-  const span = tops[i + 1] - tops[i];
-  return i + (span > 0 ? Math.min(1, Math.max(0, (scroll - tops[i]) / span)) : 0);
+  const pageH = tops[1] - tops[0]; // ความสูง 1 จอ (หน้าแรกสูงพอดี 1 จอเสมอ)
+  const from = Math.max(tops[i], tops[i + 1] - pageH);
+  const span = tops[i + 1] - from;
+  return i + (span > 0 ? Math.min(1, Math.max(0, (scroll - from) / span)) : 0);
 }

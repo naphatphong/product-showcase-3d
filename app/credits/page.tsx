@@ -5,7 +5,7 @@ import { site } from "@/config/site";
 
 export const metadata: Metadata = {
   title: `Credits — ${site.name} ${site.byline}`,
-  description: "3D models and imagery used in this portfolio, with their authors and licences.",
+  description: "3D models, photos, video and imagery used in this portfolio, with their authors and licences.",
 };
 
 // หน้าเครดิต: สร้างจาก config/credits.ts ทั้งหมด (เพิ่มโมเดลใหม่ ไม่ต้องแก้หน้านี้)
@@ -17,7 +17,7 @@ export default function Credits() {
       <h1 className="mt-4 font-display text-5xl font-light sm:text-6xl">Built on the work of others.</h1>
       <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/60">
         {site.name} is a non-commercial portfolio. The products are concepts, not real listings. The Earth
-        imagery and 3D models below were made by these creators and are used under their licences.
+        imagery, 3D models, photos and video below were made by these creators and are used under their licences.
       </p>
 
       <ul className="mt-12 divide-y divide-white/10 border-y border-white/10">

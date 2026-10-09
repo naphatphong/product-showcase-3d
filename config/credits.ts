@@ -1,4 +1,4 @@
-// เครดิตของสิ่งที่ไม่ได้สร้างเอง (ภาพโลก, โมเดล 3D) — หน้า /credits สร้างจากรายการนี้
+// เครดิตของสิ่งที่ไม่ได้สร้างเอง (ภาพโลก, โมเดล 3D, รูปถ่าย, วิดีโอ) — หน้า /credits สร้างจากรายการนี้
 // license แบบ Creative Commons กำหนดให้บอก 4 อย่าง: ชื่องาน, ผู้สร้าง, ลิงก์ต้นฉบับ, license
 // และต้องบอกด้วยว่าเราแก้ไขอะไรไปบ้าง (changes)
 // เพิ่มโมเดลใหม่ → เพิ่มเครดิตที่นี่ + ใน public/models/CREDITS.md
@@ -9,6 +9,8 @@ export const LICENSES = {
   "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/",
   "CC BY-NC 4.0": "https://creativecommons.org/licenses/by-nc/4.0/",
   "CC BY-NC-SA 4.0": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+  // Pexels ไม่บังคับให้ให้เครดิต แต่เราใส่ไว้ทุกไฟล์เพื่อความถูกต้อง
+  "Pexels License": "https://www.pexels.com/license/",
 } as const;
 
 export type Credit = {
@@ -76,6 +78,78 @@ export const credits: Credit[] = [
     license: "CC BY-NC-SA 4.0",
     // ShareAlike (SA): ไฟล์ที่เราแก้แล้วต้องแจกต่อด้วย license เดียวกัน
     changes: "Compressed for the web (WebP textures, meshopt geometry), 1.6 MB → 227 KB. The modified file is shared under the same licence, CC BY-NC-SA 4.0.",
+  },  // รูปถ่ายและวิดีโอในหน้า /f1 (ดาวน์โหลดจาก Pexels)
+  {
+    usedFor: "GRID 26 — speed dial video (desktop)",
+    title: "Formula 1 race, Miami (Pexels video 15293954)",
+    author: "Pexels contributor",
+    authorUrl: "https://www.pexels.com/video/15293954/",
+    source: "https://www.pexels.com/video/15293954/",
+    license: "Pexels License",
+    changes: "Cropped to fit the dial, scaled down and re-encoded without sound; poster image taken from a frame of the clip.",
+  },
+  {
+    usedFor: "GRID 26 — speed dial video (phones)",
+    title: "Verstappen Overtake at Spa",
+    author: "Timo van Overdijk",
+    authorUrl: "https://www.pexels.com/video/verstappen-overtake-at-spa-16726088/",
+    source: "https://www.pexels.com/video/verstappen-overtake-at-spa-16726088/",
+    license: "Pexels License",
+    changes: "Cropped to fit the dial, scaled down and re-encoded without sound; poster image taken from a frame of the clip.",
+  },
+  {
+    usedFor: "GRID 26 — heritage, 2006",
+    title: "Dynamic Formula 1 Car Racing on São Paulo Track",
+    author: "Jonathan Borba",
+    authorUrl: "https://www.pexels.com/@jonathanborba/",
+    source: "https://www.pexels.com/photo/dynamic-formula-1-car-racing-on-sao-paulo-track-34680414/",
+    license: "Pexels License",
+    changes: "Resized and converted to WebP.",
+  },
+  {
+    usedFor: "GRID 26 — heritage, 2006",
+    title: "Red Bull Racing Car on Interlagos Circuit",
+    author: "Jonathan Borba",
+    authorUrl: "https://www.pexels.com/@jonathanborba/",
+    source: "https://www.pexels.com/photo/red-bull-racing-car-on-interlagos-circuit-34926315/",
+    license: "Pexels License",
+    changes: "Resized and converted to WebP.",
+  },
+  {
+    usedFor: "GRID 26 — heritage, 2023",
+    title: "Formula 1 Red Bull RB19 race car and Toyota GR010 Hybrid Le Mans hypercar in front of the Heydar Aliyev Center in Baku, Azerbaijan",
+    author: "Muhammed Abasov",
+    authorUrl: "https://www.pexels.com/@muhammed-abasov-789288188/",
+    source: "https://www.pexels.com/photo/formula-1-red-bull-rb19-race-car-and-toyota-gr010-hybrid-le-mans-hypercar-in-front-of-the-heydar-aliyev-center-in-baku-azerbaijan-19417092/",
+    license: "Pexels License",
+    changes: "Resized and converted to WebP.",
+  },
+  {
+    usedFor: "GRID 26 — heritage, 2024",
+    title: "High-Speed Formula 1 Racing Action on Track",
+    author: "Jonathan Borba",
+    authorUrl: "https://www.pexels.com/@jonathanborba/",
+    source: "https://www.pexels.com/photo/high-speed-formula-1-racing-action-on-track-29252126/",
+    license: "Pexels License",
+    changes: "Resized and converted to WebP.",
+  },
+  {
+    usedFor: "GRID 26 — heritage, 2024",
+    title: "Professional Pit Stop at Formula One Race",
+    author: "Jonathan Borba",
+    authorUrl: "https://www.pexels.com/@jonathanborba/",
+    source: "https://www.pexels.com/photo/professional-pit-stop-at-formula-one-race-29327954/",
+    license: "Pexels License",
+    changes: "Resized and converted to WebP.",
+  },
+  {
+    usedFor: "GRID 26 — heritage, 2025",
+    title: "High-Speed Formula 1 Car Racing in São Paulo",
+    author: "Jonathan Borba",
+    authorUrl: "https://www.pexels.com/@jonathanborba/",
+    source: "https://www.pexels.com/photo/high-speed-formula-1-car-racing-in-sao-paulo-34835661/",
+    license: "Pexels License",
+    changes: "Resized and converted to WebP.",
   },
 ];
 
