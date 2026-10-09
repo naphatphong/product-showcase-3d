@@ -28,6 +28,7 @@ export type Product = {
   // แบบของสินค้า อย่างน้อย 1 แบบ (type [Variant, ...Variant[]] = array ที่ห้ามว่าง)
   // มีมากกว่า 1 แบบ → แผงรายละเอียดมีปุ่มให้เลือก / ตอนกดเข้า กล้องดำดิ่งไปเมืองของแบบที่เลือก
   variants: [Variant, ...Variant[]];
+  defaultVariant?: string; // id ของแบบที่เลือกไว้ตอนเปิดเว็บ (ไม่ใส่ = แบบแรก) ลำดับปุ่มเลือกแบบไม่เปลี่ยน
 };
 
 // เมืองที่ใช้ซ้ำหลายแบบ
@@ -49,6 +50,7 @@ export const products: Product[] = [
     ],
     origin: ATLANTA,
     note: "Fan concept — not affiliated with The Coca-Cola Company, PepsiCo or Keurig Dr Pepper. 3D model by Mark Peters (CC BY-NC 4.0).",
+    defaultVariant: "pepsi-zero",
     // กระป๋อง 6 ยี่ห้อ = 6 แบบ (โมเดลต้นฉบับมี 6 กระป๋องในไฟล์เดียว แยกออกมาไฟล์ละยี่ห้อ จะได้โหลดทีละกระป๋อง)
     // เมืองบ้านเกิด = เมืองที่ยี่ห้อนั้นเริ่มต้น (สูตร Zero ใช้เมืองเดียวกับยี่ห้อหลัก, Sprite ใช้ Atlanta ที่ตั้งของ Coca-Cola)
     variants: [
@@ -121,6 +123,7 @@ export const products: Product[] = [
     origin: { city: "Monaco", lat: 43.74, lon: 7.42 },
     note: "Fan concept — not affiliated with Formula 1 or any team. 3D models by Dave Love (CC BY 4.0).",
     size: 2.6,
+    defaultVariant: "redbull-rb22",
     // เมืองบ้านเกิด = ที่ตั้งโรงงานของแต่ละทีม
     variants: [
       {
@@ -147,6 +150,11 @@ export const products: Product[] = [
     ],
   },
 ];
+
+// ลำดับของแบบเริ่มต้น (จาก defaultVariant) — id ไม่ตรงกับแบบไหนเลย → แบบแรก
+export function defaultVariantIndex(product: Product) {
+  return Math.max(0, product.variants.findIndex((v) => v.id === product.defaultVariant));
+}
 
 // ค่าที่ใช้แสดงจริงของสินค้าตามแบบที่เลือก (เลขแบบเกินจำนวน → ใช้แบบแรก)
 export function look(product: Product, variant = 0) {

@@ -13,7 +13,7 @@ import {
   type ReactNode,
   type WheelEvent,
 } from "react";
-import { look, productHref, products } from "@/config/products";
+import { defaultVariantIndex, look, productHref, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import { formatCoords } from "@/lib/format";
 import * as sfx from "@/lib/orbitSound";
@@ -79,8 +79,8 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
   const lastPick = useRef({ index: -1, t: -Infinity }); // คลิกสินค้าครั้งล่าสุด (ใช้แยกดับเบิลคลิก)
   const [dragging, setDragging] = useState(false);
   const [hovered, setHovered] = useState<number | null>(null); // สินค้าที่เมาส์ชี้อยู่ (ใช้เปลี่ยนรูปเมาส์)
-  // แบบที่เลือกของสินค้าแต่ละชิ้น (เริ่มที่แบบแรกทุกชิ้น) เช่น [0, 0, 1] = ชิ้นที่ 3 เลือกแบบที่ 2
-  const [variants, setVariants] = useState(() => products.map(() => 0));
+  // แบบที่เลือกของสินค้าแต่ละชิ้น (เริ่มที่แบบเริ่มต้นใน config) เช่น [0, 0, 1] = ชิ้นที่ 3 เลือกแบบที่ 2
+  const [variants, setVariants] = useState(() => products.map(defaultVariantIndex));
   const [ready, setReady] = useState(false); // ภาพโลกโหลดเสร็จหรือยัง
   const [progress, setProgress] = useState<number | null>(null); // % การโหลดไฟล์ของฉาก (null = โค้ด 3D ยังไม่มา)
   const [loaded, setLoaded] = useState(false); // หน้าโหลดเปิดม่านจบแล้ว → เริ่มหน้าเปิด

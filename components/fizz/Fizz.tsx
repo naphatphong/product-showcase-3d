@@ -12,7 +12,7 @@ import {
 } from "react";
 import Safe from "@/components/Safe";
 import { benefits, brandStories } from "@/config/fizz";
-import { products } from "@/config/products";
+import { defaultVariantIndex, products } from "@/config/products";
 import * as sfx from "@/lib/fizzSound";
 import { useNarrow } from "@/lib/useNarrow";
 import { archivo } from "@/components/fonts";
@@ -26,7 +26,8 @@ import { Faq, Finale } from "./Outro";
 const FizzScene = dynamic(() => import("./scene/FizzScene"), { ssr: false });
 
 // ยี่ห้อทั้ง 6 มาจาก config สินค้า (ชื่อ ไฟล์โมเดล สี เมือง)
-const brands = products.find((p) => p.slug === "drink")!.variants;
+const drink = products.find((p) => p.slug === "drink")!;
+const brands = drink.variants;
 const N = brands.length;
 const LAST = SECTIONS.length - 1; // section สุดท้าย = สำเนาหน้าเลือกยี่ห้อ (ใช้ตอนวนกลับ)
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -225,11 +226,12 @@ export default function Fizz() {
     };
     l.on("scroll", onScroll);
 
-    // เริ่มที่หน้าเลือกยี่ห้อเสมอ + ยี่ห้อที่ส่งมาจากหน้าแรก (?v=sprite)
+    // เริ่มที่หน้าเลือกยี่ห้อเสมอ + ยี่ห้อที่ส่งมาจากหน้าแรก (?v=sprite) — ไม่มี ?v= (เปิดหน้านี้ตรงๆ) ใช้ยี่ห้อเริ่มต้นใน config
     // (เลือกยี่ห้อในเฟรมถัดไป: React ไม่แนะนำให้เปลี่ยน state ทันทีใน effect เพราะจะ render ซ้อนกัน)
     l.scrollTo(0, { immediate: true, force: true });
     onScroll();
-    const start = brands.findIndex((b) => b.id === new URLSearchParams(location.search).get("v"));
+    const fromUrl = brands.findIndex((b) => b.id === new URLSearchParams(location.search).get("v"));
+    const start = fromUrl >= 0 ? fromUrl : defaultVariantIndex(drink);
     const startFrame = requestAnimationFrame(() => {
       urlRead.current = true; // อ่านยี่ห้อจาก URL แล้ว ต่อจากนี้เขียน URL ตามยี่ห้อที่เลือกได้
       if (start > 0) rotateTo(start);
