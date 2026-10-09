@@ -125,7 +125,7 @@ const surfaceFragment = /* glsl */ `
     day = pow(day, vec3(1.12)) * 1.1;
 
     // ---------- เมฆ ----------
-    vec2 cloudUv = vUv + vec2(uCloudShift, 0.0); // เมฆเลื่อนช้ากว่าพื้นโลก
+    vec2 cloudUv = vUv - vec2(uCloudShift, 0.0); // เมฆเลื่อนไปทางตะวันออก (u ของภาพเพิ่มไปทางตะวันออก) พื้นโลกไม่ขยับ
     float clouds = cloudAt(cloudUv);
     // ทิศของแสงอาทิตย์บนแผนที่ (ตะวันออก/เหนือ ณ จุดนี้) → ใช้ทำเงาเมฆ และทำให้เมฆดูเป็นก้อนนูน
     vec3 no = normalize(vNormalO);
@@ -158,10 +158,10 @@ const surfaceFragment = /* glsl */ `
     // → ขอบโลกเรืองฟ้า แต่ยังมองทะลุเห็นเมฆและพื้นจนถึงขอบ
     float airLit = smoothstep(-0.2, 0.6, sun);
     float depth = pow(1.0 - view, 2.0);                    // ความหนาของอากาศที่มองทะลุ (0 ตรงกลาง → 1 ที่ขอบ)
-    vec3 airCol = mix(vec3(0.1, 0.25, 0.6), vec3(0.45, 0.68, 1.0), depth); // ฟ้าเข้มด้านใน → ฟ้าอ่อนที่ขอบ
-    col = col * (1.0 - depth * 0.35) + airCol * airLit * (0.03 + depth * 0.4);
-    // แถบสว่างเส้นบางๆ เลียดขอบโลกพอดี
-    col += vec3(0.5, 0.72, 1.0) * pow(1.0 - view, 16.0) * (0.1 + 0.9 * airLit);
+    vec3 airCol = mix(vec3(0.08, 0.22, 0.6), vec3(0.18, 0.45, 1.0), depth); // ฟ้าเข้มด้านใน → ฟ้าสดที่ขอบ (ไม่ขาว)
+    col = col * (1.0 - depth * 0.45) + airCol * airLit * (0.03 + depth * 0.55);
+    // แถบฟ้าเส้นบางๆ เลียดขอบโลกพอดี
+    col += vec3(0.15, 0.4, 1.0) * pow(1.0 - view, 16.0) * (0.1 + 0.6 * airLit);
 
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
@@ -179,10 +179,10 @@ const atmosphereFragment = /* glsl */ `
     vec3 n = normalize(vNormalW);
     vec3 v = normalize(cameraPosition - vPosW);
     float d = dot(n, v);                                         // ใกล้ 0 = ขอบนอกสุดของวงแสง
-    float glow = pow(1.0 - smoothstep(-0.36, 0.0, d), 2.6);      // สว่างสุดชิดผิวโลก แล้วจางออก
+    float glow = pow(1.0 - smoothstep(-0.2, 0.0, d), 2.2);       // สว่างสุดชิดผิวโลก แล้วจางออก
     float lit = smoothstep(-0.45, 0.5, dot(n, uSunDir));         // ด้านโดนแดดสว่างกว่า
-    vec3 c = mix(vec3(0.3, 0.58, 1.0), vec3(0.75, 0.88, 1.0), glow); // ชิดผิวโลกเกือบขาว ด้านนอกฟ้าเข้ม
-    gl_FragColor = vec4(c * glow * (0.12 + 1.9 * lit), 1.0);
+    vec3 c = mix(vec3(0.06, 0.25, 1.0), vec3(0.3, 0.58, 1.0), glow); // ฟ้าสดทั้งวง ชิดผิวโลกอ่อนลงนิด (ไม่ขาว)
+    gl_FragColor = vec4(c * glow * (0.1 + 1.4 * lit), 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -251,14 +251,13 @@ export default function Earth({ focus, narrow = false }: Props) {
     const g = group.current;
     if (!g) return;
     if (surface.current) {
-      surface.current.uniforms.uCloudShift.value += dt * 0.0004;
+      surface.current.uniforms.uCloudShift.value += dt * 0.0012; // เมฆลอยไปทางตะวันออกช้าๆ (พื้นโลกอยู่นิ่ง)
       // ทิศแสงอาทิตย์เทียบกับลูกโลก = หมุนย้อนกลับเท่าที่โลกหมุนไป (โลกหมุนแค่รอบแกน Y)
       (surface.current.uniforms.uSunObj.value as THREE.Vector3).copy(EARTH_LIGHT).applyAxisAngle(Y_AXIS, -g.rotation.y);
     }
 
     if (!focus) {
-      targetRotation.current = null;
-      g.rotation.y += dt * 0.004; // ปกติ: โลกหมุนช้าๆ (โลกอยู่ใกล้มาก หมุนเร็วกว่านี้ผิวโลกจะไหลเร็วเกิน)
+      targetRotation.current = null; // ปกติ: พื้นโลกอยู่นิ่ง มีแค่เมฆที่เคลื่อนที่
       return;
     }
     // กำลังเข้าหน้าสินค้า: คำนวณมุมเป้าหมายครั้งเดียว แล้วค่อยๆ หมุนไปหา
@@ -284,7 +283,7 @@ export default function Earth({ focus, narrow = false }: Props) {
         />
       </mesh>
       {/* ชั้นบรรยากาศ: วาดด้านใน (BackSide) + บวกสี (Additive) + ไม่บังวัตถุอื่น (depthWrite ปิด) */}
-      <mesh scale={1.03}>
+      <mesh scale={1.016}>
         <sphereGeometry args={[EARTH_RADIUS, 160, 80]} />
         <shaderMaterial
           vertexShader={vertex}

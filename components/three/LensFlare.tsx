@@ -69,7 +69,7 @@ function sunBlocked(camera: THREE.Camera) {
   toEarth.copy(EARTH_CENTER).sub(camera.position);
   const along = toEarth.dot(SUN_DIR); // ระยะตามแนวเส้นไปถึงจุดที่ใกล้ศูนย์กลางโลกที่สุด
   if (along < 0) return false; // โลกอยู่ด้านหลัง
-  const r = EARTH_RADIUS * 1.03;
+  const r = EARTH_RADIUS * 1.016;
   return toEarth.lengthSq() - along * along < r * r;
 }
 
