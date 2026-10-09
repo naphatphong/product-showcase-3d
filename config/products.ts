@@ -1,6 +1,6 @@
 // ข้อมูลสินค้าทั้งหมดของโชว์รูม — แก้ชื่อ รายละเอียด สี ได้ที่ไฟล์นี้ที่เดียว
 // เก็บเป็นข้อมูลล้วน (ไม่มีโค้ด 3D ปน) เพื่อให้ย้ายไปเก็บใน Supabase ได้ในเฟสร้านค้า
-// ชื่อสินค้า (FIZZ / SIGNAL / GRID 26) แก้ได้ที่นี่ที่เดียว
+// ชื่อสินค้า (FIZZ / SIGNAL / GRID 26 / MONOLITH) แก้ได้ที่นี่ที่เดียว
 
 type Place = { city: string; lat: number; lon: number };
 
@@ -15,7 +15,7 @@ export type Variant = {
 };
 
 export type Product = {
-  slug: "drink" | "phone" | "f1"; // ใช้เป็น URL ของหน้าสินค้า เช่น /phone
+  slug: "drink" | "phone" | "f1" | "house"; // ใช้เป็น URL ของหน้าสินค้า เช่น /phone
   name: string;
   category: string;
   tagline: string;
@@ -146,6 +146,31 @@ export const products: Product[] = [
         model: "/models/f1/redbull-rb22.glb",
         accent: "#4f7bff",
         origin: { city: "Milton Keynes", lat: 52.04, lon: -0.76 },
+      },
+    ],
+  },
+  {
+    slug: "house",
+    name: "MONOLITH",
+    category: "Modern villa",
+    tagline: "Concrete, stone and light.",
+    accent: "#d9b98f", // สีหินทรายของผนังหิน
+    specs: [
+      { label: "Plot", value: "39 × 35 m" },
+      { label: "Height", value: "9 m" },
+      { label: "Built in", value: "Concrete" },
+    ],
+    origin: { city: "Khon Kaen", lat: 16.44, lon: 102.83 },
+    size: 2.3, // บ้านกว้างแต่เตี้ย (39 × 11 × 35 ม.) ขยายขึ้นนิดหน่อย จะได้ไม่ดูเล็กกว่าชิ้นอื่น (ใหญ่กว่านี้จะทับชื่อสินค้า)
+    // โมเดลบ้านทั้งหลังพร้อมสวนและกำแพงรอบ ตัวเล็กสำหรับวงแหวน (ย่อจากต้นฉบับ 785 MB ด้วย scripts/build-house.mjs)
+    variants: [
+      {
+        id: "monolith-villa",
+        name: "Monolith Villa",
+        model: "/models/house/villa-ring.glb",
+        accent: "#d9b98f",
+        swatch: "#cfcac2", // สีคอนกรีตเปลือย
+        origin: { city: "Khon Kaen", lat: 16.44, lon: 102.83 },
       },
     ],
   },
