@@ -1,0 +1,755 @@
+/* หน้าเว็บบ้าน /house (แบบ fluid.glass) — import จาก HouseLanding.tsx จึงโหลดเฉพาะหน้านี้
+   ทุกคลาสขึ้นต้นด้วย hs- กันชนกับคลาสของหน้าอื่น (CSS Module ใช้ไม่ได้ในโปรเจกต์นี้: next.config ให้ทุกไฟล์ .css ผ่าน Tailwind แบบ CSS ธรรมดา)
+   สี: พื้นเข้มเกือบดำ (ink) สลับพื้นครีม (paper) / ตัวหนังสือ Archivo บางๆ + ป้ายเล็กตัวพิมพ์ดีด IBM Plex Mono */
+
+.hs-root {
+  --ink: #1c1d1f;
+  --ink-2: #26272a;
+  --paper: #f2efe9;
+  --stone: #a6a39e;
+  --on-ink: #eceae6;
+  --on-paper: #19191a;
+  --muted-ink: rgb(236 234 230 / 0.55);
+  --muted-paper: rgb(25 25 26 / 0.5);
+  --gutter: clamp(16px, 2.4vw, 32px);
+  --ease: cubic-bezier(0.2, 0.75, 0.2, 1);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: var(--font-archivo), Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.hs-root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---------- ป้ายเล็ก (ตัวพิมพ์ดีด ตัวใหญ่ทั้งหมด) ---------- */
+.hs-label {
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+.hs-diamond {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 8px 1px 0;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+.hs-center {
+  text-align: center;
+}
+.hs-rule {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.18;
+  margin-bottom: 14px;
+}
+
+/* ปุ่มสีเข้มเล็กๆ มีลูกศร ↳ */
+.hs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: var(--on-ink) !important;
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.25s ease;
+}
+.hs-btn:hover {
+  background: #000;
+}
+.hs-btn-ghost {
+  background: rgb(255 255 255 / 0.12);
+}
+.hs-btn-ghost:hover {
+  background: rgb(255 255 255 / 0.2);
+}
+.hs-btn-ghost[aria-disabled] {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* ---------- ชิ้นที่ค่อยๆ โผล่ตอนเลื่อนมาถึง ---------- */
+.hs-root [data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 1s ease var(--d, 0s),
+    transform 1.2s var(--ease) var(--d, 0s);
+}
+.hs-root [data-reveal][data-in="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- หน้าโหลด ---------- */
+.hs-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--stone);
+  display: grid;
+  place-items: center;
+  transition: visibility 0s linear 0.8s;
+}
+.hs-loader-mark {
+  position: absolute;
+  top: 33%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  color: rgb(0 0 0 / 0.35);
+}
+/* แผ่นสีเข้ม: ตอนโหลดค่อยๆ สูงขึ้นจากล่าง → พร้อมแล้วขยายเต็มจอ → หน้าโหลดหายไป เห็นวิดีโอ */
+.hs-loader-panel {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 62%;
+  background: var(--ink);
+  transform-origin: bottom;
+  animation: panel-rise 1.4s var(--ease) both;
+  transition:
+    left 1s var(--ease),
+    right 1s var(--ease),
+    height 1s var(--ease);
+}
+@keyframes panel-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+.hs-root[data-stage="open"] .hs-loader-panel,
+.hs-root[data-stage="done"] .hs-loader-panel {
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+.hs-root[data-stage="done"] .hs-loader {
+  visibility: hidden;
+  pointer-events: none;
+}
+.hs-root[data-stage="done"] .hs-loader-panel {
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+/* ---------- จอแรก ---------- */
+.hs-hero {
+  position: relative;
+  height: 100svh;
+  min-height: 520px;
+  overflow: hidden;
+  background: var(--ink);
+}
+.hs-hero-film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.06);
+  transition: transform 2.4s var(--ease);
+}
+.hs-root[data-stage="done"] .hs-hero-film {
+  transform: none;
+}
+/* เงาไล่สีด้านล่างและบนสุด ให้ตัวหนังสืออ่านง่ายบนวิดีโอ */
+.hs-hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgb(16 16 18 / 0.72) 0%, rgb(16 16 18 / 0.15) 42%, transparent 60%),
+    linear-gradient(to bottom, rgb(16 16 18 / 0.45), transparent 18%);
+}
+.hs-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 18px var(--gutter);
+}
+.hs-wordmark {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+.hs-top-link {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.hs-top-link:hover {
+  opacity: 1;
+}
+.hs-hero-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(120px, 21vh, 210px);
+  z-index: 2;
+  text-align: center;
+  padding: 0 var(--gutter);
+}
+.hs-hero-title {
+  font-size: clamp(34px, 4.3vw, 64px);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+}
+.hs-hero-meta {
+  position: absolute;
+  right: var(--gutter);
+  bottom: 26px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted-ink);
+}
+.hs-film-btn {
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-ink);
+  padding: 5px 10px;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  cursor: pointer;
+}
+.hs-film-btn:hover {
+  border-color: rgb(255 255 255 / 0.7);
+}
+
+/* ---------- แถบแนะนำ ---------- */
+.hs-band {
+  padding: 26px var(--gutter) clamp(140px, 22vh, 240px);
+  background: linear-gradient(var(--ink), #121314);
+}
+.hs-band-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 300px);
+  gap: 32px;
+}
+.hs-band-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--on-ink);
+}
+
+/* ---------- พื้นครีม ---------- */
+.hs-paper {
+  background: var(--paper);
+  color: var(--on-paper);
+}
+.hs-paper .hs-btn-ghost {
+  background: rgb(0 0 0 / 0.08);
+  color: var(--on-paper) !important;
+}
+
+/* ---------- ข้อความใหญ่ ---------- */
+.hs-about {
+  padding: clamp(80px, 14vh, 160px) var(--gutter) clamp(90px, 16vh, 180px);
+}
+.hs-statement {
+  max-width: 21em;
+  margin: 22px auto 30px;
+  text-align: center;
+  font-size: clamp(28px, 3.5vw, 54px);
+  line-height: 1.08;
+  letter-spacing: -0.028em;
+}
+.hs-word {
+  color: rgb(25 25 26 / 0.16);
+  transition: color 0.5s ease;
+}
+.hs-word[data-lit="true"] {
+  color: var(--on-paper);
+}
+
+/* ---------- กลุ่มรูปลอย ---------- */
+.hs-collection {
+  padding: 26px var(--gutter) 120px;
+  overflow: hidden;
+}
+.hs-collage {
+  position: relative;
+  height: 158vh;
+  margin-top: 40px;
+}
+.hs-coll-text {
+  position: absolute;
+  left: 66%;
+  top: 2vh;
+  width: min(25vw, 330px);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.hs-coll-text p {
+  margin-bottom: 14px;
+}
+.hs-tile-slot {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+}
+.hs-tile-move {
+  will-change: transform;
+}
+.hs-tile {
+  position: relative;
+}
+.hs-tile-link {
+  display: block;
+}
+.hs-tile-img {
+  position: relative;
+  overflow: hidden;
+  background: #d9d5ce;
+}
+.hs-cover {
+  object-fit: cover;
+  transition: transform 1.2s var(--ease);
+}
+.hs-tile-link:hover .hs-cover {
+  transform: scale(1.05);
+}
+/* เงาไล่สีครึ่งล่างของรูปที่มีชื่อบ้าน ให้ตัวหนังสือสีขาวอ่านออกแม้บนผนังสีขาว */
+.hs-tile-link .hs-tile-img::after {
+  content: "";
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.38));
+}
+/* ชื่อบ้านตัวใหญ่สีขาววางทับครึ่งล่างของรูป (แบบ Doors / Windows ของ fluid.glass) */
+.hs-tile-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18%;
+  text-align: center;
+  color: #fff;
+  font-size: clamp(22px, 2.3vw, 36px);
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 18px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+}
+
+/* ---------- ภายในบ้าน ---------- */
+.hs-interior {
+  padding: 26px var(--gutter) 90px;
+}
+.hs-room-film {
+  position: relative;
+  margin-top: 26px;
+  aspect-ratio: 16 / 9;
+  max-height: 86vh;
+  width: 100%;
+  overflow: hidden;
+  background: #111;
+}
+.hs-room-film video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hs-room-meta {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: rgb(255 255 255 / 0.8);
+}
+.hs-interior-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 32px;
+  margin-top: 70px;
+  padding-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 0.14);
+}
+.hs-h2 {
+  font-size: clamp(26px, 2.6vw, 40px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.hs-address {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  text-align: right;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.hs-address .hs-btn {
+  margin-top: 10px;
+}
+
+/* ---------- โมเดล 3D ---------- */
+.hs-model {
+  position: relative;
+  padding: 60px var(--gutter) 70px;
+  background: radial-gradient(60% 55% at 50% 55%, #2f3033 0%, var(--ink) 70%);
+}
+.hs-model-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+.hs-model-text {
+  max-width: 300px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.hs-stage {
+  position: relative;
+  height: min(78vh, 760px);
+  margin-top: 10px;
+  cursor: grab;
+}
+.hs-stage:active {
+  cursor: grabbing;
+}
+/* ตัว canvas ค่อยๆ ปรากฏเมื่อโมเดลโหลดเสร็จ */
+.hs-stage > div {
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.hs-stage[data-ready="true"] > div {
+  opacity: 1;
+}
+.hs-stage-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted-ink);
+}
+.hs-model-specs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgb(255 255 255 / 0.14);
+  font-size: 15px;
+}
+.hs-model-specs dt {
+  color: var(--muted-ink);
+  margin-bottom: 4px;
+}
+
+/* ---------- บ้านทุกหลัง ---------- */
+.hs-homes {
+  padding: 26px var(--gutter) 140px;
+}
+.hs-homes-head {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 32px;
+  margin-bottom: clamp(60px, 10vh, 120px);
+}
+.hs-home-list {
+  display: grid;
+  gap: clamp(70px, 12vh, 130px);
+}
+.hs-home-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 32px;
+  padding-top: 18px;
+  border-top: 1px solid rgb(0 0 0 / 0.14);
+  scroll-margin-top: 40px;
+}
+.hs-home-info {
+  position: sticky;
+  top: 40px;
+  align-self: start;
+}
+.hs-home-name {
+  margin: 10px 0 14px;
+  font-size: clamp(34px, 4vw, 60px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.hs-home-summary {
+  max-width: 340px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgb(25 25 26 / 0.78);
+}
+.hs-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
+  max-width: 340px;
+  margin-top: 26px;
+  font-size: 14px;
+}
+.hs-specs dt {
+  color: var(--muted-paper);
+  margin-bottom: 2px;
+}
+.hs-home-shots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.hs-shot-main {
+  grid-column: 1 / -1;
+}
+.hs-shot-img {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #d9d5ce;
+}
+.hs-shot-main .hs-shot-img {
+  aspect-ratio: 16 / 8.2;
+}
+.hs-shot-main:hover .hs-cover,
+.hs-shot:hover .hs-cover {
+  transform: scale(1.04);
+}
+.hs-home-shots figcaption {
+  margin-top: 8px;
+  color: var(--muted-paper);
+}
+
+/* ---------- ท้ายหน้า ---------- */
+.hs-footer {
+  padding: 50px var(--gutter) 110px;
+  overflow: hidden;
+}
+.hs-foot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgb(255 255 255 / 0.14);
+}
+.hs-foot-text {
+  max-width: 13em;
+  font-size: clamp(20px, 1.8vw, 26px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.hs-foot-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.hs-foot-word {
+  margin-top: 60px;
+  font-size: clamp(64px, 19vw, 300px);
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  color: rgb(255 255 255 / 0.08);
+  white-space: nowrap;
+}
+.hs-foot-note {
+  margin-top: 26px;
+  font-size: 12px;
+  color: var(--muted-ink);
+}
+
+/* ---------- แถบเมนูลอยด้านล่าง ---------- */
+.hs-pill {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 40;
+  width: min(260px, calc(100vw - 32px));
+  transform: translate(-50%, 140%);
+  transition: transform 0.9s var(--ease) 0.5s;
+}
+.hs-root[data-stage="done"] .hs-pill {
+  transform: translate(-50%, 0);
+}
+.hs-pill-bar {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  height: 40px;
+  background: var(--ink-2);
+  color: var(--on-ink);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+.hs-pill-mark,
+.hs-pill-menu {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+.hs-pill-mark {
+  border-right: 1px solid rgb(255 255 255 / 0.1);
+}
+.hs-pill-label {
+  text-align: center;
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.hs-pill-menu {
+  align-content: center;
+  gap: 3px;
+  cursor: pointer;
+  border-left: 1px solid rgb(255 255 255 / 0.1);
+}
+.hs-pill-menu i {
+  display: block;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transition: transform 0.3s ease;
+}
+.hs-pill[data-open="true"] .hs-pill-menu i:nth-child(1) {
+  transform: translateY(4px) rotate(45deg);
+}
+.hs-pill[data-open="true"] .hs-pill-menu i:nth-child(2) {
+  transform: scaleX(0);
+}
+.hs-pill[data-open="true"] .hs-pill-menu i:nth-child(3) {
+  transform: translateY(-4px) rotate(-45deg);
+}
+.hs-menu {
+  margin-bottom: 6px;
+  padding: 8px 0;
+  background: var(--ink-2);
+  color: var(--on-ink);
+}
+.hs-menu-link {
+  display: flex;
+  gap: 14px;
+  padding: 9px 16px;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  opacity: 0.7;
+}
+.hs-menu-link span {
+  width: 18px;
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  line-height: 22px;
+  opacity: 0.6;
+}
+.hs-menu-link:hover,
+.hs-menu-link[aria-current="true"] {
+  opacity: 1;
+}
+
+/* ---------- มือถือ: รูปลอยกลายเป็นตาราง 2 คอลัมน์ / ส่วนต่างๆ เรียงลงมาเป็นแถวเดียว ---------- */
+@media (max-width: 767px) {
+  .hs-band-row,
+  .hs-homes-head,
+  .hs-home-row {
+    grid-template-columns: 1fr;
+  }
+  .hs-band-row {
+    gap: 14px;
+  }
+  .hs-hero-meta .hs-label {
+    display: none;
+  }
+  /* ปุ่มหยุดวิดีโอยกขึ้นเหนือแถบเมนูลอย (จอแคบ แถบเมนูกินความกว้างเกือบทั้งจอ) */
+  .hs-hero-meta {
+    bottom: 76px;
+  }
+  .hs-collage {
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .hs-coll-text {
+    position: static;
+    grid-column: 1 / -1;
+    width: auto;
+    margin-bottom: 18px;
+  }
+  .hs-tile-slot {
+    position: static;
+    width: auto;
+  }
+  .hs-tile-slot[data-wide="true"] {
+    grid-column: 1 / -1;
+  }
+  .hs-tile-move {
+    transform: none !important;
+  }
+  .hs-tile-name {
+    font-size: 22px;
+  }
+  .hs-interior-foot,
+  .hs-model-head,
+  .hs-foot-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hs-address,
+  .hs-foot-links {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .hs-stage {
+    height: 62vh;
+  }
+  .hs-model-specs {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hs-home-info {
+    position: static;
+  }
+}
+
+/* เครื่องที่ตั้งให้ลดภาพเคลื่อนไหว: ไม่มีการเลื่อนโผล่ / หน้าโหลดไม่มีแอนิเมชัน */
+@media (prefers-reduced-motion: reduce) {
+  .hs-root [data-reveal],
+  .hs-loader-panel,
+  .hs-hero-film,
+  .hs-pill {
+    transition: none;
+    animation: none;
+  }
+  .hs-root [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+  .hs-word {
+    transition: none;
+  }
+}

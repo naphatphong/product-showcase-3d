@@ -1,0 +1,330 @@
+{
+ "stills": [
+  {
+   "home": "monolith",
+   "model": "/public/models/house/villa-tour.glb",
+   "params": "c=37.4,0,83&sh=32&gy=-2.1&sunAz=35&sunEl=16&sun=5&exp=0.6&envI=0.5&mat=%7B%22%5EMaterial%20%23174%24%22%3A%20%7B%22color%22%3A%20%22%233d7f86%22%2C%20%22rough%22%3A%200.05%2C%20%22metal%22%3A%200%2C%20%22op%22%3A%201%7D%7D",
+   "shots": [
+    {
+     "name": "monolith-1",
+     "pos": [
+      33,
+      1.6,
+      101
+     ],
+     "look": [
+      38,
+      3.5,
+      86
+     ],
+     "fov": 50
+    },
+    {
+     "name": "monolith-2",
+     "pos": [
+      50,
+      4.5,
+      110
+     ],
+     "look": [
+      38,
+      3.5,
+      86
+     ],
+     "fov": 40
+    },
+    {
+     "name": "monolith-3",
+     "pos": [
+      40,
+      1.6,
+      79
+     ],
+     "look": [
+      42,
+      1,
+      84
+     ],
+     "fov": 60
+    },
+    {
+     "name": "monolith-4",
+     "pos": [
+      36,
+      12,
+      92
+     ],
+     "look": [
+      38,
+      1,
+      80
+     ],
+     "fov": 45
+    },
+    {
+     "name": "monolith-5",
+     "pos": [
+      47,
+      1.4,
+      92
+     ],
+     "look": [
+      44,
+      1,
+      95
+     ],
+     "fov": 60
+    }
+   ]
+  },
+  {
+   "home": "pavilion",
+   "model": "/scripts/render/models/h12.glb",
+   "params": "fix=1&c=-12.9,1,2.7&sh=14&sunAz=35&sunEl=16&sun=5&exp=0.6&envI=0.5&gy=-0.02&fogN=60&fogF=300&mat=%7B%22frosted%7CAcrilico%7CTranslu_4%22%3A%20%7B%22color%22%3A%20%22%23e8f0f0%22%2C%20%22op%22%3A%200.16%2C%20%22rough%22%3A%200.05%7D%7D",
+   "shots": [
+    {
+     "name": "pavilion-1",
+     "pos": [
+      -3.5,
+      1.1,
+      12
+     ],
+     "look": [
+      -13.2,
+      1.5,
+      3
+     ],
+     "fov": 42
+    },
+    {
+     "name": "pavilion-4",
+     "pos": [
+      -24,
+      1.8,
+      13
+     ],
+     "look": [
+      -12.6,
+      1.2,
+      2.5
+     ],
+     "fov": 38
+    },
+    {
+     "name": "pavilion-3",
+     "pos": [
+      -8.2,
+      1.45,
+      7.8
+     ],
+     "look": [
+      -15.5,
+      1.0,
+      0.5
+     ],
+     "fov": 52
+    },
+    {
+     "name": "pavilion-2",
+     "pos": [
+      -12.2,
+      1.5,
+      11.5
+     ],
+     "look": [
+      -14.5,
+      1.2,
+      4
+     ],
+     "fov": 34
+    }
+   ]
+  },
+  {
+   "home": "slope",
+   "model": "/scripts/render/models/villa.glb",
+   "params": "s=0.1&hide=^Mesh767$&fix=1&c=5.5,3,-8.75&sh=16&sunAz=35&sunEl=16&sun=4.5&exp=0.5&envI=0.45&gy=-0.02&fogN=60&fogF=300",
+   "shots": [
+    {
+     "name": "slope-1",
+     "pos": [
+      24,
+      1.8,
+      9
+     ],
+     "look": [
+      5.5,
+      4.2,
+      -8
+     ],
+     "fov": 38
+    },
+    {
+     "name": "slope-3",
+     "pos": [
+      -13,
+      3.5,
+      7
+     ],
+     "look": [
+      5.5,
+      3.8,
+      -8
+     ],
+     "fov": 38
+    },
+    {
+     "name": "slope-2",
+     "pos": [
+      5.5,
+      1.7,
+      19
+     ],
+     "look": [
+      5.5,
+      4.2,
+      -8
+     ],
+     "fov": 36
+    },
+    {
+     "name": "slope-4",
+     "pos": [
+      13,
+      2.2,
+      5
+     ],
+     "look": [
+      4,
+      4.6,
+      -6
+     ],
+     "fov": 40
+    }
+   ]
+  },
+  {
+   "home": "lounge",
+   "model": "/scripts/render/models/tvroom.glb",
+   "params": "fix=1&env=room&envI=0.45&c=0.7,1,0&sh=6&sunAz=250&sunEl=24&sun=6&exp=0.75&ground=%239aa070&gy=-0.2&fog=%23eef1f2&fogN=8&fogF=45&hide=^Plane010$&mat=%7B%22%5E23%20-%20Default%24%22%3A%20%7B%22color%22%3A%20%22%23a38a6b%22%2C%20%22rough%22%3A%200.5%7D%2C%20%22%5EConcrete%24%22%3A%20%7B%22color%22%3A%20%22%23e9e6e0%22%2C%20%22rough%22%3A%200.9%7D%2C%20%22NaughtOne.%2Amtl_1%22%3A%20%7B%22color%22%3A%20%22%23cdbfa8%22%2C%20%22rough%22%3A%200.9%7D%2C%20%22%5EWood%24%7CWood_base%22%3A%20%7B%22color%22%3A%20%22%238a6440%22%2C%20%22rough%22%3A%200.5%7D%2C%20%22%5E01%20-%20Default%24%22%3A%20%7B%22color%22%3A%20%22%23050505%22%2C%20%22rough%22%3A%200.15%2C%20%22emi%22%3A%20%22%23000000%22%7D%2C%20%22Rat%20textile%22%3A%20%7B%22color%22%3A%20%22%23c9a877%22%7D%2C%20%22Leaf%20green%7C%5Eleaf%24%7C%5EStem%24%22%3A%20%7B%22color%22%3A%20%22%2355703c%22%7D%2C%20%22portada%20libro%24%22%3A%20%7B%22color%22%3A%20%22%23b4553c%22%7D%2C%20%22portada%20libro2%22%3A%20%7B%22color%22%3A%20%22%232f4a5e%22%7D%2C%20%22portada%20libro3%22%3A%20%7B%22color%22%3A%20%22%23d8c9a8%22%7D%2C%20%22%5E%2817%7C20%7C21%7C22%7C24%29%20-%20Default%24%7C%5EClear_Glass%24%22%3A%20%7B%22color%22%3A%20%22%23ffffff%22%2C%20%22op%22%3A%200.08%2C%20%22rough%22%3A%200.05%7D%2C%20%22%5EMat%24%22%3A%20%7B%22color%22%3A%20%22%237a6650%22%2C%20%22rough%22%3A%200.6%7D%7D",
+   "shots": [
+    {
+     "name": "lounge-1",
+     "pos": [
+      2.45,
+      1.35,
+      2.7
+     ],
+     "look": [
+      0.6,
+      0.95,
+      -2.2
+     ],
+     "fov": 56
+    },
+    {
+     "name": "lounge-2",
+     "pos": [
+      0.4,
+      1.5,
+      2.95
+     ],
+     "look": [
+      0.2,
+      0.85,
+      -2.5
+     ],
+     "fov": 56
+    },
+    {
+     "name": "lounge-3",
+     "pos": [
+      2.2,
+      1.05,
+      0.4
+     ],
+     "look": [
+      0.9,
+      0.95,
+      -2.9
+     ],
+     "fov": 46
+    },
+    {
+     "name": "lounge-4",
+     "pos": [
+      -0.6,
+      1.2,
+      1.2
+     ],
+     "look": [
+      2.6,
+      1.0,
+      -1.6
+     ],
+     "fov": 50
+    }
+   ]
+  }
+ ],
+ "films": [
+  {
+   "name": "hero",
+   "model": "/public/models/house/villa-tour.glb",
+   "params": "c=37.4,0,83&sh=32&gy=-2.1&sunAz=35&sunEl=16&sun=5&exp=0.6&envI=0.5&mat=%7B%22%5EMaterial%20%23174%24%22%3A%20%7B%22color%22%3A%20%22%233d7f86%22%2C%20%22rough%22%3A%200.05%2C%20%22metal%22%3A%200%2C%20%22op%22%3A%201%7D%7D",
+   "w": 1600,
+   "h": 900,
+   "frames": 288,
+   "A": [
+    30,
+    2.2,
+    108
+   ],
+   "B": [
+    50,
+    4.5,
+    110
+   ],
+   "LA": [
+    38,
+    3.5,
+    86
+   ],
+   "LB": [
+    38,
+    3.5,
+    86
+   ],
+   "fov": 40
+  },
+  {
+   "name": "lounge",
+   "model": "/scripts/render/models/tvroom.glb",
+   "params": "fix=1&env=room&envI=0.45&c=0.7,1,0&sh=6&sunAz=250&sunEl=24&sun=6&exp=0.75&ground=%239aa070&gy=-0.2&fog=%23eef1f2&fogN=8&fogF=45&hide=^Plane010$&mat=%7B%22%5E23%20-%20Default%24%22%3A%20%7B%22color%22%3A%20%22%23a38a6b%22%2C%20%22rough%22%3A%200.5%7D%2C%20%22%5EConcrete%24%22%3A%20%7B%22color%22%3A%20%22%23e9e6e0%22%2C%20%22rough%22%3A%200.9%7D%2C%20%22NaughtOne.%2Amtl_1%22%3A%20%7B%22color%22%3A%20%22%23cdbfa8%22%2C%20%22rough%22%3A%200.9%7D%2C%20%22%5EWood%24%7CWood_base%22%3A%20%7B%22color%22%3A%20%22%238a6440%22%2C%20%22rough%22%3A%200.5%7D%2C%20%22%5E01%20-%20Default%24%22%3A%20%7B%22color%22%3A%20%22%23050505%22%2C%20%22rough%22%3A%200.15%2C%20%22emi%22%3A%20%22%23000000%22%7D%2C%20%22Rat%20textile%22%3A%20%7B%22color%22%3A%20%22%23c9a877%22%7D%2C%20%22Leaf%20green%7C%5Eleaf%24%7C%5EStem%24%22%3A%20%7B%22color%22%3A%20%22%2355703c%22%7D%2C%20%22portada%20libro%24%22%3A%20%7B%22color%22%3A%20%22%23b4553c%22%7D%2C%20%22portada%20libro2%22%3A%20%7B%22color%22%3A%20%22%232f4a5e%22%7D%2C%20%22portada%20libro3%22%3A%20%7B%22color%22%3A%20%22%23d8c9a8%22%7D%2C%20%22%5E%2817%7C20%7C21%7C22%7C24%29%20-%20Default%24%7C%5EClear_Glass%24%22%3A%20%7B%22color%22%3A%20%22%23ffffff%22%2C%20%22op%22%3A%200.08%2C%20%22rough%22%3A%200.05%7D%2C%20%22%5EMat%24%22%3A%20%7B%22color%22%3A%20%22%237a6650%22%2C%20%22rough%22%3A%200.6%7D%7D",
+   "w": 1280,
+   "h": 720,
+   "frames": 240,
+   "A": [
+    2.45,
+    1.35,
+    2.7
+   ],
+   "B": [
+    1.0,
+    1.3,
+    2.85
+   ],
+   "LA": [
+    0.7,
+    0.95,
+    -2.2
+   ],
+   "LB": [
+    0.9,
+    0.95,
+    -2.4
+   ],
+   "fov": 56
+  }
+ ]
+}

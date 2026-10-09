@@ -1,19 +1,23 @@
 // ย่อโมเดลบ้าน (ไฟล์ต้นฉบับจาก 3ds Max ~785 MB, 18.6 ล้านสามเหลี่ยม) ให้เล็กพอใช้บนเว็บ
 //
-// วิธีใช้:  node scripts/build-house.mjs <ต้นฉบับ.glb> <ผลลัพธ์.glb> <รูปความโปร่งของใบไม้.jpg>
-// เช่น     node scripts/build-house.mjs house.glb public/models/house/villa-ring.glb "Export Texture/beech leaf_op.jpg"
+// วิธีใช้:  node scripts/build-house.mjs <ต้นฉบับ.glb> <ผลลัพธ์.glb> <รูปความโปร่งของใบไม้.jpg> [ring|tour]
+// เช่น     node scripts/build-house.mjs house.glb public/models/house/villa-ring.glb "Export Texture/beech leaf_op.jpg" ring
+//          node scripts/build-house.mjs house.glb public/models/house/villa-tour.glb "Export Texture/beech leaf_op.jpg" tour
 //
 // ต้นฉบับเป็น .fbx → แปลงเป็น .glb ก่อนด้วย FBX2glTF (npm i fbx2gltf):
 //          FBX2glTF --binary --input Export.fbx --output house
 //
-// ไฟล์นี้ทำตัว "เล็ก" สำหรับลอยบนวงแหวนหน้าแรก (เห็นบนจอแค่ราว 1/3 ของความกว้างจอ):
-//   1. ทิ้งเฟอร์นิเจอร์ในบ้าน (โซฟา เตียงอาบแดด กาน้ำ ...) — มองจากไกลไม่เห็น แต่กินสามเหลี่ยมเกือบ 4 แสน
+// ทำได้ 2 ขนาด (PROFILES ด้านล่าง):
+//   ring = ตัวเล็กสำหรับลอยบนวงแหวนหน้าแรก (เห็นบนจอแค่ราว 1/3 ของความกว้างจอ) ~6.5 MB
+//   tour = ตัวละเอียดสำหรับหน้าเว็บบ้าน (ภาพ วิดีโอ และเดินชมบ้าน) เก็บเฟอร์นิเจอร์ ใบไม้เยอะกว่า รูปพื้นผิว 2048 px
+// ขั้นตอน (ตัวเลขของแต่ละขนาดอยู่ใน PROFILES):
+//   1. (ตัวเล็ก) ทิ้งเฟอร์นิเจอร์ในบ้าน (โซฟา เตียงอาบแดด กาน้ำ ...) — มองจากไกลไม่เห็น แต่กินสามเหลี่ยมเกือบ 4 แสน
 //   2. ลดรายละเอียด: ต้นไม้/ไม้เลื้อย/รั้วไม้ระแนง เป็นก้อนสามเหลี่ยมหนาแน่นที่สุด ลดได้มาก มองไกลยังเป็นทรงพุ่มเหมือนเดิม
 //   3. แก้วัสดุ: ไฟล์จาก 3ds Max (V-Ray) แปลงมาเป็นโลหะ 40% ทุกชิ้น + มีสีประจำจุดยอด (COLOR_0) สีเทาเข้ม
 //      ทำให้คอนกรีตกับใบไม้ดูมืดและมันวาว → ปรับเป็นวัสดุด้าน (ไม่ใช่โลหะ) และลบสีประจำจุดยอดทิ้ง
 //      ใบไม้: ในไฟล์เป็นแผ่นสี่เหลี่ยมที่มีรูปใบไม้บนพื้นสีเขียวขี้ม้า ส่วนรูป "ความโปร่ง" (ขาว = ใบ, ดำ = ทะลุ)
 //      หลุดไปตอนแปลง FBX → เอารูปนั้นมาใส่เป็นช่อง alpha ใบไม้จึงกลับมาเป็นรูปใบจริง
-//   4. รูปพื้นผิวย่อเหลือไม่เกิน 1024 px แปลงเป็น WebP (รูปดินต้นฉบับ 8192 px ใหญ่ 64 MB)
+//   4. รูปพื้นผิวย่อเหลือไม่เกิน 1024 px (ตัวละเอียด 2048) แปลงเป็น WebP (รูปดินต้นฉบับ 8192 px ใหญ่ 64 MB)
 //   5. บีบไฟล์แบบ meshopt (drei ถอดให้เองตอนโหลด เหมือนโมเดลรถ)
 
 import { NodeIO } from "@gltf-transform/core";
@@ -22,9 +26,19 @@ import { compactPrimitive, dedup, meshopt, prune, simplifyPrimitive, textureComp
 import { MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 import sharp from "sharp";
 
-const [src, out, leafOpacity] = process.argv.slice(2);
-if (!src || !out || !leafOpacity) {
-  console.error("ใช้: node scripts/build-house.mjs <ต้นฉบับ.glb> <ผลลัพธ์.glb> <รูปความโปร่งของใบไม้.jpg>");
+const [src, out, leafOpacity, profileName = "ring"] = process.argv.slice(2);
+
+// ตัวเลขของแต่ละขนาด
+//   furniture: เก็บเฟอร์นิเจอร์ไหม (false) หรือ [ratio, error] ของการลดรายละเอียดเฟอร์นิเจอร์
+//              (โซฟาบุนวมในไฟล์ละเอียดมาก 2 ตัวรวมกัน 4 ล้านสามเหลี่ยม ลดได้เยอะโดยมองไม่ออก) / leaves: [เก็บใบไว้กี่ส่วน, ขยายใบที่เหลือกี่เท่า]
+//   foliage / rest: [ratio, error] ของการลดรายละเอียด (กิ่งไม้/ไม้เลื้อย และส่วนอื่นทั้งหมด) / texture: ขนาดรูปสูงสุด (px)
+const PROFILES = {
+  ring: { furniture: false, leaves: [0.04, 3.0], foliage: [0.03, 0.05], rest: [0.1, 0.01], texture: 1024 },
+  tour: { furniture: [0.04, 0.004], leaves: [0.22, 1.6], foliage: [0.15, 0.01], rest: [0.35, 0.002], texture: 2048 },
+};
+const profile = PROFILES[profileName];
+if (!src || !out || !leafOpacity || !profile) {
+  console.error("ใช้: node scripts/build-house.mjs <ต้นฉบับ.glb> <ผลลัพธ์.glb> <รูปความโปร่งของใบไม้.jpg> [ring|tour]");
   process.exit(1);
 }
 
@@ -45,8 +59,8 @@ const tris = () =>
     .reduce((t, p) => t + (p.getIndices()?.getCount() ?? p.getAttribute("POSITION").getCount()) / 3, 0);
 console.log("ต้นฉบับ", Math.round(tris()).toLocaleString(), "สามเหลี่ยม");
 
-// 1. ทิ้งเฟอร์นิเจอร์
-for (const n of root.listNodes()) if (FURNITURE.test(n.getName().trim())) n.dispose();
+// 1. ทิ้งเฟอร์นิเจอร์ (เฉพาะตัวเล็ก)
+if (!profile.furniture) for (const n of root.listNodes()) if (FURNITURE.test(n.getName().trim())) n.dispose();
 
 // 2. ลดรายละเอียด
 //    ต้นไม้ในไฟล์นี้ปั้นใบทีละใบ (ต้นหนึ่งมี 3.5 หมื่นใบ ใบละ ~5 สามเหลี่ยม) ใบแยกกันเป็นชิ้นเล็กๆ ลดรายละเอียดแบบปกติไม่ได้
@@ -127,16 +141,28 @@ const LEAF = /leaf|#189|#191/i; // วัสดุใบไม้ (ไม้เ�
 eachPrimitive(
   (name) => FOLIAGE.test(name),
   (prim) => {
-    if (LEAF.test(prim.getMaterial()?.getName() ?? "")) return thinLeaves(prim, 0.04, 3.0);
+    if (LEAF.test(prim.getMaterial()?.getName() ?? "")) return thinLeaves(prim, ...profile.leaves);
     weldByPosition(prim);
-    simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio: 0.03, error: 0.05, lockBorder: false });
+    const [ratio, error] = profile.foliage;
+    simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio, error, lockBorder: false });
   },
 );
+if (profile.furniture)
+  eachPrimitive(
+    (name) => FURNITURE.test(name.trim()),
+    (prim) => {
+      weldByPosition(prim);
+      const [ratio, error] = profile.furniture;
+      simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio, error, lockBorder: false });
+    },
+  );
 eachPrimitive(
-  (name) => !FOLIAGE.test(name),
+  // ตัวละเอียด: เฟอร์นิเจอร์ลดแยกไปแล้วข้างบน / ตัวเล็ก: เหมือนเดิมทุกอย่าง (ตัวเล็กใน Step 59 ได้ไฟล์เดิม)
+  (name) => !FOLIAGE.test(name) && !(profile.furniture && FURNITURE.test(name.trim())),
   (prim) => {
     weldByPosition(prim);
-    simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio: 0.1, error: 0.01, lockBorder: false });
+    const [ratio, error] = profile.rest;
+    simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio, error, lockBorder: false });
   },
 );
 
@@ -163,7 +189,7 @@ if (leafTex) {
 // 4-5. ย่อรูป + บีบไฟล์ (ไม่รวมก้อน: ต้นไม้ 10 ต้นใช้ข้อมูลชุดเดียวกัน ถ้ารวมก้อนจะกลายเป็น 10 ชุด ไฟล์ใหญ่ขึ้น)
 await doc.transform(
   prune(),
-  textureCompress({ encoder: sharp, targetFormat: "webp", resize: [1024, 1024], quality: 80 }),
+  textureCompress({ encoder: sharp, targetFormat: "webp", resize: [profile.texture, profile.texture], quality: 80 }),
   meshopt({ encoder: MeshoptEncoder, level: "high" }),
 );
 
