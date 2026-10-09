@@ -5,7 +5,7 @@ import { MeshReflectorMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
 // ห้องอู่รถแข่ง (สร้างจากโค้ดล้วน ไม่มีไฟล์โมเดล): พื้นอีพ็อกซี่สีเทาเข้มเงาวับ, ผนังหลังเป็นแผ่นเหล็กสีเข้ม
-// มีแถบไฟ LED, ตัวหนังสือ GRID 26, จอมอนิเตอร์, ตู้เครื่องมือ, ยางซ้อนกัน และเส้นทาสีบนพื้นแบบช่องจอดใน pit lane
+// มีตัวหนังสือ GRID 26 บนผนัง, ตู้เครื่องมือ และยางซ้อนกัน
 // หน่วยเป็นเมตร: พื้นอยู่ที่ y = 0, ผนังหลังที่ z = WALL_Z, ด้านหน้า (z บวก) เปิดออกไปทาง pit lane ที่กล้องอยู่
 // ขนาดห้องใช้ใน ShowroomScene.tsx ด้วย (กันกล้องหมุนทะลุผนัง/เพดาน)
 
@@ -29,13 +29,11 @@ function canvasTexture(w: number, h: number, draw: (g: CanvasRenderingContext2D)
   return t;
 }
 
-export default function Garage({ narrow, cars }: { narrow: boolean; cars: { name: string; accent: string }[] }) {
+export default function Garage({ narrow }: { narrow: boolean }) {
   return (
     <group>
       <Floor narrow={narrow} />
       <Walls />
-      <WallLights />
-      <Monitors cars={cars} />
       {/* ของในอู่: ชิดผนังหลัง + บางชิ้นวางใกล้รถ ให้เหมือนอู่ที่ใช้งานอยู่จริง */}
       <ToolChest x={-6.3} z={WALL_Z + 0.4} />
       <ToolChest x={6.3} z={WALL_Z + 0.4} />
@@ -52,7 +50,7 @@ export default function Garage({ narrow, cars }: { narrow: boolean; cars: { name
 }
 
 // พื้น: คอม = สะท้อนเงารถกับไฟจริงแบบเบลอๆ (MeshReflectorMaterial วาดฉากกลับหัวอีกรอบ) / มือถือ = พื้นมันธรรมดา ประหยัดแรงเครื่อง
-// ด้านบนพื้นมีเส้นทาสี: เส้นกริดจางๆ, เส้นขาวขอบ pit lane, แถบเหลืองดำตรงทางเข้าอู่
+// ด้านบนพื้นมีเส้นกริดจางๆ ของแผ่นพื้น
 function Floor({ narrow }: { narrow: boolean }) {
   const lines = useMemo(() => {
     const t = canvasTexture(1024, 1024, (g) => {
@@ -72,40 +70,22 @@ function Floor({ narrow }: { narrow: boolean }) {
     t.repeat.set(WIDTH / 12, DEPTH / 12);
     return t;
   }, []);
-  const stripes = useMemo(() => {
-    const t = canvasTexture(512, 64, (g) => {
-      g.fillStyle = "#151515";
-      g.fillRect(0, 0, 512, 64);
-      g.fillStyle = "#f2c200";
-      for (let x = -64; x < 576; x += 64) {
-        g.beginPath();
-        g.moveTo(x, 64);
-        g.lineTo(x + 32, 0);
-        g.lineTo(x + 64, 0);
-        g.lineTo(x + 32, 64);
-        g.fill();
-      }
-    });
-    t.wrapS = THREE.RepeatWrapping;
-    t.repeat.set(WIDTH / 4, 1);
-    return t;
-  }, []);
 
   return (
     <group>
       <mesh rotation-x={-Math.PI / 2} position={[0, 0, MID_Z]}>
         <planeGeometry args={[WIDTH, DEPTH]} />
         {narrow ? (
-          <meshStandardMaterial color="#34363b" roughness={0.42} metalness={0.25} />
+          <meshStandardMaterial color="#34363b" roughness={0.28} metalness={0.3} />
         ) : (
           <MeshReflectorMaterial
             color="#34363b"
-            roughness={0.62}
-            metalness={0.35}
-            blur={[380, 110]}
+            roughness={0.45}
+            metalness={0.4}
+            blur={[260, 70]}
             resolution={768}
-            mixBlur={1}
-            mixStrength={9}
+            mixBlur={0.8}
+            mixStrength={14}
             depthScale={1}
             minDepthThreshold={0.6}
             maxDepthThreshold={1.6}
@@ -117,15 +97,6 @@ function Floor({ narrow }: { narrow: boolean }) {
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.002, MID_Z]}>
         <planeGeometry args={[WIDTH, DEPTH]} />
         <meshBasicMaterial map={lines} transparent depthWrite={false} />
-      </mesh>
-      {/* แถบเหลืองดำตรงทางเข้าอู่ + เส้นขาวขอบ pit lane */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.003, 4.6]}>
-        <planeGeometry args={[WIDTH, 0.42]} />
-        <meshStandardMaterial map={stripes} roughness={0.7} />
-      </mesh>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.003, 6.1]}>
-        <planeGeometry args={[WIDTH, 0.12]} />
-        <meshStandardMaterial color="#e8e8e4" roughness={0.6} />
       </mesh>
     </group>
   );
@@ -189,56 +160,6 @@ function Walls() {
   );
 }
 
-// ไฟเส้นแนวตั้งบนผนังหลัง: หลอดสว่าง + แสงฟุ้งบนผนังรอบๆ (ภาพไล่สีจางๆ ซ้อนแบบบวกแสง) ให้ผนังไม่มืดตื้อ
-// เว้นช่องตรงกลางไว้ให้จอมอนิเตอร์
-const STRIPS = [-12.6, -8.4, -4.2, 4.2, 8.4, 12.6];
-function WallLights() {
-  const glow = useMemo(
-    () =>
-      canvasTexture(128, 512, (g) => {
-        // สว่างตรงกลาง จางออกด้านข้าง และจางที่หัว/ท้ายหลอด
-        const x = g.createLinearGradient(0, 0, 128, 0);
-        x.addColorStop(0, "rgba(255,255,255,0)");
-        x.addColorStop(0.5, "rgba(255,255,255,1)");
-        x.addColorStop(1, "rgba(255,255,255,0)");
-        g.fillStyle = x;
-        g.fillRect(0, 0, 128, 512);
-        g.globalCompositeOperation = "destination-in";
-        const y = g.createLinearGradient(0, 0, 0, 512);
-        y.addColorStop(0, "rgba(0,0,0,0)");
-        y.addColorStop(0.25, "rgba(0,0,0,1)");
-        y.addColorStop(0.75, "rgba(0,0,0,1)");
-        y.addColorStop(1, "rgba(0,0,0,0)");
-        g.fillStyle = y;
-        g.fillRect(0, 0, 128, 512);
-      }),
-    [],
-  );
-  return (
-    <group>
-      {STRIPS.map((x) => (
-        <group key={x} position={[x, 2.3, WALL_Z + 0.03]}>
-          <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.05, 2.6]} />
-            <meshBasicMaterial color="#c9d3e6" toneMapped={false} />
-          </mesh>
-          <mesh>
-            <planeGeometry args={[1.6, 4.2]} />
-            <meshBasicMaterial
-              map={glow}
-              color="#8796b3"
-              transparent
-              opacity={0.32}
-              blending={THREE.AdditiveBlending}
-              depthWrite={false}
-            />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
 // ไฟเพดาน: แผงไฟยาวเรียงเป็นแถว (เห็นเป็นแถบสว่างด้านบน + สะท้อนบนพื้นมัน)
 function CeilingLights() {
   const bars = [];
@@ -250,54 +171,6 @@ function CeilingLights() {
           <boxGeometry args={[2.4, 0.06, 0.22]} />
           <meshBasicMaterial color="#dfe5f2" toneMapped={false} />
         </mesh>
-      ))}
-    </group>
-  );
-}
-
-// จอมอนิเตอร์บนผนัง: จอละคัน (ชื่อรถ + แถบสีทีม) แบบจอข้อมูลในอู่จริง
-function Monitors({ cars }: { cars: { name: string; accent: string }[] }) {
-  const screens = useMemo(
-    () =>
-      cars.map((c, i) =>
-        canvasTexture(640, 360, (g) => {
-          g.fillStyle = "#07080a";
-          g.fillRect(0, 0, 640, 360);
-          g.fillStyle = c.accent;
-          g.fillRect(0, 0, 640, 14);
-          g.fillStyle = "rgba(240,240,236,0.5)";
-          g.font = "500 22px ui-monospace, Menlo, monospace";
-          g.fillText(`CAR 0${i + 1} · TELEMETRY`, 32, 62);
-          g.fillStyle = "#f2f2ee";
-          g.font = "800 64px 'Arial Narrow', Arial, sans-serif";
-          g.fillText(c.name.toUpperCase(), 32, 140);
-          // เส้นกราฟความเร็วสมมติ (ตกแต่งให้เหมือนจอข้อมูล)
-          g.strokeStyle = c.accent;
-          g.lineWidth = 3;
-          g.beginPath();
-          for (let x = 0; x <= 576; x += 8) {
-            const y = 270 - 60 * Math.sin(x / 47 + i) - 25 * Math.sin(x / 13 + i * 2);
-            if (x === 0) g.moveTo(32 + x, y);
-            else g.lineTo(32 + x, y);
-          }
-          g.stroke();
-        }),
-      ),
-    [cars],
-  );
-  return (
-    <group>
-      {screens.map((map, i) => (
-        <group key={i} position={[(i - 1) * 1.75, 2.45, WALL_Z + 0.06]}>
-          <mesh>
-            <boxGeometry args={[1.6, 0.95, 0.06]} />
-            <meshStandardMaterial color="#0a0a0c" roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0, 0.032]}>
-            <planeGeometry args={[1.5, 0.85]} />
-            <meshBasicMaterial map={map} toneMapped={false} />
-          </mesh>
-        </group>
       ))}
     </group>
   );

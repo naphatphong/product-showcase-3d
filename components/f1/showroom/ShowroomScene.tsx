@@ -53,7 +53,7 @@ export default function ShowroomScene(props: Props) {
       <Progress onProgress={props.onProgress} />
       <Rig {...props} />
       <Lights {...props} />
-      <Garage narrow={props.narrow} cars={props.cars} />
+      <Garage narrow={props.narrow} />
       <Suspense fallback={null}>
         {SHOWROOM_CARS.map((_, i) => (
           <Car key={i} index={i} hoverPart={hoverPart} {...props} />
