@@ -9,7 +9,7 @@ import Safe from "@/components/Safe";
 import { look, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import Backdrop from "./Backdrop";
-import Earth, { EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
+import Earth, { DAYLIGHT, EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
 import FloatingProduct from "./FloatingProduct";
 import LensFlare from "./LensFlare";
 
@@ -27,6 +27,7 @@ const SPLASH = {
 };
 const ARRIVE_SECONDS = 5; // เวลาที่สินค้าชิ้นแรกบินจากนอกจอเข้ามาจอด (ช้าๆ แบบดาวเทียมในต้นแบบ)
 const ARRIVE_FROM = 1.7; // ชิ้นแรกเริ่มบินจากตรงไหน (นับเป็นระยะห่างระหว่างสินค้า: เกิน 1 = นอกจอมุมขวาบน)
+const DAWN_SECONDS = 4; // กดเริ่มแล้ว ฉากสว่างจากมืดเป็นกลางวันใช้เวลาเท่าไร (พร้อมกับที่สินค้าลอยเข้ามา)
 
 // ---------- วงโคจรของสินค้า ----------
 // สินค้าทุกชิ้นเป็นเหมือนดาวเทียมบนวงโคจรเดียวกันรอบโลก (วงกลมรอบศูนย์กลางโลก ผ่านจุด SLOT)
@@ -85,10 +86,7 @@ export default function Scene(props: SceneProps) {
       {/* ดาว: กระจายอยู่บนทรงกลมรัศมี 120 รอบฉาก, fade = ดาวขอบๆ จางลง */}
       <Stars radius={120} depth={40} count={6000} factor={5} saturation={0} fade speed={0.4} />
 
-      {/* ไฟของสินค้า: ไฟหลักจากหน้าซ้าย + ไฟจากฝั่งดวงอาทิตย์ขวาบน (ทิศเดียวกับแสงบนโลก) */}
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[-4, 5, 6]} intensity={2.2} />
-      <directionalLight position={SUN_DIR.clone().multiplyScalar(10)} intensity={2.4} color="#dce8ff" />
+      <Daylight started={props.started} />
       {/* Environment = ภาพรอบตัวที่ใช้ทำแสงสะท้อนบนโลหะ สร้างจากแผ่นไฟ (Lightformer) ในฉากเอง ไม่ต้องโหลดไฟล์ */}
       <Environment resolution={256} environmentIntensity={1.25}>
         <Lightformer
@@ -206,6 +204,38 @@ function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants
       />
     </group>
   ));
+}
+
+// ความสว่างของฉาก + ไฟของสินค้า
+// หน้าเปิด (ยังไม่กดเริ่ม): ฉากมืด โลกเป็นกลางคืน / กดเริ่มแล้ว: ค่อยๆ สว่างเป็นกลางวันใน DAWN_SECONDS วินาที
+// ไฟของสินค้าก็ค่อยๆ สว่างขึ้นพร้อมกัน สินค้าจึงเหมือนลอยออกจากความมืดเข้ามาหาแสง
+// ค่า DAYLIGHT ที่ตั้งตรงนี้ โลก ฉากหลัง และแฟลร์ของเลนส์อ่านไปใช้เองทุกเฟรม
+function Daylight({ started }: { started: boolean }) {
+  const ambient = useRef<THREE.AmbientLight>(null);
+  const key = useRef<THREE.DirectionalLight>(null);
+  const sun = useRef<THREE.DirectionalLight>(null);
+  const t = useRef(0); // ความคืบหน้า 0 → 1
+  const [reduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  useFrame(({ scene }, dt) => {
+    if (started) t.current = reduced ? 1 : Math.min(1, t.current + dt / DAWN_SECONDS);
+    const d = t.current * t.current * (3 - 2 * t.current); // smoothstep: เริ่มช้า เร่ง แล้วชะลอ
+    DAYLIGHT.value = d;
+    const k = 0.15 + 0.85 * d; // ไฟสินค้า: มืดเกือบสนิท → สว่างเต็มที่
+    if (ambient.current) ambient.current.intensity = 0.4 * k;
+    if (key.current) key.current.intensity = 2.6 * k;
+    if (sun.current) sun.current.intensity = 2.6 * k;
+    scene.environmentIntensity = 1.3 * k; // แสงสะท้อนบนโลหะ
+  });
+
+  return (
+    <>
+      {/* ไฟของสินค้า: ไฟหลักจากหน้าซ้าย + ไฟจากฝั่งดวงอาทิตย์ขวาบน (ทิศเดียวกับแสงบนโลก) */}
+      <ambientLight ref={ambient} intensity={0} />
+      <directionalLight ref={key} position={[-4, 5, 6]} intensity={0} />
+      <directionalLight ref={sun} position={SUN_DIR.clone().multiplyScalar(10)} intensity={0} color="#dce8ff" />
+    </>
+  );
 }
 
 // หารเอาเศษแบบไม่ติดลบ เช่น mod(-1, 3) = 2

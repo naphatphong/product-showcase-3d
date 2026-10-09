@@ -20,6 +20,15 @@ export const SUN_DIR = new THREE.Vector3(-0.32, 0.58, -0.75).normalize();
 // แบบนี้โลกส่วนที่เห็นสว่างทั้งหมด โดยขอบซ้ายบน (ฝั่งดวงอาทิตย์) ยังสว่างที่สุด ส่วนแฟลร์และฉากหลังยังใช้ SUN_DIR เหมือนเดิม
 const toCamera = new THREE.Vector3(-0.8, -0.3, 8).sub(EARTH_CENTER).normalize(); // ทิศจากศูนย์กลางโลกไปหากล้อง (จอกว้าง)
 export const EARTH_LIGHT = SUN_DIR.clone().addScaledVector(toCamera, 0.75).normalize(); // 0.75 = ยังเหลือเงามืดจางๆ ทางขวาล่าง โลกดูกลมมีมิติ
+// ก่อนกดเริ่ม (หน้าเปิด) ฉากมืด: แสงมาจากหลังโลกเกือบตรงข้ามกล้อง → โลกฝั่งที่เห็นเป็นกลางคืน (เห็นไฟเมือง)
+// เหลือแค่แถบโค้งบางๆ ตรงขอบโลกด้านซ้ายบนที่เริ่มโดนแดด เหมือนพระอาทิตย์กำลังจะขึ้น
+const NIGHT_LIGHT = SUN_DIR.clone().addScaledVector(toCamera, -2.5).normalize();
+// ความสว่างของฉาก: 0 = มืด (หน้าเปิด) → 1 = กลางวันเต็มที่ / Scene.tsx ค่อยๆ เพิ่มค่านี้ตอนสินค้าลอยเข้ามา
+// เป็น object { value } แบบเดียวกับ uniform ของ shader จึงส่งให้ shader หลายตัวใช้ร่วมกันได้เลย
+export const DAYLIGHT = { value: 0 };
+// ทิศแสงบนผิวโลกตอนนี้: ไล่จาก NIGHT_LIGHT ไปหา EARTH_LIGHT ตาม DAYLIGHT
+// → เส้นแบ่งกลางวัน/กลางคืนกวาดผ่านโลกจากขอบซ้ายบน (พระอาทิตย์ขึ้น) อัปเดตทุกเฟรมใน useFrame ด้านล่าง
+const lightDir = EARTH_LIGHT.clone();
 
 // แปลงละติจูด/ลองจิจูด เป็นเวกเตอร์ทิศบนลูกโลก (ก่อนหมุน)
 // สูตรนี้ตรงกับวิธีที่ SphereGeometry ของ three.js แปะภาพแผนที่โลกแบบ equirectangular
@@ -61,7 +70,6 @@ const surfaceFragment = /* glsl */ `
   uniform vec2 uCloudsSize;
   uniform vec3 uSunDir;
   uniform vec3 uSunObj;     // ทิศแสงอาทิตย์เทียบกับลูกโลก (หมุนตามโลก) ใช้หาว่าเงาเมฆตกไปทางไหนบนแผนที่
-  uniform float uCloudShift;
   varying vec2 vUv;
   varying vec3 vNormalO;
   varying vec3 vNormalW;
@@ -124,9 +132,8 @@ const surfaceFragment = /* glsl */ `
     day = mix(day, vec3(0.008, 0.035, 0.11), water * 0.5);
     day = pow(day, vec3(1.12)) * 1.1;
 
-    // ---------- เมฆ ----------
-    vec2 cloudUv = vUv - vec2(uCloudShift, 0.0); // เมฆเลื่อนไปทางตะวันออก (u ของภาพเพิ่มไปทางตะวันออก) พื้นโลกไม่ขยับ
-    float clouds = cloudAt(cloudUv);
+    // ---------- เมฆ (ติดไปกับพื้นโลก หมุนไปพร้อมกัน) ----------
+    float clouds = cloudAt(vUv);
     // ทิศของแสงอาทิตย์บนแผนที่ (ตะวันออก/เหนือ ณ จุดนี้) → ใช้ทำเงาเมฆ และทำให้เมฆดูเป็นก้อนนูน
     vec3 no = normalize(vNormalO);
     vec3 east = normalize(cross(vec3(0.0, 1.0, 0.0), no) + vec3(1e-5, 0.0, 0.0));
@@ -134,9 +141,9 @@ const surfaceFragment = /* glsl */ `
     float cosLat = max(length(no.xz), 0.05);     // ใกล้ขั้วโลก ภาพแผนที่ถูกยืด → ระยะในแนวนอนต้องคูณชดเชย
     vec2 sunUv = vec2(dot(uSunObj, east) / cosLat, dot(uSunObj, north) * 2.0) * 0.0012;
     // เงาเมฆบนพื้น: เมฆที่อยู่ "ระหว่าง" จุดนี้กับดวงอาทิตย์บังแสง (ยิ่งแสงเฉียง เงายิ่งทอดยาว)
-    float shadow = cloudAt(cloudUv + sunUv * (1.0 + (1.0 - lit) * 2.0)) * (1.0 - clouds);
+    float shadow = cloudAt(vUv + sunUv * (1.0 + (1.0 - lit) * 2.0)) * (1.0 - clouds);
     // ความนูนของเมฆ: ด้านที่หันเข้าหาดวงอาทิตย์สว่างกว่า ด้านหลังมืดกว่า (เทียบความหนาเมฆที่จุดนี้กับจุดเยื้องไปทางแสง)
-    float relief = clamp((clouds - cloudAt(cloudUv + sunUv * 0.6)) * 2.5, -1.0, 1.0);
+    float relief = clamp((clouds - cloudAt(vUv + sunUv * 0.6)) * 2.5, -1.0, 1.0);
 
     // ---------- แสงด้านกลางวัน ----------
     vec3 ground = day * (0.06 + lit * 1.35) * (1.0 - shadow * 0.55);
@@ -194,9 +201,9 @@ const sizeOf = (t: THREE.Texture) => {
   return new THREE.Vector2(img.width, img.height);
 };
 
-// ค่าคงที่ ไม่เปลี่ยนเลย สร้างไว้นอก component ได้
+// สร้างครั้งเดียวนอก component ได้ (lightDir เป็น Vector3 ตัวเดิมที่ useFrame แก้ค่าทุกเฟรม shader จึงเห็นค่าใหม่เอง)
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
-const atmosphereUniforms = { uSunDir: { value: EARTH_LIGHT } };
+const atmosphereUniforms = { uSunDir: { value: lightDir } };
 
 type Props = {
   // ถ้ามีค่า = กำลังจะเข้าหน้าสินค้า: หมุนโลกให้จุดนี้หันมาหากล้อง
@@ -223,7 +230,7 @@ export default function Earth({ focus, narrow = false }: Props) {
     ([d, n, c]) => {
       d.colorSpace = THREE.SRGBColorSpace; // ภาพสีต้องบอกว่าเป็น sRGB สีจะได้ไม่ซีด
       n.colorSpace = THREE.SRGBColorSpace;
-      c.wrapS = THREE.RepeatWrapping; // ให้เมฆเลื่อนวนรอบโลกได้ไม่มีรอยต่อ
+      c.wrapS = THREE.RepeatWrapping; // เงาเมฆอ่านภาพเยื้องไปข้างๆ ได้ แม้ตรงรอยต่อซ้าย-ขวาของภาพ
       for (const t of [d, n, c]) t.anisotropy = 16; // ภาพคมขึ้นตอนมองเฉียงๆ (three.js ลดให้เองถ้าเครื่องรองรับไม่ถึง)
     },
   );
@@ -237,9 +244,8 @@ export default function Earth({ focus, narrow = false }: Props) {
       uClouds: { value: clouds },
       uNightSize: { value: sizeOf(night) },
       uCloudsSize: { value: sizeOf(clouds) },
-      uSunDir: { value: EARTH_LIGHT },
-      uSunObj: { value: EARTH_LIGHT.clone() },
-      uCloudShift: { value: 0 },
+      uSunDir: { value: lightDir },
+      uSunObj: { value: lightDir.clone() },
     }),
     [day, night, clouds],
   );
@@ -250,14 +256,15 @@ export default function Earth({ focus, narrow = false }: Props) {
   useFrame(({ camera }, dt) => {
     const g = group.current;
     if (!g) return;
+    lightDir.copy(NIGHT_LIGHT).lerp(EARTH_LIGHT, DAYLIGHT.value).normalize();
     if (surface.current) {
-      surface.current.uniforms.uCloudShift.value += dt * 0.0012; // เมฆลอยไปทางตะวันออกช้าๆ (พื้นโลกอยู่นิ่ง)
       // ทิศแสงอาทิตย์เทียบกับลูกโลก = หมุนย้อนกลับเท่าที่โลกหมุนไป (โลกหมุนแค่รอบแกน Y)
-      (surface.current.uniforms.uSunObj.value as THREE.Vector3).copy(EARTH_LIGHT).applyAxisAngle(Y_AXIS, -g.rotation.y);
+      (surface.current.uniforms.uSunObj.value as THREE.Vector3).copy(lightDir).applyAxisAngle(Y_AXIS, -g.rotation.y);
     }
 
     if (!focus) {
-      targetRotation.current = null; // ปกติ: พื้นโลกอยู่นิ่ง มีแค่เมฆที่เคลื่อนที่
+      targetRotation.current = null;
+      g.rotation.y += dt * 0.004; // ปกติ: โลกและเมฆหมุนไปพร้อมกันช้าๆ (โลกอยู่ใกล้มาก หมุนเร็วกว่านี้ผิวโลกจะไหลเร็วเกิน)
       return;
     }
     // กำลังเข้าหน้าสินค้า: คำนวณมุมเป้าหมายครั้งเดียว แล้วค่อยๆ หมุนไปหา

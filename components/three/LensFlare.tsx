@@ -3,7 +3,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
+import { DAYLIGHT, EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
 
 // แสงแฟลร์ของเลนส์ (แบบภาพถ่ายย้อนแสงในต้นแบบ): วาดทับทั้งจอด้วย shader แบบบวกแสง (additive)
 // - แสงอุ่นเรืองรอบดวงอาทิตย์ (ดวงอาทิตย์อยู่เหนือขอบจอด้านบน → เห็นเป็นแสงฟุ้งที่ขอบบน)
@@ -92,7 +92,9 @@ export default function LensFlare() {
     const behind = sunPoint.z > 1;
     const off = Math.hypot(sunPoint.x, sunPoint.y);
     const want = behind || sunBlocked(camera) ? 0 : 1 - THREE.MathUtils.smoothstep(off, 1.6, 3.6);
-    m.uniforms.uVis.value = THREE.MathUtils.damp(m.uniforms.uVis.value, want, 3, dt);
+    // หน้าเปิดฉากยังมืด แฟลร์จางๆ ก่อน แล้วแรงขึ้นตามความสว่างของฉาก
+    const vis = want * (0.25 + 0.75 * DAYLIGHT.value);
+    m.uniforms.uVis.value = THREE.MathUtils.damp(m.uniforms.uVis.value, vis, 3, dt);
   });
 
   return (
