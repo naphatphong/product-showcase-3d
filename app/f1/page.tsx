@@ -1,8 +1,9 @@
-import ProductIntro, { productMetadata } from "@/components/ProductIntro";
+import { productMetadata } from "@/components/ProductIntro";
+import F1Story from "@/components/f1/F1Story";
 
-// หน้าสินค้า /f1 — ตอนนี้เป็นหน้าชั่วคราว ข้อมูลทั้งหมดมาจาก config/products.ts
+// หน้าสินค้า /f1 — GRID 26: เลื่อนลงทีละสไลด์ รถ RB22 แยกชิ้นทีละส่วน แล้วประกอบกลับ (ดู components/f1)
 export const metadata = productMetadata("f1");
 
 export default function Page() {
-  return <ProductIntro slug="f1" />;
+  return <F1Story />;
 }

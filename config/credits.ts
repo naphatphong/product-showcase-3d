@@ -56,7 +56,7 @@ export const credits: Credit[] = [
     authorUrl: "https://sketchfab.com/Tyler_Dave",
     source: "https://sketchfab.com/3d-models/2026-redbull-rb22-0a3d24a58e0549d591a5a48c22eec383",
     license: "CC BY 4.0",
-    changes: "Compressed for the web (WebP textures, meshopt geometry), ~31 MB → ~3.9 MB.",
+    changes: "Compressed for the web (WebP textures, meshopt geometry), ~31 MB → ~3.9 MB. A second copy is split into 16 named parts for the scroll story (~5.9 MB).",
   },
   {
     usedFor: "FIZZ — all six cans",

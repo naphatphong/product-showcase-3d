@@ -462,6 +462,173 @@ html.lenis body {
   display: none;
 }
 
+/* ======================= หน้า GRID 26 (/f1) ======================= */
+
+/* อยู่ใน @layer components: คลาสของ Tailwind (เช่น text-[10px]) ที่ใส่เพิ่มใน component จึงทับค่าในนี้ได้
+   (CSS ที่ไม่อยู่ใน layer จะชนะคลาสของ Tailwind เสมอ ไม่ว่าเขียนแบบไหน) */
+@layer components {
+  /* โทนสว่างแบบกระดาษเขียนแบบวิศวกรรม: พื้นเทาอ่อน ตัวหนังสือดำ สีแดงเป็นสีเน้น
+     สีทั้งหมดของหน้านี้อยู่ในตัวแปรชุดนี้ (ใช้ใน component ผ่าน var(--f1-...)) */
+  .f1-root {
+    --f1-paper: #ecebe7;
+    --f1-ink: #121212;
+    --f1-muted: #4f4f4a;
+    --f1-faint: #85857f;
+    --f1-line: rgba(18, 18, 18, 0.16);
+    --f1-red: #e10600;
+    color: var(--f1-ink);
+    font-family: var(--font-archivo), Arial, sans-serif;
+    font-weight: 400;
+  }
+
+  /* กระดาษ: แสงขาวนวลตรงกลางจอ (หลังรถ) + เส้นกริดใหญ่ทุก 120px + เส้นกริดเล็กทุก 24px */
+  .f1-paper {
+    background-color: var(--f1-paper);
+    background-image:
+      radial-gradient(55% 50% at 55% 48%, rgba(255, 255, 255, 0.7), transparent 75%),
+      linear-gradient(rgba(18, 18, 18, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(18, 18, 18, 0.06) 1px, transparent 1px),
+      linear-gradient(rgba(18, 18, 18, 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(18, 18, 18, 0.028) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      120px 120px,
+      120px 120px,
+      24px 24px,
+      24px 24px;
+    background-position: center;
+  }
+
+  /* หัวข้อ: ตัวหนาแคบ (แกน wdth ของ Archivo) ตัวพิมพ์ใหญ่ แบบโปสเตอร์ */
+  .f1-title {
+    font-family: var(--font-archivo), Arial, sans-serif;
+    font-weight: 800;
+    font-stretch: 72%;
+    text-transform: uppercase;
+    letter-spacing: -0.005em;
+    line-height: 0.86;
+  }
+  /* ป้ายเล็ก: ตัวพิมพ์ดีด ตัวพิมพ์ใหญ่ ห่างๆ แบบตัวหนังสือในแบบวิศวกรรม */
+  .f1-mono,
+  .f1-label {
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  }
+  .f1-label {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--f1-faint);
+  }
+  .f1-ghost {
+    color: rgba(18, 18, 18, 0.05);
+  }
+
+  /* ตำแหน่งข้อความของ section: คอม = ซ้ายกลางจอ (ภาพรถเลื่อนไปทางขวา), มือถือ = ด้านล่าง (รถอยู่ครึ่งบน) */
+  .f1-copy {
+    position: absolute;
+    inset-inline: 1.25rem;
+    bottom: 2.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  /* มือถือ: พื้นสีกระดาษไล่จางด้านหลังข้อความ ให้อ่านง่ายแม้มีชิ้นส่วนรถอยู่ด้านหลัง */
+  .f1-copy::before {
+    content: "";
+    position: absolute;
+    inset: -4rem -1.25rem -2.25rem;
+    z-index: -1;
+    background: linear-gradient(to top, var(--f1-paper) 62%, transparent);
+  }
+  @media (min-width: 768px) {
+    .f1-copy {
+      inset-inline: auto;
+      left: max(60px, 6vw);
+      bottom: auto;
+      top: 50%;
+      transform: translateY(-50%);
+      width: min(27rem, 34vw);
+    }
+    .f1-copy::before {
+      content: none;
+    }
+  }
+
+  /* ปุ่มหลัก: กล่องดำ ตัวหนังสือสีกระดาษ + มุมเล็กๆ 4 มุมรอบปุ่ม (แบบเดียวกับ .orbit-cta ของหน้าแรก แต่กลับสี) */
+  .f1-cta {
+    position: relative;
+    display: inline-block;
+    padding: 0.85rem 1.9rem;
+    background: var(--f1-ink);
+    color: var(--f1-paper);
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    transition:
+      background-color 0.25s,
+      color 0.25s;
+  }
+  .f1-cta::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    pointer-events: none;
+    --c: var(--f1-ink);
+    background:
+      linear-gradient(var(--c), var(--c)) left top / 7px 1px,
+      linear-gradient(var(--c), var(--c)) left top / 1px 7px,
+      linear-gradient(var(--c), var(--c)) right top / 7px 1px,
+      linear-gradient(var(--c), var(--c)) right top / 1px 7px,
+      linear-gradient(var(--c), var(--c)) left bottom / 7px 1px,
+      linear-gradient(var(--c), var(--c)) left bottom / 1px 7px,
+      linear-gradient(var(--c), var(--c)) right bottom / 7px 1px,
+      linear-gradient(var(--c), var(--c)) right bottom / 1px 7px;
+    background-repeat: no-repeat;
+    transition: inset 0.25s;
+  }
+  .f1-cta:hover {
+    background: var(--f1-red);
+  }
+  .f1-cta:hover::before {
+    inset: -3px;
+  }
+  /* ปุ่มรอง: กรอบเส้นบาง */
+  .f1-pill {
+    display: inline-block;
+    border: 1px solid var(--f1-line);
+    padding: 0.6rem 1.1rem;
+    background: rgba(236, 235, 231, 0.6);
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--f1-ink);
+    backdrop-filter: blur(4px);
+    transition:
+      background-color 0.25s,
+      color 0.25s;
+  }
+  .f1-pill:hover {
+    background: var(--f1-ink);
+    color: var(--f1-paper);
+  }
+
+  /* เส้นความคืบหน้า: ยาวตาม --p (0–1) ปลายเส้นเป็นจุดสีแดง */
+  .f1-progress {
+    width: calc(var(--p, 0) * 100%);
+  }
+  .f1-progress::after {
+    content: "";
+    position: absolute;
+    right: -3px;
+    top: -2px;
+    width: 5px;
+    height: 5px;
+    background: var(--f1-red);
+  }
+}
+
 /* ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": แสดงข้อความทันที ไม่มีตัวอักษรวิ่ง/พื้นหลังขยับ */
 @media (prefers-reduced-motion: reduce) {
   .reveal-char,
