@@ -153,20 +153,24 @@ const surfaceFragment = /* glsl */ `
     float glint = pow(max(dot(n, normalize(uSunDir + v)), 0.0), 70.0);
     dayCol += vec3(1.0, 0.92, 0.8) * glint * water * (1.0 - clouds) * 0.7;
 
-    // ---------- ด้านกลางคืน: แสงไฟเมือง (โดนเมฆบังก็จางลง) ----------
+    // ---------- ด้านกลางคืน ----------
+    // แสงจันทร์/แสงดาวจางๆ สีน้ำเงิน: กลางคืนยังเห็นเมฆและแผ่นดินลางๆ ไม่ดำสนิท
+    vec3 moon = mix(day * vec3(0.5, 0.65, 1.0), vec3(0.55, 0.65, 0.85), clouds * 0.85) * 0.07;
+    // แสงไฟเมือง (โดนเมฆบังก็จางลง)
     vec3 night = bicubic(uNight, vUv, uNightSize).rgb;
-    vec3 nightCol = night * 1.5 * (1.0 - clouds * 0.8);
+    vec3 nightCol = moon + night * 2.2 * (1.0 - clouds * 0.7);
 
     vec3 col = mix(nightCol, dayCol, dayMix);
 
     // ---------- ชั้นบรรยากาศ (หัวใจของความสมจริง) ----------
     // แสงแดดกระเจิงในอากาศเป็นสีฟ้า (เหตุผลเดียวกับที่ท้องฟ้าเป็นสีฟ้า) ยิ่งมองเฉียงไปทางขอบโลก ยิ่งมองทะลุอากาศหนา ฟ้ายิ่งเข้ม
     // แต่อากาศ "ใส": ไม่ทาสีทับพื้น ใช้วิธี (1) พื้นมืดลงนิดหน่อยตามความหนาอากาศ (2) บวกแสงฟ้าที่กระเจิงเพิ่มเข้าไป
-    // → ขอบโลกเรืองฟ้า แต่ยังมองทะลุเห็นเมฆและพื้นจนถึงขอบ
-    float airLit = smoothstep(-0.2, 0.6, sun);
+    // → ขอบโลกเป็นม่านฟ้าใสๆ ซ้อนทับ แต่ยังมองทะลุเห็นเมฆและพื้นจนถึงขอบ
+    float airLit = max(smoothstep(-0.2, 0.6, sun), 0.15);  // กลางคืนยังเหลือม่านฟ้าจางๆ ที่ขอบ
     float depth = pow(1.0 - view, 2.0);                    // ความหนาของอากาศที่มองทะลุ (0 ตรงกลาง → 1 ที่ขอบ)
-    vec3 airCol = mix(vec3(0.08, 0.22, 0.6), vec3(0.18, 0.45, 1.0), depth); // ฟ้าเข้มด้านใน → ฟ้าสดที่ขอบ (ไม่ขาว)
-    col = col * (1.0 - depth * 0.45) + airCol * airLit * (0.03 + depth * 0.55);
+    float veil = pow(1.0 - view, 2.6);                     // ม่านฟ้า: เริ่มจางๆ ห่างจากขอบ แล้วเข้มขึ้นจนถึงขอบ
+    vec3 airCol = mix(vec3(0.06, 0.2, 0.75), vec3(0.12, 0.38, 1.0), depth); // ฟ้าเข้มด้านใน → ฟ้าสดที่ขอบ (ไม่ขาว)
+    col = col * (1.0 - depth * 0.35) + airCol * airLit * (0.03 + veil * 0.95);
     // แถบฟ้าเส้นบางๆ เลียดขอบโลกพอดี
     col += vec3(0.15, 0.4, 1.0) * pow(1.0 - view, 16.0) * (0.1 + 0.6 * airLit);
 
@@ -177,19 +181,27 @@ const surfaceFragment = /* glsl */ `
 `;
 
 // shader ของชั้นบรรยากาศ: ทรงกลมใหญ่กว่าโลกนิดหน่อย วาดด้านใน (BackSide)
-// แล้วเรืองแสงแบบบวกสี (additive) เห็นเป็นวงแสงสีฟ้ารอบขอบโลก
+// แล้วเรืองแสงแบบบวกสี (additive) เห็นเป็นวงแสงสีฟ้าใสๆ รอบขอบโลก
+const ATMO_SCALE = 1.04; // ขอบนอกของชั้นบรรยากาศ (เท่าของรัศมีโลก)
 const atmosphereFragment = /* glsl */ `
   uniform vec3 uSunDir;
+  uniform vec3 uCenter;   // ศูนย์กลางโลก
+  uniform float uRadius;  // รัศมีโลก
+  uniform float uTop;     // รัศมีขอบนอกของชั้นบรรยากาศ
   varying vec3 vNormalW;
   varying vec3 vPosW;
   void main() {
     vec3 n = normalize(vNormalW);
-    vec3 v = normalize(cameraPosition - vPosW);
-    float d = dot(n, v);                                         // ใกล้ 0 = ขอบนอกสุดของวงแสง
-    float glow = pow(1.0 - smoothstep(-0.2, 0.0, d), 2.2);       // สว่างสุดชิดผิวโลก แล้วจางออก
+    // เส้นสายตาจากกล้องผ่านพิกเซลนี้ เฉียดผิวโลกสูงแค่ไหน: 0 = เลียดผิวโลกพอดี → 1 = ขอบนอกของบรรยากาศ
+    vec3 ray = normalize(vPosW - cameraPosition);
+    vec3 oc = uCenter - cameraPosition;
+    float h = length(oc - ray * dot(oc, ray));                  // ระยะใกล้สุดระหว่างเส้นสายตากับศูนย์กลางโลก
+    float a = clamp((h - uRadius) / (uTop - uRadius), 0.0, 1.0);
+    float core = exp(-a * 14.0);                                 // เส้นฟ้าสว่างบางๆ ชิดผิวโลก
+    float halo = exp(-a * 3.0) * (1.0 - a);                      // ม่านฟ้าใสๆ ที่ค่อยๆ จางออกไปในอวกาศ
     float lit = smoothstep(-0.45, 0.5, dot(n, uSunDir));         // ด้านโดนแดดสว่างกว่า
-    vec3 c = mix(vec3(0.06, 0.25, 1.0), vec3(0.3, 0.58, 1.0), glow); // ฟ้าสดทั้งวง ชิดผิวโลกอ่อนลงนิด (ไม่ขาว)
-    gl_FragColor = vec4(c * glow * (0.1 + 1.4 * lit), 1.0);
+    vec3 c = vec3(0.25, 0.55, 1.0) * core + vec3(0.05, 0.22, 1.0) * halo * 0.45;
+    gl_FragColor = vec4(c * (0.2 + 1.3 * lit), 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }
@@ -203,7 +215,12 @@ const sizeOf = (t: THREE.Texture) => {
 
 // สร้างครั้งเดียวนอก component ได้ (lightDir เป็น Vector3 ตัวเดิมที่ useFrame แก้ค่าทุกเฟรม shader จึงเห็นค่าใหม่เอง)
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
-const atmosphereUniforms = { uSunDir: { value: lightDir } };
+const atmosphereUniforms = {
+  uSunDir: { value: lightDir },
+  uCenter: { value: EARTH_CENTER },
+  uRadius: { value: EARTH_RADIUS },
+  uTop: { value: EARTH_RADIUS * ATMO_SCALE },
+};
 
 type Props = {
   // ถ้ามีค่า = กำลังจะเข้าหน้าสินค้า: หมุนโลกให้จุดนี้หันมาหากล้อง
@@ -290,7 +307,7 @@ export default function Earth({ focus, narrow = false }: Props) {
         />
       </mesh>
       {/* ชั้นบรรยากาศ: วาดด้านใน (BackSide) + บวกสี (Additive) + ไม่บังวัตถุอื่น (depthWrite ปิด) */}
-      <mesh scale={1.016}>
+      <mesh scale={ATMO_SCALE}>
         <sphereGeometry args={[EARTH_RADIUS, 160, 80]} />
         <shaderMaterial
           vertexShader={vertex}
