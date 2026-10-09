@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, type RefObject } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, Environment, Lightformer, useGLTF, useProgress } from "@react-three/drei";
 import * as THREE from "three";
-import { CHAPTERS, EXPLODE, EXPLODE_ORDER, STORY_CAR, type PartId } from "@/config/f1";
+import { CHAPTERS, EXPLODE, EXPLODE_ORDER, FOCUS, STORY_CAR, type PartId } from "@/config/f1";
 import { FIRST_CHAPTER, sectionProgress, type Motion } from "../motion";
 import { blankPose, DESIGN_ASPECT, POSES, POSES_NARROW, sample, type Pose } from "./timeline";
 
@@ -133,8 +133,9 @@ function addGhost(material: THREE.Material, ghost: { value: number }) {
   material.customProgramCacheKey = () => "f1-ghost";
 }
 
-// ข้อมูลของแต่ละชิ้นที่เก็บไว้ใน node.userData: ตำแหน่งตอนประกอบ, ค่าจางของชิ้น, ลำดับตอนแยกชิ้น
-type PartData = { base: THREE.Vector3; ghost: { value: number }; order: number };
+// ข้อมูลของแต่ละชิ้นที่เก็บไว้ใน node.userData: ตำแหน่งตอนประกอบ, ค่าจางของชิ้น, ลำดับตอนแยกชิ้น,
+// focus = ลอยออกมาแค่ไหนตอนบทของชิ้นนี้แสดงอยู่ (0–1 ค่อยๆ เปลี่ยน)
+type PartData = { base: THREE.Vector3; ghost: { value: number }; order: number; focus: number };
 
 const STAGGER = 0.035; // หน่วงการออกตัวของแต่ละชิ้น (สัดส่วนของช่วงแยกชิ้น)
 const SPAN = 1 - STAGGER * (EXPLODE_ORDER.length - 1);
@@ -156,6 +157,7 @@ function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose
         base: node.position.clone(),
         ghost,
         order: Math.max(0, EXPLODE_ORDER.indexOf(node.name as PartId)),
+        focus: 0,
       };
       node.userData = data;
       node.traverse((o) => {
@@ -183,9 +185,13 @@ function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose
       const local = Math.min(1, Math.max(0, (p.ex - part.order * STAGGER) / SPAN));
       const e = easeInOut(local);
       const dir = EXPLODE[name] ?? [0, 0, 0];
-      node.position.copy(part.base).add(offset.set(dir[0] * e, dir[1] * e, dir[2] * e));
-      const ghost = focus && !focus.includes(name) ? 0.9 : 0;
-      part.ghost.value = THREE.MathUtils.damp(part.ghost.value, ghost, 5, dt);
+      // บทของชิ้นนี้: ลอยออกมาหน้าชิ้นอื่น (FOCUS) / บทอื่น: กลับที่เดิม แล้วจางเป็นสีเทา
+      const on = focus?.includes(name) ?? false;
+      part.focus = THREE.MathUtils.damp(part.focus, on ? 1 : 0, 3.5, dt);
+      const f = easeInOut(part.focus);
+      const pop = FOCUS[name] ?? [0, 0, 0];
+      node.position.copy(part.base).add(offset.set(dir[0] * e + pop[0] * f, dir[1] * e + pop[1] * f, dir[2] * e + pop[2] * f));
+      part.ghost.value = THREE.MathUtils.damp(part.ghost.value, focus && !on ? 0.9 : 0, 5, dt);
     }
     // หน้าแรก: รถส่ายไปมาช้าๆ เหมือนวางบนแท่นหมุน (เลื่อนออกจากหน้าแรกแล้วค่อยๆ หยุด)
     const hero = Math.max(0, 1 - t);

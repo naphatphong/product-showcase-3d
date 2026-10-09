@@ -27,16 +27,18 @@ const HERO: Pose = { tx: 0, ty: 0.5, tz: 0.25, az: 49 * deg, el: 11 * deg, dist:
 // แยกชิ้นทั้งคัน: ถอยกล้องให้เห็นทุกชิ้น
 const EXPLODE = from(HERO, { ty: 1.25, tz: 0.3, az: 43 * deg, el: 21 * deg, dist: 15, shift: 0.16, ex: 1 });
 
-// บทชิ้นส่วน: กล้องเข้าไปที่ชิ้นนั้น (จุดที่มอง = ตำแหน่งของชิ้นตอนแยกแล้ว) ภาพเลื่อนไปทางขวา ข้อความอยู่ซ้าย
-const CHAPTER = from(EXPLODE, { shift: 0.17 });
-const FRONT = from(CHAPTER, { ty: 1.18, tz: 3.62, az: 36 * deg, el: 13 * deg, dist: 4.8 });
-const COCKPIT = from(CHAPTER, { ty: 2.2, tz: 0.85, az: 54 * deg, el: 17 * deg, dist: 4.2 });
-const CHASSIS = from(CHAPTER, { ty: 1.15, tz: -0.45, az: 66 * deg, el: 18 * deg, dist: 7.2 });
-const POWER = from(CHAPTER, { ty: 1.95, tz: -1.05, az: 72 * deg, el: 14 * deg, dist: 5.6 });
-const SIDEPODS = from(CHAPTER, { ty: 1.3, tz: 0, az: 17 * deg, el: 32 * deg, dist: 6.8 });
-const FLOOR = from(CHAPTER, { ty: 0.25, tz: -0.8, az: 129 * deg, el: 22 * deg, dist: 7 });
-const REAR = from(CHAPTER, { ty: 1.61, tz: -3.2, az: 149 * deg, el: 11 * deg, dist: 4.4 });
-const WHEELS = from(CHAPTER, { ty: 0.45, tz: 0, az: 52 * deg, el: 17 * deg, dist: 9 });
+// บทชิ้นส่วน: กล้องเข้าไปที่ชิ้นนั้น ภาพเลื่อนไปทางขวาเล็กน้อย (ข้อความอยู่ซ้าย รายการชิ้นส่วนอยู่ขวา)
+// จุดที่มอง = จุดศูนย์กลางจริงของชิ้นตอนแยกแล้ว (ชิ้นที่เน้นลอยตรงเข้าหากล้องตาม FOCUS ใน config/f1.ts
+// จึงยังอยู่ตรงจุดที่มองบนจอ แค่ใหญ่ขึ้น — ระยะ dist นับรวมระยะที่ชิ้นลอยเข้ามาแล้ว)
+const CHAPTER = from(EXPLODE, { shift: 0.1 });
+const FRONT = from(CHAPTER, { ty: 1.08, tz: 3.72, az: 36 * deg, el: 13 * deg, dist: 6.4 });
+const COCKPIT = from(CHAPTER, { ty: 2.3, tz: 0.93, az: 50 * deg, el: 28 * deg, dist: 5.4 });
+const CHASSIS = from(CHAPTER, { ty: 1.18, tz: 0.4, az: 78 * deg, el: 18 * deg, dist: 8.6 });
+const POWER = from(CHAPTER, { ty: 1.95, tz: -0.95, az: 70 * deg, el: 16 * deg, dist: 9.2 });
+const SIDEPODS = from(CHAPTER, { ty: 1.65, tz: 0.72, az: 25 * deg, el: 30 * deg, dist: 9.9 });
+const FLOOR = from(CHAPTER, { ty: 0.2, tz: -0.9, az: 150 * deg, el: 20 * deg, dist: 9.5 });
+const REAR = from(CHAPTER, { ty: 1.72, tz: -3.21, az: 149 * deg, el: 11 * deg, dist: 5.2 });
+const WHEELS = from(CHAPTER, { ty: 0.55, tz: 0, az: 18 * deg, el: 24 * deg, dist: 14.5 });
 
 // ประกอบกลับ: กล้องอ้อมไปอีกด้านของรถระหว่างที่ชิ้นส่วนบินกลับเข้าที่
 const ASSEMBLE = from(HERO, { az: -49 * deg, el: 14 * deg, dist: 9.6, shift: 0.14 });
@@ -55,14 +57,14 @@ export const POSES: Pose[] = [HERO, EXPLODE, FRONT, COCKPIT, CHASSIS, POWER, SID
 const NARROW: Partial<Pose>[] = [
   { az: 34 * deg, dist: 13.5, lift: 0.12 }, // hero
   { az: 28 * deg, dist: 20 }, // explode
-  { dist: 7.6 }, // front
+  { dist: 7.9 }, // front
   { dist: 5.2 }, // cockpit
-  { dist: 9.4 }, // chassis
-  { dist: 6.4 }, // power
-  { dist: 11.4 }, // sidepods
-  { dist: 10.8 }, // floor
-  { dist: 5 }, // rear
-  { dist: 16 }, // wheels
+  { dist: 8.5 }, // chassis
+  { dist: 9.5 }, // power
+  { dist: 10.1 }, // sidepods
+  { dist: 9.9 }, // floor
+  { dist: 5.2 }, // rear
+  { dist: 15.1 }, // wheels
   { az: -34 * deg, dist: 13.5 }, // assemble
   { az: -62 * deg, dist: 16, lift: 0.2 }, // outro
 ];

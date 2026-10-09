@@ -549,8 +549,10 @@ html.lenis body {
       transform: translateY(-50%);
       width: min(27rem, 34vw);
     }
+    /* คอม: วงสีกระดาษจางๆ ด้านหลังข้อความ ชิ้นส่วนสีเทาที่อยู่ข้างหลังจะจางลง ข้อความอ่านง่าย */
     .f1-copy::before {
-      content: none;
+      inset: -40% -22% -40% -45%;
+      background: radial-gradient(closest-side, rgba(236, 235, 231, 0.88) 50%, rgba(236, 235, 231, 0));
     }
   }
 
