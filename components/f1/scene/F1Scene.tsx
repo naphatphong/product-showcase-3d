@@ -13,6 +13,7 @@ export type SceneProps = {
   motion: RefObject<Motion>;
   narrow: boolean;
   hidden: boolean; // section ที่แสดงอยู่ไม่ใช้ฉาก 3D (หน้าเว็บซ่อนฉากไว้) → หยุดวาด
+  started: boolean; // หน้าโหลดหายไปแล้ว → เริ่มประกอบรถ
   onReady: () => void; // โหลดโมเดลครบแล้ว
   onProgress: (percent: number) => void; // ความคืบหน้าการโหลดไฟล์จริง 0–100
 };
@@ -34,7 +35,7 @@ export default function F1Scene(props: SceneProps) {
       <Director motion={props.motion} narrow={props.narrow} pose={pose} />
       <Lights />
       <Suspense fallback={null}>
-        <Car motion={props.motion} pose={pose} />
+        <Car motion={props.motion} pose={pose} started={props.started} />
         <Ready onReady={props.onReady} />
       </Suspense>
       {/* เงานุ่มๆ ใต้รถ (ไม่ต้องมีพื้นจริง) — ชิ้นที่ลอยสูงเงาจะจางลงเอง */}
@@ -144,11 +145,14 @@ const SPAN = 1 - STAGGER * (EXPLODE_ORDER.length - 1);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const offset = new THREE.Vector3();
 const anchor = new THREE.Vector3();
+const INTRO = 3.2; // วินาที: เปิดหน้ามา รถเริ่มแบบแยกชิ้น แล้วค่อยๆ ประกอบเป็นคัน
 
 // รถ: เตรียมชิ้นส่วนครั้งเดียว แล้วทุกเฟรมเลื่อนแต่ละชิ้นตามระยะแยกชิ้นของท่า + ทำชิ้นที่ไม่ได้เน้นให้จาง
-function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose> }) {
+function Car({ motion, pose, started }: { motion: RefObject<Motion>; pose: RefObject<Pose>; started: boolean }) {
   const { scene } = useGLTF(STORY_CAR.model);
   const group = useRef<THREE.Group>(null);
+  // 0 = ยังแยกชิ้น (รอหน้าโหลดหายไป) → 1 = ประกอบเสร็จ / เครื่องที่ตั้งลดภาพเคลื่อนไหว: ประกอบไว้แล้วตั้งแต่แรก
+  const intro = useRef(matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 0);
 
   // สำเนาของรถสำหรับหน้านี้ (ไม่แก้ตัวต้นฉบับที่ useGLTF เก็บไว้ในแคช — geometry/texture ยังใช้ร่วมกัน ไม่เปลืองหน่วยความจำ)
   const model = useMemo(() => {
@@ -182,11 +186,13 @@ function Car({ motion, pose }: { motion: RefObject<Motion>; pose: RefObject<Pose
     const t = sectionProgress(motion.current);
     // บทที่กำลังแสดง → ชิ้นที่เน้น (บทอื่น/หน้าแรก/ประกอบกลับ = ไม่จางเลย)
     const focus = CHAPTERS[Math.round(t) - FIRST_CHAPTER]?.parts;
+    if (started) intro.current = Math.min(1, intro.current + dt / INTRO);
+    const ex = Math.max(p.ex, 1 - intro.current); // ชิ้นส่วนบินเข้าหากันแบบเดียวกับตอนประกอบกลับท้ายเรื่อง
     for (const node of car.children) {
       const part = node.userData as PartData;
       const name = node.name as PartId;
       // ชิ้นที่ order น้อย (ชิ้นนอก) ออกก่อน — ตอนประกอบกลับ ค่า ex ลดลง ชิ้นนอกจึงกลับเข้าที่หลังสุด
-      const local = Math.min(1, Math.max(0, (p.ex - part.order * STAGGER) / SPAN));
+      const local = Math.min(1, Math.max(0, (ex - part.order * STAGGER) / SPAN));
       const e = easeInOut(local);
       const dir = EXPLODE[name] ?? [0, 0, 0];
       // บทของชิ้นนี้: ลอยออกมาหน้าชิ้นอื่น (FOCUS) / บทอื่น: กลับที่เดิม แล้วจางเป็นสีเทา

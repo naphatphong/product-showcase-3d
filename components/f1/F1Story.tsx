@@ -115,9 +115,12 @@ export default function F1Story() {
   );
 
   // เลื่อนไป section ถัดไป/ก่อนหน้า: หาขอบ section ถัดไปตามทิศ (ถ้าค้างอยู่กลาง section จะเข้าที่ก่อน)
+  // นับจากจุดที่จอกำลังเลื่อนไป (targetScroll) ไม่ใช่จุดที่จออยู่ตอนนี้ — เลื่อนขึ้นเร็วๆ ถึงหัวหน้าประวัติ จอยังตามไม่ทัน
+  // ถ้านับจากจุดที่จออยู่ จะคิดว่ายังอยู่ในหน้าประวัติ แล้วเด้งไปท้ายหน้าประวัติแทนที่จะขึ้นไปหน้าความเร็ว
   const page = useCallback(
     (dir: 1 | -1) => {
-      const { scroll, tops } = motion.current;
+      const { tops } = motion.current;
+      const scroll = lenis.current?.targetScroll ?? motion.current.scroll;
       let target = -1;
       if (dir > 0) target = tops.findIndex((t) => t > scroll + 4);
       else for (let i = LAST; i >= 0 && target < 0; i--) if (tops[i] < scroll - 4) target = i;
@@ -328,7 +331,14 @@ export default function F1Story() {
         className={`fixed inset-0 z-[2] touch-none transition-opacity duration-500 ${hidden ? "opacity-0" : ""}`}
       >
         <Safe onError={onReady}>
-          <F1Scene motion={motion} narrow={narrow} hidden={hidden} onReady={onReady} onProgress={onProgress} />
+          <F1Scene
+            motion={motion}
+            narrow={narrow}
+            hidden={hidden}
+            started={started}
+            onReady={onReady}
+            onProgress={onProgress}
+          />
         </Safe>
       </div>
 
