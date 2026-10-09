@@ -226,16 +226,8 @@ export type SpeedStat = {
   fromZero: boolean; // เข็มกลับไปเริ่มที่ 0 ก่อนออกตัว
 };
 
-export type Clip = { src: string; poster: string };
-
 export const SPEED = {
   max: 360, // ปลายหน้าปัด (กม./ชม.)
-  // วิดีโอรถแข่งในครึ่งวงกลม (ไฟล์ใน public/video/f1/, ย่อด้วย ffmpeg แล้ว ไม่มีเสียง)
-  // wide = คอม (ครึ่งวงกลม 2:1), tall = มือถือ (ทรงประตู 1:1) — ตั้งเป็น null = แสดงรถ 3D ในครึ่งวงกลมแทน
-  video: {
-    wide: { src: "/video/f1/speed-wide.mp4", poster: "/video/f1/speed-wide.webp" }, // Miami, จากอัฒจันทร์
-    tall: { src: "/video/f1/speed-tall.mp4", poster: "/video/f1/speed-tall.webp" }, // Spa, Verstappen แซง
-  } as null | { wide: Clip; tall: Clip },
   stats: [
     { value: 350, decimals: 0, unit: "km/h", label: "Top speed", needle: 350, time: 1.8, fromZero: false },
     { value: 2.6, decimals: 1, unit: "s", label: "0–100 km/h", needle: 100, time: 2.6, fromZero: true },
@@ -253,6 +245,15 @@ export type Era = {
   title: string;
   text: string;
   photos?: Photo[];
+};
+
+// วิดีโอเต็มจอแรกของหน้าประวัติ (ก่อนหัวข้อ "Since 2005."): คลิปแข่งรถจริงจากข้างสนาม
+// ไฟล์ใน public/video/f1/ (ย่อด้วย ffmpeg แล้ว ไม่มีเสียง) — wide = คอม (16:9), tall = มือถือ (9:16)
+// caption = รถ/สนามที่อยู่ในคลิปจริง (ถ่ายจากอัฒจันทร์ ไม่ใช่รถ RB22)
+export type Clip = { src: string; poster: string; caption: string };
+export const HERITAGE_FILM: { wide: Clip; tall: Clip } = {
+  wide: { src: "/video/f1/race-wide.mp4", poster: "/video/f1/race-wide.webp", caption: "Formula 1 · Miami" },
+  tall: { src: "/video/f1/race-tall.mp4", poster: "/video/f1/race-tall.webp", caption: "Verstappen overtaking · Spa" },
 };
 
 export const HERITAGE: Era[] = [

@@ -5,7 +5,7 @@ import Reveal from "@/components/Reveal";
 import { SPEED } from "@/config/f1";
 
 // หน้าความเร็วของ GRID 26 (แบบส่วน TECH ของเว็บ Aevion):
-// - ครึ่งวงกลมกลางจอ = หน้าปัดความเร็ว 0–360 กม./ชม. ข้างในเป็นวิดีโอรถแข่ง (ยังไม่มีวิดีโอ = เห็นรถ 3D ด้านหลังแทน)
+// - ครึ่งวงกลมกลางจอ = หน้าปัดความเร็ว 0–360 กม./ชม. ข้างในเห็นรถ 3D ของฉากด้านหลัง (วิดีโอแข่งรถอยู่หน้าถัดไป: RaceSection)
 // - วงกลมตรงฐานครึ่งวงกลม = ตัวเลขที่นับขึ้นของช่องที่เลือกอยู่
 // - ด้านล่าง 3 ช่อง: ความเร็วสูงสุด, 0–100 กม./ชม., แรงม้า — เลือกวนให้เองทีละช่อง หรือกดเลือกเองได้
 // ทุกเฟรมแก้ค่าผ่าน ref โดยตรง (เข็ม, ตัวเลข) ไม่ใช้ React state เพราะเปลี่ยน 60 ครั้งต่อวินาที
@@ -23,15 +23,12 @@ function onDial(v: number, r: number, c: number) {
 
 export default function SpeedSection({
   active,
-  near,
   narrow,
 }: {
   active: boolean; // section นี้แสดงอยู่
-  near: boolean; // อยู่ติดกับ section ที่แสดงอยู่ → เริ่มโหลดวิดีโอไว้ก่อน
-  narrow: boolean; // จอแคบ (มือถือ): ครึ่งวงกลมกลายเป็นทรงโค้งประตู ให้วิดีโอใหญ่ขึ้น
+  narrow: boolean; // จอแคบ (มือถือ): ครึ่งวงกลมกลายเป็นทรงโค้งประตู ให้รถข้างในใหญ่ขึ้น
 }) {
   const stage = useRef<HTMLDivElement>(null);
-  const video = useRef<HTMLVideoElement>(null);
   const arc = useRef<SVGPathElement>(null); // เส้นสีแดงจาก 0 ถึงเข็ม
   const marker = useRef<SVGGElement>(null); // สามเหลี่ยมสีแดงที่ปลายเข็ม
   const readout = useRef<HTMLSpanElement>(null); // ตัวเลขในวงกลม
@@ -39,7 +36,6 @@ export default function SpeedSection({
   const [size, setSize] = useState(0); // ความกว้างครึ่งวงกลม (px)
   const [stat, setStat] = useState(0); // ช่องที่เลือกอยู่
   const [picked, setPicked] = useState(0); // นับครั้งที่ผู้ใช้กดเลือกช่องเอง (หยุดวนอัตโนมัติชั่วคราว)
-  const [paused, setPaused] = useState(false); // ผู้ใช้กดหยุดวิดีโอ
 
   // ขนาดครึ่งวงกลม: กว้างที่สุดที่ใส่ในพื้นที่ได้ (คอม = กว้าง 2 เท่าของสูง, มือถือ = ทรงประตูกว้างเท่าสูง)
   // ResizeObserver เรียก fit ครั้งแรกให้เองทันทีที่เริ่มดู และทุกครั้งที่พื้นที่เปลี่ยนขนาด
@@ -109,19 +105,8 @@ export default function SpeedSection({
     return () => cancelAnimationFrame(raf);
   }, [active, stat, size]);
 
-  // วิดีโอ: โหลดเมื่อเลื่อนมาใกล้ เล่นเฉพาะตอน section นี้แสดงอยู่ (ไม่เปลืองเน็ต/แบต)
-  // คอม = คลิปแนวนอน (Miami) / มือถือ = คลิปแนวตั้ง (Spa) แต่ละคลิปมีรูปปกของตัวเอง
-  const clip = SPEED.video && (narrow ? SPEED.video.tall : SPEED.video.wide);
-  const src = clip && near ? clip.src : undefined;
-  useEffect(() => {
-    const v = video.current;
-    if (!v || !src) return;
-    if (active && !paused) v.play().catch(() => {});
-    else v.pause();
-  }, [active, paused, src]);
-
   const r = size / 2;
-  const height = narrow ? size : r; // ความสูงกรอบวิดีโอ (คอม = ครึ่งวงกลมพอดี, มือถือ = ทรงประตู)
+  const height = narrow ? size : r; // ความสูงหน้าปัด (คอม = ครึ่งวงกลมพอดี, มือถือ = ทรงประตู)
   const ticks = [];
   for (let v = 0; v <= SPEED.max; v += 10) ticks.push(v);
   const s = SPEED.stats[stat];
@@ -150,26 +135,6 @@ export default function SpeedSection({
               className="absolute bottom-0 left-1/2 -translate-x-1/2"
               style={{ width: size, height }}
             >
-              {/* กรอบวิดีโอ: ครึ่งวงกลม (มือถือ = โค้งด้านบน ด้านข้างตรง) */}
-              <div
-                className="absolute inset-0 overflow-hidden"
-                style={{ borderRadius: `${r}px ${r}px 0 0` }}
-              >
-                {clip && (
-                  <video
-                    ref={video}
-                    src={src}
-                    poster={clip.poster}
-                    muted
-                    loop
-                    playsInline
-                    preload="none"
-                    aria-hidden
-                    className="h-full w-full object-cover"
-                  />
-                )}
-              </div>
-
               {/* หน้าปัด: เส้นโค้ง, ขีดทุก 10 กม./ชม., ตัวเลขทุก 100, เส้นแดงถึงเข็ม */}
               <svg
                 aria-hidden
@@ -203,19 +168,13 @@ export default function SpeedSection({
             </div>
           )}
 
-          {/* วงกลมกลางฐาน: ตัวเลขที่นับขึ้นของช่องที่เลือก (มีวิดีโอ = กดหยุด/เล่นวิดีโอได้) */}
-          <button
-            type="button"
-            disabled={!clip}
-            onClick={() => setPaused((p) => !p)}
-            aria-label={clip ? (paused ? "Play video" : "Pause video") : undefined}
-            className="f1-hub pointer-events-auto disabled:cursor-default"
-          >
+          {/* วงกลมกลางฐาน: ตัวเลขที่นับขึ้นของช่องที่เลือก */}
+          <div className="f1-hub">
             <span ref={readout} className="f1-hub-num">
               {fmt(0, s.decimals)}
             </span>
             <span className="f1-label text-[9px] md:text-[10px]">{s.unit}</span>
-          </button>
+          </div>
         </div>
 
         {/* 3 ช่องตัวเลข: ช่องที่เลือกอยู่เข้ม ที่เหลือจาง (แบบเว็บ Aevion) */}

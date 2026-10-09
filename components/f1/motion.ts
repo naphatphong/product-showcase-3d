@@ -2,7 +2,7 @@
 // หน้าเว็บเขียนค่า (ตำแหน่งเลื่อนจอ, เมาส์) ฉาก 3D อ่านค่าทุกเฟรม — ไม่ใช้ React state เพราะเปลี่ยนทุกเฟรม
 // (แนวเดียวกับหน้า FIZZ: components/fizz/motion.ts)
 
-import { CHAPTERS, DESIGN_CALLOUTS, SPEED } from "@/config/f1";
+import { CHAPTERS, DESIGN_CALLOUTS } from "@/config/f1";
 
 // section ตามลำดับในหน้า: หน้าแรก → ความเร็ว → ประวัติ → ความสวย → แยกชิ้นทั้งคัน → 8 บท (บทละชิ้นส่วน)
 // → ประกอบกลับ → ไปโชว์รูม — ลำดับต้องตรงกับท่ากล้องใน scene/timeline.ts
@@ -23,9 +23,8 @@ export const EXPLODE_I = SECTIONS.indexOf("explode");
 export const FIRST_CHAPTER = SECTIONS.indexOf(CHAPTERS[0].id); // section แรกที่เป็นบทชิ้นส่วน
 export const ASSEMBLE = SECTIONS.indexOf("assemble");
 
-// section ที่ไม่ใช้ฉาก 3D (ซ่อนฉากแล้วหยุดวาด ประหยัดแบตเครื่อง): หน้าประวัติ (รูปถ่าย)
-// และหน้าความเร็วเมื่อมีวิดีโอแล้ว (ยังไม่มีวิดีโอ = รถ 3D อยู่ในครึ่งวงกลมแทน)
-export const NO_3D = new Set([HERITAGE_I, ...(SPEED.video ? [SPEED_I] : [])]);
+// section ที่ไม่ใช้ฉาก 3D (ซ่อนฉากแล้วหยุดวาด ประหยัดแบตเครื่อง): หน้าประวัติ (วิดีโอ + รูปถ่าย)
+export const NO_3D = new Set([HERITAGE_I]);
 
 export type Motion = {
   scroll: number; // ตำแหน่งเลื่อนจอ (px)

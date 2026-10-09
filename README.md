@@ -60,7 +60,7 @@ coming back to the home page in the same tab skips it.
 | `components/three/LensFlare.tsx` | Screen-space lens flare from the sun (glow, ghosts, rainbow arc), hidden when the Earth blocks it |
 | `components/three/FloatingProduct.tsx` | One floating product: loads its `.glb`, size/centre normalisation, hover glow, HUD label |
 | `components/fizz/` | FIZZ page: Lenis scroll paging, 3D cans on a scroll timeline, bubbles, HUD, loader, FAQ |
-| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, speed dial (`SpeedSection`), long scrolling history page with photos (`HeritageSection`), design close-up with callouts that follow the car (`DesignSection`), part chapters, HUD, loader |
+| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, speed dial (`SpeedSection`), long scrolling history page with a racing video and photos (`HeritageSection`), design close-up with callouts that follow the car (`DesignSection`), part chapters, HUD, loader |
 | `config/site.ts` | Site name, headline, intro text |
 | `config/products.ts` | Product data: name, category, tagline, specs, variants (model, colour, home city) |
 | `config/fizz.ts` | FIZZ copy: brand stories, soda facts, FAQ |
@@ -78,9 +78,8 @@ coming back to the home page in the same tab skips it.
 - Product name, specs or tagline: `config/products.ts`
 - A product's variants (model file, colour, colour button, home city): `variants` in `config/products.ts`
 - GRID 26 camera angles for each section: `components/f1/scene/timeline.ts`
-- GRID 26 racing video on the speed dial: `SPEED.video` in `config/f1.ts` (a wide clip for desktop, a tall clip for phones,
-  files in `public/video/f1/`; set it to `null` to put the 3D car back inside the dial)
-- GRID 26 history page: years, text and photos in `HERITAGE` in `config/f1.ts` (photos in `public/photos/f1/`). It is the one
+- GRID 26 history page: the racing video on its first screen is `HERITAGE_FILM` in `config/f1.ts` (a wide clip for desktop,
+  a tall clip for phones, files in `public/video/f1/`); years, text and photos are `HERITAGE` (photos in `public/photos/f1/`). It is the one
   section longer than a screen: the story scrolls freely through it, then pages again (`freeRange` in `components/f1/F1Story.tsx`)
 - Any new photo or video needs a credit in `config/credits.ts`
 

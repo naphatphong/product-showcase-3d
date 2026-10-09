@@ -80,22 +80,22 @@ export const credits: Credit[] = [
     changes: "Compressed for the web (WebP textures, meshopt geometry), 1.6 MB → 227 KB. The modified file is shared under the same licence, CC BY-NC-SA 4.0.",
   },  // รูปถ่ายและวิดีโอในหน้า /f1 (ดาวน์โหลดจาก Pexels)
   {
-    usedFor: "GRID 26 — speed dial video (desktop)",
+    usedFor: "GRID 26 — heritage video (desktop)",
     title: "Formula 1 race, Miami (Pexels video 15293954)",
     author: "Pexels contributor",
     authorUrl: "https://www.pexels.com/video/15293954/",
     source: "https://www.pexels.com/video/15293954/",
     license: "Pexels License",
-    changes: "Cropped to fit the dial, scaled down and re-encoded without sound; poster image taken from a frame of the clip.",
+    changes: "Scaled down to 1600×900 and re-encoded without sound; poster image taken from a frame of the clip.",
   },
   {
-    usedFor: "GRID 26 — speed dial video (phones)",
+    usedFor: "GRID 26 — heritage video (phones)",
     title: "Verstappen Overtake at Spa",
     author: "Timo van Overdijk",
     authorUrl: "https://www.pexels.com/video/verstappen-overtake-at-spa-16726088/",
     source: "https://www.pexels.com/video/verstappen-overtake-at-spa-16726088/",
     license: "Pexels License",
-    changes: "Cropped to fit the dial, scaled down and re-encoded without sound; poster image taken from a frame of the clip.",
+    changes: "Scaled down to 720×1280 at 30 fps and re-encoded without sound; poster image taken from a frame of the clip.",
   },
   {
     usedFor: "GRID 26 — heritage, 2006",

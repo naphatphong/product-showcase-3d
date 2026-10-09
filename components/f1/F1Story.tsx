@@ -308,7 +308,7 @@ export default function F1Story() {
   const onProgress = useCallback((p: number) => setProgress(p), []);
   const onLoaded = useCallback(() => setStarted(true), []);
   const chapter = active - FIRST_CHAPTER; // บทที่แสดงอยู่ (ติดลบ/เกิน = ไม่ได้อยู่ในบทชิ้นส่วน)
-  const hidden = NO_3D.has(active); // section นี้ไม่ใช้ฉาก 3D (หน้าประวัติ/หน้าวิดีโอ) → ซ่อนฉาก
+  const hidden = NO_3D.has(active); // section นี้ไม่ใช้ฉาก 3D (หน้าประวัติ: วิดีโอ + รูปถ่าย) → ซ่อนฉาก
 
   return (
     <div className={`${archivo.variable} ${plexMono.variable} f1-root`}>
@@ -334,7 +334,7 @@ export default function F1Story() {
 
       {/* ข้อความของแต่ละ section (ลอยอยู่กับที่ เปลี่ยนตาม section ที่แสดง) */}
       <HeroOverlay active={started && active === 0} car={STORY_CAR.name} />
-      <SpeedSection active={active === SPEED_I} near={Math.abs(active - SPEED_I) <= 1} narrow={narrow} />
+      <SpeedSection active={active === SPEED_I} narrow={narrow} />
       <DesignSection active={active === DESIGN_I} motion={motion} />
       <ExplodeOverlay active={active === EXPLODE_I} />
       {CHAPTERS.map((c, i) => (
@@ -356,7 +356,13 @@ export default function F1Story() {
             }}
             className={i === HERITAGE_I ? "relative min-h-svh" : "relative h-svh"}
           >
-            {i === HERITAGE_I && <HeritageSection />}
+            {i === HERITAGE_I && (
+              <HeritageSection
+                active={active === HERITAGE_I}
+                near={Math.abs(active - HERITAGE_I) <= 1}
+                narrow={narrow}
+              />
+            )}
           </section>
         ))}
       </main>
