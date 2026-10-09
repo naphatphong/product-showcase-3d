@@ -25,7 +25,7 @@ const SPLASH = {
   wide: { pos: new THREE.Vector3(-0.8, 0.3, 9.5), look: new THREE.Vector3(-0.8, 2.2, 0), fov: 38 },
   narrow: { pos: new THREE.Vector3(0, -0.5, 12.5), look: new THREE.Vector3(0, 1.6, 0), fov: 52 },
 };
-const ARRIVE_SECONDS = 2.2; // เวลาที่สินค้าชิ้นแรกบินจากนอกจอเข้ามาจอด
+const ARRIVE_SECONDS = 5; // เวลาที่สินค้าชิ้นแรกบินจากนอกจอเข้ามาจอด (ช้าๆ แบบดาวเทียมในต้นแบบ)
 const ARRIVE_FROM = 1.7; // ชิ้นแรกเริ่มบินจากตรงไหน (นับเป็นระยะห่างระหว่างสินค้า: เกิน 1 = นอกจอมุมขวาบน)
 
 // ---------- วงโคจรของสินค้า ----------
@@ -48,8 +48,13 @@ function orbitPoint(a: number, out: THREE.Vector3) {
 }
 
 // ตำแหน่งวงโคจรที่ต้องเลื่อนไปหา (หน่วย = จำนวนชิ้น เช่น 1.4 = เลยชิ้นที่ 2 ไปเกือบครึ่งทาง)
+// held = กำลังลากอยู่ (สินค้าต้องตามนิ้วทันที) / ปล่อยแล้ว = ค่อยๆ ลอยไปจอดช้าๆ
 // เป็น ref เพราะเปลี่ยนทุกครั้งที่นิ้ว/เมาส์ขยับตอนลาก — ฉากอ่านค่าเองทุกเฟรม ไม่ต้อง render ใหม่
-export type Ring = { goal: number };
+export type Ring = { goal: number; held?: boolean };
+
+// ความไวในการไล่ตามเป้าหมาย (ยิ่งมากยิ่งเร็ว): ตอนลากต้องตามนิ้ว, ตอนปล่อย/กดปุ่ม ลอยช้าๆ (ราว 2 วินาที)
+const FOLLOW_HELD = 9;
+const FOLLOW_GLIDE = 1.9;
 
 export type SceneProps = {
   narrow: boolean;
@@ -134,7 +139,7 @@ function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants
   // ครึ่งความกว้าง/สูงของภาพที่ระยะของ SLOT (คิดจากมุมกล้องปกติ จะได้ไม่เปลี่ยนตามตอนกล้องขยับ)
   const halfH = view.pos.z * Math.tan(THREE.MathUtils.degToRad(view.fov / 2));
   const halfW = (halfH * size.width) / size.height;
-  const scale = narrow ? 1.25 : 1.2; // ขนาดสินค้า
+  const scale = 1.45; // ขนาดสินค้า (จอกว้างและจอแคบเท่ากัน)
   // ระยะที่ต้องเลื่อนจนสินค้าพ้นขอบจอ (เผื่อครึ่งตัวสินค้า + ป้ายใต้สินค้า) ทั้งทางขวาบนและซ้ายล่าง เอาทางที่ไกลกว่า
   const sx = SLOT.x - view.look.x;
   const sy = SLOT.y - view.look.y;
@@ -158,17 +163,19 @@ function Carousel({ narrow, front, ring, onHover, onSelect, labelLayer, variants
 
   useFrame((_, dt) => {
     const goal = ring.current.goal;
-    // หน้าเปิด: สินค้ายังไม่มา / กดเริ่มแล้ว: ชิ้นแรกบินจากนอกจอมุมขวาบนเข้ามาจอด (เร็วตอนแรก แล้วค่อยๆ ชะลอ)
+    // หน้าเปิด: สินค้ายังไม่มา / กดเริ่มแล้ว: ชิ้นแรกค่อยๆ ลอยจากนอกจอมุมขวาบนเข้ามาจอด
     if (started) arrive.current = reduced ? 1 : Math.min(1, arrive.current + dt / ARRIVE_SECONDS);
-    const extra = ARRIVE_FROM * Math.pow(1 - arrive.current, 3); // ระยะที่ยังเหลือก่อนถึงที่จอด (easeOutCubic)
+    // ระยะที่ยังเหลือก่อนถึงที่จอด: easeOutQuart = ความเร็วพอดีๆ ตอนแรก แล้วชะลอยาวๆ จนแทบลอยนิ่งตอนท้าย
+    const extra = ARRIVE_FROM * Math.pow(1 - arrive.current, 4);
     const prevGoal = pos.current ?? goal;
-    const p = pos.current === null || reduced ? goal : THREE.MathUtils.damp(prevGoal, goal, 5, dt);
+    const follow = ring.current.held ? FOLLOW_HELD : FOLLOW_GLIDE;
+    const p = pos.current === null || reduced ? goal : THREE.MathUtils.damp(prevGoal, goal, follow, dt);
     // ความเร็ว (ชิ้นต่อวินาที รวมการบินเข้ามาตอนเริ่ม) → เอียงตัวไปทางที่เคลื่อน
     const shown = p - extra;
     const v = dt > 0 && pos.current !== null ? (shown - (prevGoal - extraPrev.current)) / dt : 0;
     extraPrev.current = extra;
     pos.current = p;
-    bank.current = THREE.MathUtils.damp(bank.current, THREE.MathUtils.clamp(v * 0.18, -0.4, 0.4), 6, dt);
+    bank.current = THREE.MathUtils.damp(bank.current, THREE.MathUtils.clamp(v * 0.3, -0.4, 0.4), 3, dt);
     const n = products.length;
     items.current.forEach((g, i) => {
       if (!g) return;

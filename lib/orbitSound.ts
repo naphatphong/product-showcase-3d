@@ -108,9 +108,9 @@ function noiseBurst(o: BurstOptions) {
 export function whoosh(dir: 1 | -1 = 1, long = false) {
   if (!ctx || !master || !enabled) return;
   const [from, to] = dir > 0 ? [240, 1400] : [1400, 240];
-  noiseBurst({ type: "bandpass", freq: from, freqTo: to, q: 1.4, peak: 0.22, attack: long ? 0.9 : 0.3, release: long ? 1.4 : 0.6 });
+  noiseBurst({ type: "bandpass", freq: from, freqTo: to, q: 1.4, peak: 0.22, attack: long ? 1.6 : 0.5, release: long ? 2.6 : 1.1 });
   // เสียงทุ้มต่ำวูบตาม (ความรู้สึกว่ามีของใหญ่ผ่านหน้า)
-  tone(ctx, master, { freq: long ? 70 : 90, freqTo: 45, peak: 0.12, attack: long ? 0.6 : 0.2, release: long ? 1.4 : 0.6 });
+  tone(ctx, master, { freq: long ? 70 : 90, freqTo: 45, peak: 0.12, attack: long ? 1.2 : 0.4, release: long ? 2.6 : 1.1 });
 }
 
 // เสียงกริ๊งใสๆ 2 โน้ต (E5 + B5) มีเสียงสะท้อน — ตอนกด Enter orbit

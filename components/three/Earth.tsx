@@ -92,9 +92,21 @@ const surfaceFragment = /* glsl */ `
     float sun = dot(n, uSunDir);                 // 1 = แดดตรงหัว, ติดลบ = ด้านกลางคืน
     float dayMix = smoothstep(-0.18, 0.28, sun); // เส้นแบ่งกลางวัน/กลางคืนแบบนุ่มๆ
 
-    vec3 day = texture2D(uDay, vUv).rgb;
+    // ทำภาพให้คมขึ้นแบบ unsharp mask: เอาภาพปกติ ลบด้วยภาพเบลอ (อ่านจาก mipmap ที่เล็กกว่า 2 ขั้น ด้วย bias)
+    // ได้เฉพาะรายละเอียด/ขอบ แล้วบวกกลับเข้าไป — ชายฝั่ง ภูเขา และขอบเมฆจึงชัดขึ้น โดยไม่ต้องใช้ภาพที่ใหญ่ขึ้น
+    // bias -0.5 = อ่านภาพละเอียดกว่าที่ GPU เลือกให้นิดหน่อย ช่วยแถวขอบโลกที่มองเฉียงมากๆ ไม่ให้เบลอ
+    vec3 day = texture2D(uDay, vUv, -0.5).rgb;
+    vec3 dayBlur = texture2D(uDay, vUv, 2.0).rgb;
+    day = clamp(day + (day - dayBlur) * 0.9, 0.0, 1.0);
+    // เพิ่มความอิ่มสีและคอนทราสต์เล็กน้อย (ภาพถ่ายดาวเทียมต้นฉบับค่อนข้างซีด)
+    float luma = dot(day, vec3(0.299, 0.587, 0.114));
+    day = clamp(mix(vec3(luma), day, 1.18) * 1.06 - 0.02, 0.0, 1.0);
     vec3 night = bicubic(uNight, vUv, uNightSize).rgb;
-    float clouds = bicubic(uClouds, vUv + vec2(uCloudShift, 0.0), uCloudsSize).r; // เมฆเลื่อนช้ากว่าพื้นโลก
+    vec2 cloudUv = vUv + vec2(uCloudShift, 0.0); // เมฆเลื่อนช้ากว่าพื้นโลก
+    float clouds = bicubic(uClouds, cloudUv, uCloudsSize).r;
+    float cloudBlur = texture2D(uClouds, cloudUv, 2.0).r;
+    // เมฆ: unsharp mask เหมือนพื้นโลก + ดึงคอนทราสต์ (ส่วนบางๆ ใสขึ้น ส่วนหนาขาวขึ้น) เมฆจึงไม่เป็นหมอกฟุ้งทั้งลูก
+    clouds = smoothstep(0.08, 0.9, clamp(clouds + (clouds - cloudBlur) * 0.8, 0.0, 1.0));
 
     // ด้านกลางวัน: พื้นโลกโดนแดด + เมฆสีขาว
     vec3 dayCol = day * (0.08 + max(sun, 0.0) * 1.15);
@@ -168,7 +180,7 @@ export default function Earth({ focus }: Props) {
       d.colorSpace = THREE.SRGBColorSpace; // ภาพสีต้องบอกว่าเป็น sRGB สีจะได้ไม่ซีด
       n.colorSpace = THREE.SRGBColorSpace;
       c.wrapS = THREE.RepeatWrapping; // ให้เมฆเลื่อนวนรอบโลกได้ไม่มีรอยต่อ
-      for (const t of [d, n, c]) t.anisotropy = 8; // ภาพคมขึ้นตอนมองเฉียงๆ
+      for (const t of [d, n, c]) t.anisotropy = 16; // ภาพคมขึ้นตอนมองเฉียงๆ (three.js ลดให้เองถ้าเครื่องรองรับไม่ถึง)
     },
   );
 

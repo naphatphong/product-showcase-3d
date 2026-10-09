@@ -59,7 +59,7 @@ type Drag = {
 // จำไว้ในแท็บนี้ว่าผ่านหน้าเปิดแล้ว (กลับมาหน้าแรกอีกครั้ง → ข้ามหน้าเปิด สินค้าบินเข้ามาเลย)
 const SEEN = "orbit-entered";
 // หลังกดเริ่ม รอให้สินค้าชิ้นแรกบินใกล้ถึงที่จอดก่อน (มิลลิวินาที) แล้วค่อยแสดงรายละเอียด/ปุ่ม/ป้าย
-const ARRIVE_UI_DELAY = 1300;
+const ARRIVE_UI_DELAY = 2600;
 
 // ส่วนที่โต้ตอบได้ของหน้าแรก:
 // 1. หน้าเปิด: เห็นแค่โลก + หัวข้อ + ปุ่ม Enter orbit (กดปุ่ม / เลื่อนลง / Enter = เริ่ม)
@@ -209,6 +209,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     // ไม่ได้กดปุ่มเมาส์ค้างแล้ว (ปล่อยนอกฉากก่อนเริ่มลาก) → ยกเลิก
     if (e.pointerType === "mouse" && e.buttons === 0) {
       drag.current = null;
+      ring.current.held = false;
       return;
     }
     const dx = e.clientX - d.x;
@@ -228,11 +229,13 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
     d.lastX = e.clientX;
     d.lastT = e.timeStamp;
     ring.current.goal = goal;
+    ring.current.held = true;
     setTurn(Math.round(goal)); // ลากผ่านครึ่งชิ้น → แผงรายละเอียดเปลี่ยนเป็นชิ้นใหม่ทันที
   };
   const pointerUp = (e: PointerEvent) => {
     const d = drag.current;
     drag.current = null;
+    ring.current.held = false;
     if (!d?.moved) return;
     setDragging(false);
     const g = ring.current.goal;

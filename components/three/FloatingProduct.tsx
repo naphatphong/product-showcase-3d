@@ -11,6 +11,15 @@ import type { Product, Variant } from "@/config/products";
 // (สินค้าแต่ละชิ้นปรับเองได้ด้วย size ใน config เช่น รถยาวๆ ให้ใหญ่ขึ้น)
 const SIZE = 1.9;
 
+// มุมเอียงของแต่ละชิ้น [ก้ม/เงย (แกน x), เอียงซ้าย/ขวา (แกน z)] เรเดียน — ในอวกาศไม่มีพื้น ของจึงไม่ตั้งตรง
+// แต่ละชิ้นเอียงไม่เหมือนกัน และส่ายช้าๆ รอบมุมนี้ตลอด (WOBBLE) เหมือนลอยอยู่จริง
+const TILTS: [number, number][] = [
+  [0.25, -0.3],
+  [0.2, 0.28],
+  [0.28, -0.18],
+];
+const WOBBLE = 0.12;
+
 // โหลดไฟล์ .glb (drei จะแคชไว้ โหลดซ้ำไม่เสียเวลา และถอดไฟล์ที่บีบแบบ meshopt ให้เอง)
 function GltfModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
@@ -40,6 +49,7 @@ export default function FloatingProduct({
   onSelect,
 }: Props) {
   const model = useRef<THREE.Group>(null);
+  const tilt = useRef<THREE.Group>(null);
   const rim = useRef<THREE.PointLight>(null);
   const lift = useRef(0); // ความสูงที่ยกขึ้นตอนนี้ (ค่อยๆ เปลี่ยน)
   const spin = useRef(0); // มุมที่ยังต้องหมุนเพิ่ม (ใช้ตอนเปลี่ยนแบบ)
@@ -72,6 +82,14 @@ export default function FloatingProduct({
     const extra = spin.current * (1 - Math.exp(-5 * dt)); // หมุนเพิ่มแบบเร็วตอนแรกแล้วค่อยๆ ช้าลง
     spin.current -= extra;
     m.rotation.y += dt * (active ? 0.5 : 0.2) + extra;
+    // เอียง + ส่ายช้าๆ (จังหวะแกน x กับ z ไม่เท่ากัน จึงไม่ซ้ำเป็นวงเดิม) — หมุนรอบตัวเองก็หมุนรอบแกนที่เอียงนี้
+    const t = tilt.current;
+    if (t) {
+      const [tx, tz] = TILTS[index % TILTS.length];
+      const time = state.clock.elapsedTime;
+      t.rotation.x = tx + Math.sin(time * 0.37 + index * 1.3) * WOBBLE;
+      t.rotation.z = tz + Math.sin(time * 0.29 + index * 2.1) * WOBBLE;
+    }
     // แสงขอบสีประจำสินค้า: สว่างสุดเมื่อจอดอยู่, ชิ้นอื่นสว่างขึ้นเมื่อเอาเมาส์ชี้ (บอกว่าคลิกได้)
     if (rim.current) rim.current.intensity = damp(rim.current.intensity, active ? 22 : hovered ? 12 : 4, 6, dt);
   });
@@ -93,46 +111,49 @@ export default function FloatingProduct({
 
   return (
     <group>
-      {/* กล่องล่องหนครอบตัวสินค้า ใช้รับเมาส์/นิ้ว (ชี้โดนง่ายกว่าเล็งตัวสินค้าตรงๆ) */}
-      <mesh visible={false} onPointerOver={over} onPointerOut={out} onClick={click}>
-        <cylinderGeometry args={[size / 2 + 0.1, size / 2 + 0.1, Math.max(halfHeight * 2 + 0.3, 1), 16]} />
-      </mesh>
+      {/* tilt = กลุ่มที่เอียงตัวสินค้า กล่องรับคลิก และไฟขอบไปพร้อมกัน (ป้ายข้างสินค้าอยู่นอกกลุ่ม ไม่ต้องเอียงตาม) */}
+      <group ref={tilt}>
+        {/* กล่องล่องหนครอบตัวสินค้า ใช้รับเมาส์/นิ้ว (ชี้โดนง่ายกว่าเล็งตัวสินค้าตรงๆ) */}
+        <mesh visible={false} onPointerOver={over} onPointerOut={out} onClick={click}>
+          <cylinderGeometry args={[size / 2 + 0.1, size / 2 + 0.1, Math.max(halfHeight * 2 + 0.3, 1), 16]} />
+        </mesh>
 
-      {/* ไฟดวงเล็กสีประจำสินค้า วางไว้ด้านหลัง ทำให้ขอบสินค้าเรืองสีนั้น (rim light) */}
-      <pointLight
-        ref={rim}
-        color={variant.accent}
-        intensity={4}
-        distance={3}
-        decay={2}
-        position={[0, 0.3, -1]}
-      />
+        {/* ไฟดวงเล็กสีประจำสินค้า วางไว้ด้านหลัง ทำให้ขอบสินค้าเรืองสีนั้น (rim light) */}
+        <pointLight
+          ref={rim}
+          color={variant.accent}
+          intensity={4}
+          distance={3}
+          decay={2}
+          position={[0, 0.3, -1]}
+        />
 
-      {/* ตัวสินค้า: ไฟล์ .glb ของแบบที่เลือก
-          Resize = ย่อ/ขยายให้ด้านที่ยาวสุดยาว 1 หน่วย, Center = เลื่อนให้จุดกึ่งกลางอยู่ที่ (0,0,0)
-          โมเดลจะขนาดเท่าไรก็ตาม จะถูกจัดให้ขนาดและตำแหน่งเท่ากันหมด
-          Suspense อยู่นอก Center: Center จะวัดขนาดหลังไฟล์โหลดเสร็จแล้วเท่านั้น */}
-      <group ref={model}>
-        <group scale={size}>
-          {/* Safe: ไฟล์โมเดลโหลดไม่สำเร็จ → ซ่อนเฉพาะชิ้นนี้ (key = เปลี่ยนแบบแล้วลองใหม่ได้) */}
-          <Safe key={variantId}>
-            <Suspense fallback={null}>
-              {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
-              <Center
-                key={variantId}
-                onCentered={({ width, height, depth }) => {
-                  const w = (Math.max(width, depth) * size) / 2;
-                  const h = (height * size) / 2;
-                  // ค่าเดิม → คืน object เดิม React จะไม่ render ใหม่ (Center เรียกฟังก์ชันนี้ทุกครั้งที่ render)
-                  setHalf((cur) => (cur.w === w && cur.h === h ? cur : { w, h }));
-                }}
-              >
-                <Resize>
-                  <GltfModel url={variant.model} />
-                </Resize>
-              </Center>
-            </Suspense>
-          </Safe>
+        {/* ตัวสินค้า: ไฟล์ .glb ของแบบที่เลือก
+            Resize = ย่อ/ขยายให้ด้านที่ยาวสุดยาว 1 หน่วย, Center = เลื่อนให้จุดกึ่งกลางอยู่ที่ (0,0,0)
+            โมเดลจะขนาดเท่าไรก็ตาม จะถูกจัดให้ขนาดและตำแหน่งเท่ากันหมด
+            Suspense อยู่นอก Center: Center จะวัดขนาดหลังไฟล์โหลดเสร็จแล้วเท่านั้น */}
+        <group ref={model}>
+          <group scale={size}>
+            {/* Safe: ไฟล์โมเดลโหลดไม่สำเร็จ → ซ่อนเฉพาะชิ้นนี้ (key = เปลี่ยนแบบแล้วลองใหม่ได้) */}
+            <Safe key={variantId}>
+              <Suspense fallback={null}>
+                {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
+                <Center
+                  key={variantId}
+                  onCentered={({ width, height, depth }) => {
+                    const w = (Math.max(width, depth) * size) / 2;
+                    const h = (height * size) / 2;
+                    // ค่าเดิม → คืน object เดิม React จะไม่ render ใหม่ (Center เรียกฟังก์ชันนี้ทุกครั้งที่ render)
+                    setHalf((cur) => (cur.w === w && cur.h === h ? cur : { w, h }));
+                  }}
+                >
+                  <Resize>
+                    <GltfModel url={variant.model} />
+                  </Resize>
+                </Center>
+              </Suspense>
+            </Safe>
+          </group>
         </group>
       </group>
 
