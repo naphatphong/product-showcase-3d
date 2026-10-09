@@ -96,11 +96,11 @@ const surfaceFragment = /* glsl */ `
   }
 
   // อ่านเมฆแบบ bicubic + unsharp mask (ลบภาพเบลอจาก mipmap เล็กกว่า 2 ขั้น ได้เฉพาะขอบ แล้วบวกกลับ) + ดึงคอนทราสต์
-  // ส่วนบางๆ ใสขึ้น ส่วนหนาขาวขึ้น เมฆจึงเป็นก้อนชัด ไม่เป็นหมอกฟุ้งทั้งลูก
+  // เมฆบางๆ (ค่าต่ำ) แทบใส มองทะลุเห็นพื้น ส่วนแกนเมฆหนาขาวชัด → เป็นก้อนๆ ไม่เป็นหมอกฟุ้งทั้งลูก
   float cloudAt(vec2 uv) {
     float c = bicubic(uClouds, uv, uCloudsSize).r;
     float b = texture2D(uClouds, uv, 2.0).r;
-    return smoothstep(0.06, 0.75, clamp(c + (c - b) * 0.8, 0.0, 1.0));
+    return smoothstep(0.1, 0.95, clamp(c + (c - b) * 0.6, 0.0, 1.0));
   }
 
   void main() {
@@ -118,10 +118,11 @@ const surfaceFragment = /* glsl */ `
     day = clamp(day + (day - dayBlur) * 0.5, 0.0, 1.0);
     float water = smoothstep(0.015, 0.07, day.b - day.r); // ทะเลในภาพเป็นสีน้ำเงินเข้ม (น้ำเงิน > แดง)
     // มองจากอวกาศจริง แผ่นดินจะซีดและอมฟ้าเพราะอากาศหนาหลายสิบกิโลเมตรคั่นอยู่ → ลดความอิ่มสีแผ่นดินลงนิด
-    // ทะเลจริงเป็นน้ำเงินเข้มสด ไม่ใช่เกือบดำแบบในภาพ → ยกสีทะเลขึ้น
+    // ทะเลเป็นน้ำเงินกรมท่าเข้ม (ภาพต้นฉบับเกือบดำ) แล้วเพิ่มคอนทราสต์: ส่วนมืดมืดลง ส่วนสว่างสว่างขึ้น ไม่ดูซีดแบน
     float luma = dot(day, vec3(0.299, 0.587, 0.114));
-    day = mix(vec3(luma), day, 0.85);
-    day = mix(day, vec3(0.015, 0.07, 0.19), water * 0.55);
+    day = mix(vec3(luma), day, 0.9);
+    day = mix(day, vec3(0.008, 0.035, 0.11), water * 0.5);
+    day = pow(day, vec3(1.12)) * 1.1;
 
     // ---------- เมฆ ----------
     vec2 cloudUv = vUv + vec2(uCloudShift, 0.0); // เมฆเลื่อนช้ากว่าพื้นโลก
@@ -139,8 +140,8 @@ const surfaceFragment = /* glsl */ `
 
     // ---------- แสงด้านกลางวัน ----------
     vec3 ground = day * (0.06 + lit * 1.35) * (1.0 - shadow * 0.55);
-    vec3 cloudCol = vec3(1.0, 0.99, 0.97) * (0.05 + lit * 1.35) * (0.94 - relief * 0.2);
-    vec3 dayCol = mix(ground, cloudCol, clouds * 0.95);
+    vec3 cloudCol = vec3(1.0, 0.99, 0.97) * (0.05 + lit * 1.45) * (0.94 - relief * 0.2);
+    vec3 dayCol = mix(ground, cloudCol, clouds * 0.85); // 0.85 = แม้เมฆหนาสุดก็ยังเห็นพื้นข้างใต้จางๆ
     // แสงแดดสะท้อนผิวน้ำ (เฉพาะทะเลที่ไม่มีเมฆบัง)
     float glint = pow(max(dot(n, normalize(uSunDir + v)), 0.0), 70.0);
     dayCol += vec3(1.0, 0.92, 0.8) * glint * water * (1.0 - clouds) * 0.7;
@@ -152,14 +153,15 @@ const surfaceFragment = /* glsl */ `
     vec3 col = mix(nightCol, dayCol, dayMix);
 
     // ---------- ชั้นบรรยากาศ (หัวใจของความสมจริง) ----------
-    // แสงแดดกระเจิงในอากาศเป็นสีฟ้า (เหตุผลเดียวกับที่ท้องฟ้าเป็นสีฟ้า) ทั้งลูกจึงมีม่านฟ้าบางๆ ทับอยู่
-    // และยิ่งมองเฉียงไปทางขอบโลก ยิ่งมองทะลุอากาศหนา ม่านฟ้ายิ่งทึบจนกลืนพื้นด้านล่าง
+    // แสงแดดกระเจิงในอากาศเป็นสีฟ้า (เหตุผลเดียวกับที่ท้องฟ้าเป็นสีฟ้า) ยิ่งมองเฉียงไปทางขอบโลก ยิ่งมองทะลุอากาศหนา ฟ้ายิ่งเข้ม
+    // แต่อากาศ "ใส": ไม่ทาสีทับพื้น ใช้วิธี (1) พื้นมืดลงนิดหน่อยตามความหนาอากาศ (2) บวกแสงฟ้าที่กระเจิงเพิ่มเข้าไป
+    // → ขอบโลกเรืองฟ้า แต่ยังมองทะลุเห็นเมฆและพื้นจนถึงขอบ
     float airLit = smoothstep(-0.2, 0.6, sun);
-    float depth = pow(1.0 - view, 1.9);                    // ความหนาของอากาศที่มองทะลุ (0 ตรงกลาง → 1 ที่ขอบ)
-    vec3 airCol = mix(vec3(0.16, 0.36, 0.78), vec3(0.62, 0.8, 1.0), depth); // ฟ้าเข้มด้านใน → ฟ้าอ่อนเกือบขาวที่ขอบ
-    col = mix(col, airCol * airLit, clamp(0.06 + depth * 0.9, 0.0, 0.92) * airLit);
+    float depth = pow(1.0 - view, 2.0);                    // ความหนาของอากาศที่มองทะลุ (0 ตรงกลาง → 1 ที่ขอบ)
+    vec3 airCol = mix(vec3(0.1, 0.25, 0.6), vec3(0.45, 0.68, 1.0), depth); // ฟ้าเข้มด้านใน → ฟ้าอ่อนที่ขอบ
+    col = col * (1.0 - depth * 0.35) + airCol * airLit * (0.03 + depth * 0.4);
     // แถบสว่างเส้นบางๆ เลียดขอบโลกพอดี
-    col += vec3(0.45, 0.68, 1.0) * pow(1.0 - view, 5.0) * (0.1 + 1.2 * airLit);
+    col += vec3(0.5, 0.72, 1.0) * pow(1.0 - view, 16.0) * (0.1 + 0.9 * airLit);
 
     gl_FragColor = vec4(col, 1.0);
     #include <tonemapping_fragment>
@@ -209,7 +211,7 @@ const START_ROTATION = facingRotation(48, 15, camAzimuth);
 export default function Earth({ focus, narrow = false }: Props) {
   const group = useRef<THREE.Group>(null);
   const targetRotation = useRef<number | null>(null);
-  // ภาพพื้นโลกกลางวัน/กลางคืนมี 2 ขนาด: 8K (8192×4096) สำหรับจอคอม โลกอยู่ใกล้กล้องมาก ภาพยิ่งละเอียดยิ่งคม
+  // ภาพพื้นโลก กลางวัน/กลางคืน/เมฆ มี 2 ขนาด: 8K (8192×4096) สำหรับจอคอม โลกอยู่ใกล้กล้องมาก ภาพยิ่งละเอียดยิ่งคม
   // และ 4K สำหรับมือถือ หรือการ์ดจอที่รับภาพกว้าง 8192 ไม่ได้ (maxTextureSize = ขนาดภาพใหญ่สุดที่การ์ดจอรับได้)
   const maxSize = useThree((s) => s.gl.capabilities.maxTextureSize);
   const hd = !narrow && maxSize >= 8192 ? "-8k" : "";
@@ -217,7 +219,7 @@ export default function Earth({ focus, narrow = false }: Props) {
   // โหลดภาพ 3 ภาพพร้อมกัน (ระหว่างโหลด React Suspense จะรอให้ครบก่อน)
   // ฟังก์ชันที่ส่งเป็นตัวที่ 2 ทำงานครั้งเดียวตอนโหลดเสร็จ ใช้ตั้งค่าภาพ
   const [day, night, clouds] = useTexture(
-    [`/textures/earth-day${hd}.webp`, `/textures/earth-night${hd}.webp`, "/textures/earth-clouds.webp"],
+    [`/textures/earth-day${hd}.webp`, `/textures/earth-night${hd}.webp`, `/textures/earth-clouds${hd}.webp`],
     ([d, n, c]) => {
       d.colorSpace = THREE.SRGBColorSpace; // ภาพสีต้องบอกว่าเป็น sRGB สีจะได้ไม่ซีด
       n.colorSpace = THREE.SRGBColorSpace;
