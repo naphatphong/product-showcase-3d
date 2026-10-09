@@ -32,11 +32,12 @@ const EXPLODE = from(HERO, { ty: 1.25, tz: 0.3, az: 43 * deg, el: 21 * deg, dist
 // จึงยังอยู่ตรงจุดที่มองบนจอ แค่ใหญ่ขึ้น — ระยะ dist นับรวมระยะที่ชิ้นลอยเข้ามาแล้ว)
 const CHAPTER = from(EXPLODE, { shift: 0.1 });
 const FRONT = from(CHAPTER, { ty: 1.08, tz: 3.72, az: 36 * deg, el: 13 * deg, dist: 6.4 });
-const COCKPIT = from(CHAPTER, { ty: 2.3, tz: 0.93, az: 50 * deg, el: 28 * deg, dist: 5.4 });
+const COCKPIT = from(CHAPTER, { ty: 2.3, tz: 0.93, az: 50 * deg, el: 28 * deg, dist: 6 });
 const CHASSIS = from(CHAPTER, { ty: 1.18, tz: 0.4, az: 78 * deg, el: 18 * deg, dist: 8.6 });
-const POWER = from(CHAPTER, { ty: 1.95, tz: -0.95, az: 70 * deg, el: 16 * deg, dist: 9.2 });
-const SIDEPODS = from(CHAPTER, { ty: 1.65, tz: 0.72, az: 25 * deg, el: 30 * deg, dist: 9.9 });
-const FLOOR = from(CHAPTER, { ty: 0.2, tz: -0.9, az: 150 * deg, el: 20 * deg, dist: 9.5 });
+const POWER = from(CHAPTER, { ty: 1.95, tz: -0.95, az: 70 * deg, el: 16 * deg, dist: 10.5 });
+// ไซด์พอดลอยขึ้นสูงกว่าตำแหน่งแยกชิ้น (ไม่ได้ลอยตรงเข้าหากล้อง) จุดที่มองจึงตามขึ้นไปที่ตำแหน่งใหม่
+const SIDEPODS = from(CHAPTER, { ty: 2.8, tz: 0.72, az: 25 * deg, el: 22 * deg, dist: 10 });
+const FLOOR = from(CHAPTER, { ty: 0.2, tz: -0.9, az: 150 * deg, el: 20 * deg, dist: 8.7 });
 const REAR = from(CHAPTER, { ty: 1.72, tz: -3.21, az: 149 * deg, el: 11 * deg, dist: 5.2 });
 const WHEELS = from(CHAPTER, { ty: 0.55, tz: 0, az: 18 * deg, el: 24 * deg, dist: 14.5 });
 
@@ -55,16 +56,16 @@ export const POSES: Pose[] = [HERO, EXPLODE, FRONT, COCKPIT, CHASSIS, POWER, SID
 // (คิดจากความกว้างของชิ้นส่วนเมื่อมองจากมุมนั้น — รถทั้งคันมุมเฉียงกว้างราว 4.6 ม., แยกชิ้นทั้งคันราว 7 ม.)
 // หน้าแรก/ประกอบกลับ/ท้ายหน้า หันรถเข้าหากล้องมากขึ้น (มุมเฉียงแคบกว่า) รถจะได้ไม่เล็กเกินไป
 const NARROW: Partial<Pose>[] = [
-  { az: 34 * deg, dist: 13.5, lift: 0.12 }, // hero
+  { az: 34 * deg, dist: 15.5, lift: 0.12 }, // hero (เผื่อรถส่ายไปมา)
   { az: 28 * deg, dist: 20 }, // explode
   { dist: 7.9 }, // front
   { dist: 5.2 }, // cockpit
-  { dist: 8.5 }, // chassis
-  { dist: 9.5 }, // power
-  { dist: 10.1 }, // sidepods
+  { dist: 10.5 }, // chassis
+  { dist: 12 }, // power
+  { dist: 11.5 }, // sidepods
   { dist: 9.9 }, // floor
-  { dist: 5.2 }, // rear
-  { dist: 15.1 }, // wheels
+  { dist: 6.2 }, // rear
+  { dist: 16 }, // wheels
   { az: -34 * deg, dist: 13.5 }, // assemble
   { az: -62 * deg, dist: 16, lift: 0.2 }, // outro
 ];
