@@ -1,16 +1,17 @@
 /* หน้าเว็บบ้าน /house (แบบ fluid.glass) — import จาก HouseLanding.tsx จึงโหลดเฉพาะหน้านี้
    ทุกคลาสขึ้นต้นด้วย hs- กันชนกับคลาสของหน้าอื่น (CSS Module ใช้ไม่ได้ในโปรเจกต์นี้: next.config ให้ทุกไฟล์ .css ผ่าน Tailwind แบบ CSS ธรรมดา)
-   สี: พื้นเข้มเกือบดำ (ink) สลับพื้นครีม (paper) / ตัวหนังสือ Archivo บางๆ + ป้ายเล็กตัวพิมพ์ดีด IBM Plex Mono */
+   สี: โทนอุ่นตามรูปห้อง พื้นน้ำตาลเข้มเกือบดำ (ink) สลับพื้นครีมอุ่น (paper) + บรอนซ์ (bronze) แบบโคมไฟทองเหลืองในห้อง / ตัวหนังสือ Archivo บางๆ + ป้ายเล็กตัวพิมพ์ดีด IBM Plex Mono */
 
 .hs-root {
-  --ink: #1c1d1f;
-  --ink-2: #26272a;
-  --paper: #f2efe9;
-  --stone: #a6a39e;
-  --on-ink: #eceae6;
-  --on-paper: #19191a;
-  --muted-ink: rgb(236 234 230 / 0.55);
-  --muted-paper: rgb(25 25 26 / 0.5);
+  --ink: #1e1916;
+  --ink-2: #2a231f;
+  --paper: #f4eee6;
+  --stone: #b5a796;
+  --bronze: #a98458;
+  --on-ink: #efe8df;
+  --on-paper: #221c18;
+  --muted-ink: rgb(239 232 223 / 0.55);
+  --muted-paper: rgb(34 28 24 / 0.52);
   --gutter: clamp(16px, 2.4vw, 32px);
   --ease: cubic-bezier(0.2, 0.75, 0.2, 1);
   background: var(--ink);
@@ -39,7 +40,7 @@
   width: 5px;
   height: 5px;
   margin: 0 8px 1px 0;
-  background: currentColor;
+  background: var(--bronze);
   transform: rotate(45deg);
 }
 .hs-center {
@@ -227,8 +228,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgb(16 16 18 / 0.72) 0%, rgb(16 16 18 / 0.15) 42%, transparent 60%),
-    linear-gradient(to bottom, rgb(16 16 18 / 0.45), transparent 18%);
+    linear-gradient(to top, rgb(24 18 14 / 0.72) 0%, rgb(24 18 14 / 0.15) 42%, transparent 60%),
+    linear-gradient(to bottom, rgb(24 18 14 / 0.45), transparent 18%);
 }
 .hs-header {
   position: absolute;
@@ -303,7 +304,20 @@
 /* ---------- แถบแนะนำ ---------- */
 .hs-band {
   padding: 26px var(--gutter) clamp(140px, 22vh, 240px);
-  background: linear-gradient(var(--ink), #121314);
+  background: linear-gradient(var(--ink), #15110f);
+}
+/* ทั้งห้องในภาพเดียว: พาโนรามาเต็มความกว้างจอ (ออกนอกขอบ padding ของแถบ) */
+.hs-pano {
+  position: relative;
+  aspect-ratio: 2667 / 957;
+  margin: clamp(50px, 9vh, 100px) calc(-1 * var(--gutter)) 0;
+  overflow: hidden;
+}
+.hs-pano figcaption {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 14px;
+  color: rgb(255 255 255 / 0.85);
 }
 .hs-band-row {
   display: grid;
@@ -386,7 +400,7 @@
   display: block;
   position: relative;
   overflow: hidden;
-  background: #d9d5ce;
+  background: #ddd3c6;
 }
 .hs-cover {
   object-fit: cover;
@@ -442,7 +456,7 @@
 .hs-plan-img {
   position: relative;
   aspect-ratio: 18 / 11;
-  background: #e4dfd6;
+  background: #e9e0d4;
 }
 .hs-plan-img img {
   object-fit: contain;
@@ -578,7 +592,7 @@
   margin: 0;
   padding: 0;
   border: 0;
-  background: rgb(12 12 13 / 0.95);
+  background: rgb(20 16 14 / 0.95);
   cursor: zoom-out;
 }
 .hs-box-img {
@@ -979,6 +993,9 @@ html:has(.hs-box[open]) {
   }
   .hs-compare {
     aspect-ratio: 4 / 3;
+  }
+  .hs-pano {
+    aspect-ratio: 16 / 10;
   }
   .hs-foot-row {
     flex-direction: column;

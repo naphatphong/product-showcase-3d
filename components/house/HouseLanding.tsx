@@ -13,14 +13,15 @@ import { SETTLE_AT } from "./hearth/timeline";
 import "./house.css"; // สไตล์ของหน้านี้ (คลาสขึ้นต้นด้วย hs-) โหลดเฉพาะหน้า /house
 
 const pad = (n: number) => String(n).padStart(2, "0");
-// รูปทุกรูปในหน้านี้เรนเดอร์จากโมเดลห้อง HEARTH ด้วย Cycles (scripts/hearth/bake.py → still_<ชื่อ>)
+// รูปห้อง (room-*, panorama, รูปใน Details) = ภาพเรนเดอร์ของผู้ออกแบบห้อง (cavitbarisbalta) ครอปให้พอดีช่อง
+// day / night / plan = เรนเดอร์จากโมเดลเดียวกับทัวร์ด้วย Cycles (scripts/hearth/bake.py → still_<ชื่อ>)
 const photo = (name: string) => `/photos/hearth/${name}.webp`;
 
 // จอแรก: ภาพนิ่ง 3 ภาพค่อยๆ ซูมช้าๆ และจางสลับกัน (แทนวิดีโอ ไฟล์เล็กกว่ามาก)
 const HERO = [
-  { name: "hero-1", alt: "The HEARTH living room by day: sofa, fireplace and the kitchen behind" },
-  { name: "hero-2", alt: "Looking back from the kitchen across the dining table to the sofa" },
-  { name: "hero-3-night", alt: "The whole room at night, lit by lamps and the fire" },
+  { name: "room-1", alt: "The living room under a mirrored bronze ceiling, looking towards the kitchen and the dining table" },
+  { name: "room-2", alt: "The sofa by the window, the Christmas tree and the fire under the TV wall" },
+  { name: "room-3", alt: "The marble kitchen island, looking back into the living room" },
 ];
 
 // ข้อความใหญ่กลางหน้า: คำค่อยๆ เข้มขึ้นตามการเลื่อน (แบบ fluid.glass)
@@ -32,11 +33,11 @@ const STATEMENT =
 // wide = บนมือถือรูปนี้กว้างเต็มแถว (ที่เหลือวางคู่กัน 2 รูปต่อแถว)
 type Tile = { src: string; alt: string; name?: string; x: number; y: number; w: number; ratio: string; speed: number; wide?: boolean };
 const TILES: Tile[] = [
-  { src: photo("sofa"), alt: "The sofa and coffee table in front of the fireplace", name: "Sofa", x: 20, y: 0, w: 28, ratio: "4 / 3", speed: 0.06, wide: true },
-  { src: photo("feathers"), alt: "A cloud of feather lamps over the dining table", name: "Feathers", x: 64, y: 40, w: 19, ratio: "4 / 5", speed: 0.16 },
-  { src: photo("tree-night"), alt: "The Christmas tree in the corner at night", x: 49, y: 72, w: 13, ratio: "1 / 1", speed: 0.26 },
-  { src: photo("marble"), alt: "The marble kitchen island with gold veins", name: "Marble", x: 4, y: 58, w: 22, ratio: "4 / 5", speed: 0.1 },
-  { src: photo("dining"), alt: "The dining table set for eight", name: "Dining", x: 30, y: 100, w: 30, ratio: "16 / 10", speed: 0.04, wide: true },
+  { src: photo("sofa"), alt: "The cream sofa, the armchair and the Christmas tree by the window", name: "Sofa", x: 20, y: 0, w: 28, ratio: "4 / 3", speed: 0.06, wide: true },
+  { src: photo("feathers"), alt: "A cloud of feathers hanging over the dining table", name: "Feathers", x: 64, y: 40, w: 19, ratio: "4 / 5", speed: 0.16 },
+  { src: photo("fire"), alt: "The long fire in its glass box under the TV wall", x: 49, y: 72, w: 13, ratio: "1 / 1", speed: 0.26 },
+  { src: photo("marble"), alt: "Gold-veined marble behind the kitchen sink", name: "Marble", x: 4, y: 58, w: 22, ratio: "4 / 5", speed: 0.1 },
+  { src: photo("dining"), alt: "The dining table under the feather chandelier", name: "Dining", x: 30, y: 100, w: 30, ratio: "16 / 10", speed: 0.04, wide: true },
 ];
 
 // ขนาดห้อง (วัดจากโมเดล) / ป้ายโซนบนแปลน (ตำแหน่ง % บนรูปแปลน, stop = มุมในทัวร์ที่กดแล้วพาไปดู)
@@ -262,7 +263,7 @@ export default function HouseLanding() {
           </a>
         </div>
         <div className="hs-hero-meta">
-          <span className="hs-label">Rendered from the HEARTH model</span>
+          <span className="hs-label">Design & renders · cavitbarisbalta</span>
           <button type="button" className="hs-film-btn" aria-pressed={music} onClick={toggleMusic}>
             {music ? "Sound off" : "Sound on"}
           </button>
@@ -277,10 +278,21 @@ export default function HouseLanding() {
             <Diamond /> Living room & kitchen
           </p>
           <p data-reveal className="hs-band-text" style={{ "--d": "0.12s" } as CSSProperties}>
-            One open room for living, dining and cooking. Every picture on this page, and the tour below, comes from the
-            same 3D model, lit in Cycles.
+            One open room for living, dining and cooking. The photographs are the designer&apos;s renders of this room; the
+            tour below runs the same 3D model live in your browser.
           </p>
         </div>
+        {/* ทั้งห้องในภาพเดียว: ภาพพาโนรามาเต็มความกว้าง (มือถือครอปตรงกลาง) */}
+        <figure data-reveal className="hs-pano">
+          <Image
+            src={photo("panorama")}
+            alt="The whole room in one view: kitchen, dining table, sofa and the Christmas tree"
+            fill
+            sizes="100vw"
+            className="hs-cover"
+          />
+          <figcaption className="hs-label">Kitchen · Dining · Living</figcaption>
+        </figure>
       </section>
 
       {/* ---------- ข้อความใหญ่ (พื้นครีม) ---------- */}
@@ -314,8 +326,8 @@ export default function HouseLanding() {
         <div className="hs-collage">
           <div data-reveal className="hs-coll-text">
             <p>
-              Five <strong>corners</strong> of the room up close: the sofa by the fire, the feather lamps, the tree at
-              night, the marble island and the long dining table.
+              Five <strong>corners</strong> of the room up close: the sofa by the window, the feather chandelier, the
+              long fire, the gold-veined marble and the dining table.
             </p>
             <a href="#tour" onClick={jump} className="hs-btn">
               <Arrow /> Back to the tour
@@ -362,9 +374,9 @@ export default function HouseLanding() {
           </h2>
         </div>
         <div data-reveal className="hs-compare">
-          <Image src={photo("hero-1")} alt="The living room by day" fill sizes="100vw" className="hs-cover" />
+          <Image src={photo("day")} alt="The living room by day" fill sizes="100vw" className="hs-cover" />
           <div className="hs-compare-night">
-            <Image src={photo("hero-1-night")} alt="The same view at night" fill sizes="100vw" className="hs-cover" />
+            <Image src={photo("night")} alt="The same view at night" fill sizes="100vw" className="hs-cover" />
           </div>
           <i className="hs-compare-line" aria-hidden />
           <span className="hs-label hs-compare-tag" data-side="day">
@@ -461,7 +473,10 @@ export default function HouseLanding() {
         <p className="hs-foot-word" aria-hidden>
           Hearth
         </p>
-        <p className="hs-foot-note">Concept project by Blue. The room is a 3D model; every image on this page is rendered from it.</p>
+        <p className="hs-foot-note">
+          Concept project by Blue. Room design and photographs by cavitbarisbalta; the tour, plan and day and night views
+          are rendered by Blue from the same 3D model.
+        </p>
       </footer>
 
       {/* ---------- แถบเมนูลอยด้านล่าง (ติดจอตลอด) ---------- */}

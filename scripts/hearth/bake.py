@@ -12,7 +12,7 @@
 #          python3.13 -I bake.py work/hearth.blend work/test 1024 16 day_empty vday   (ลองเร็วๆ)
 # VSPP = samples ของรอบเก็บแสงที่มุมหน้า (ค่าเริ่มต้น 2 เท่าของ samples, อย่างน้อย 64)
 # ภาพนิ่งสำหรับหน้าเว็บ (ไม่อยู่ในรอบปกติ ต้องสั่งชื่อเอง): still_<ชื่อใน STILLS> หรือ still_plan (แปลนห้องมองจากบน)
-#          python3.13 -I bake.py work/hearth.blend public/photos/hearth 1024 128 still_plan still_hero-1 ...
+#          python3.13 -I bake.py work/hearth.blend public/photos/hearth 512 64 still_day still_night still_plan
 #          PCT=25 = ภาพย่อ 25% ไว้ลองมุมกล้องเร็วๆ
 import bpy, bmesh, sys, os, math, time, re
 import numpy as np
@@ -174,15 +174,8 @@ def pano(path):
 # ภาพนิ่งของหน้า /house: พิกัด three.js (y ชี้ขึ้น) แบบเดียวกับ config/hearth.ts → (กล้อง, จุดที่มอง, มุมกว้างแนวตั้ง°, กว้าง, สูง)
 # ชื่อที่มีคำว่า night ใช้ไฟกลางคืน
 STILLS = {
-    'hero-1': ((23.45, 1.45, -16.4), (20.8, 0.9, -11.5), 58, 1920, 1080),        # นั่งเล่น มองไปผนังเตาผิง
-    'hero-2': ((20.3, 1.9, -11.2), (23.2, 0.8, -16.0), 64, 1920, 1080),          # ทั้งห้อง มองไปโต๊ะอาหารกับครัว
-    'hero-3-night': ((23.8, 2.05, -17.0), (20.9, 0.6, -11.6), 68, 1920, 1080),   # ยามค่ำ
-    'hero-1-night': ((23.45, 1.45, -16.4), (20.8, 0.9, -11.5), 58, 1920, 1080),  # มุมเดียวกับ hero-1 ตอนค่ำ (สไลด์เทียบกลางวัน/กลางคืน)
-    'sofa': ((20.75, 1.15, -13.25), (23.2, 0.5, -11.8), 54, 1600, 1200),
-    'feathers': ((22.2, 1.45, -13.0), (24.3, 1.5, -15.0), 50, 1080, 1350),       # โคมขนนก
-    'marble': ((21.5, 1.42, -15.85), (23.0, 1.1, -19.5), 50, 1080, 1350),       # หินอ่อนครัว
-    'tree-night': ((22.6, 1.4, -12.6), (20.75, 1.0, -11.0), 50, 1200, 1200),
-    'dining': ((22.5, 1.38, -13.5), (24.4, 0.9, -15.3), 52, 1600, 1000),
+    'day': ((23.45, 1.45, -16.4), (20.8, 0.9, -11.5), 58, 1920, 1080),      # สไลด์เทียบกลางวัน/กลางคืน
+    'night': ((23.45, 1.45, -16.4), (20.8, 0.9, -11.5), 58, 1920, 1080),    # มุมเดียวกัน ไฟกลางคืน
 }
 
 def still(name, path):
@@ -197,7 +190,9 @@ def still(name, path):
     f = sc.render.image_settings; f.file_format = 'WEBP'; f.quality = 86; f.color_mode = 'RGBA' if plan else 'RGB'
     if plan:
         # มองตรงลงจากใต้ฝ้า (ของที่สูงกว่ากล้อง เช่น ฝ้า รางไฟ ไม่ติดในภาพ แต่ยังให้แสง/เงาอยู่) ด้านยาวของห้องวางแนวนอน
-        cd.type = 'ORTHO'; cd.ortho_scale = 9.8; cam.location = (22.65, 14.95, 2.35); cam.rotation_euler = (0, 0, math.pi / 2); W, H = 1800, 1100
+        # sensor_fit AUTO: 9.8 m = ด้านกว้างของภาพ (VERTICAL ที่ค้างจากภาพก่อนหน้าทำให้แปลนเล็กลง)
+        cd.type = 'ORTHO'; cd.sensor_fit = 'AUTO'; cd.ortho_scale = 9.8
+        cam.location = (22.65, 14.95, 2.35); cam.rotation_euler = (0, 0, math.pi / 2); W, H = 1800, 1100
     else:
         p, at, fov, W, H = STILLS[name]
         gl = lambda v: Vector((v[0], -v[2], v[1]))   # three.js → Blender
