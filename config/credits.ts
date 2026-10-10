@@ -36,6 +36,25 @@ export const credits: Credit[] = [
     changes: "Resized and converted to WebP.",
   },
   {
+    usedFor: "Earth — mountain relief and ocean sun glint",
+    title: "Topography (GEBCO elevation, 21600×10800)",
+    author: "NASA Visible Earth",
+    authorUrl: "https://visibleearth.nasa.gov",
+    source: "https://visibleearth.nasa.gov/images/73934/topography",
+    license: "Public domain",
+    changes: "Turned into a slope map and an ocean mask (scripts/earth/build-relief.py), 8192×4096 and 4096×2048 WebP.",
+  },
+  {
+    usedFor: "Earth — sharp close-up of each product's home city during the dive",
+    title: "Sentinel-2 cloudless 2016 (contains modified Copernicus Sentinel data 2016)",
+    author: "EOX IT Services GmbH",
+    authorUrl: "https://eox.at",
+    source: "https://s2maps.eu",
+    license: "CC BY 4.0",
+    changes:
+      "Cropped to a ~445 km square around each city, colour-matched to the NASA Blue Marble map and resized to 2048 / 1024 px WebP (scripts/earth/build-city-patches.py).",
+  },
+  {
     usedFor: "GRID 26 — Mercedes W17",
     title: "2026 Mercedes W17",
     author: "Dave Love",

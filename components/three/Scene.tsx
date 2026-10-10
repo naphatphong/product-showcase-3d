@@ -9,7 +9,7 @@ import Safe from "@/components/Safe";
 import { look, products } from "@/config/products";
 import { DIVE_SECONDS } from "@/lib/dive";
 import Backdrop from "./Backdrop";
-import Earth, { DAYLIGHT, EARTH_CENTER, EARTH_RADIUS, SUN_DIR } from "./Earth";
+import Earth, { DAYLIGHT, EARTH_CENTER, EARTH_RADIUS, SUN_DIR, type Place } from "./Earth";
 import FloatingProduct from "./FloatingProduct";
 import LensFlare from "./LensFlare";
 
@@ -68,7 +68,8 @@ export type SceneProps = {
   started: boolean; // false = หน้าเปิด (เห็นแค่โลก สินค้ายังไม่มา), true = สินค้าบินเข้ามาแล้ว
   labelLayer: RefObject<HTMLDivElement | null>; // ชั้น HTML สำหรับป้ายชื่อสินค้า
   variants: number[]; // สินค้าแต่ละชิ้นเลือกแบบที่เท่าไรอยู่ (ใช้กับสินค้าที่มีหลายแบบ)
-  diveTo: { lat: number; lon: number } | null; // มีค่า = กำลังดำดิ่งเข้าหาจุดนี้บนโลก
+  diveTo: Place | null; // มีค่า = กำลังดำดิ่งเข้าหาจุดนี้บนโลก
+  homes: string[]; // เมืองบ้านเกิดของสินค้าแต่ละชิ้น (แบบที่เลือกอยู่) → โลกโหลดภาพดาวเทียมละเอียดของเมืองเหล่านี้ไว้ก่อน
 };
 
 export default function Scene(props: SceneProps) {
@@ -118,7 +119,7 @@ export default function Scene(props: SceneProps) {
           Safe: ถ้าโหลดภาพโลกไม่สำเร็จ ไม่มีโลกแต่หน้ายังใช้ได้ (และบอกว่าพร้อมแล้ว ฉากจะได้ไม่ค้างที่ loading) */}
       <Safe onError={props.onReady}>
         <Suspense fallback={null}>
-          <Earth focus={props.diveTo} narrow={props.narrow} />
+          <Earth focus={props.diveTo} narrow={props.narrow} homes={props.homes} />
           <Ready onReady={props.onReady} />
         </Suspense>
       </Safe>

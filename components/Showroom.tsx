@@ -365,6 +365,7 @@ export default function Showroom({ cart, logo, intro }: { cart: ReactNode; logo:
             labelLayer={labelLayer}
             diveTo={entering === null ? null : look(products[entering], variants[entering]).origin}
             variants={variants}
+            homes={products.map((p, i) => look(p, variants[i]).origin.city)}
           />
         </Safe>
       </div>
