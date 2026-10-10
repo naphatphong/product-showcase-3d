@@ -74,6 +74,8 @@ export default function HouseLanding() {
   const lenis = useRef<Lenis | null>(null);
   const statement = useRef<HTMLParagraphElement>(null);
   const box = useRef<HTMLDialogElement>(null);
+  const loader = useRef<HTMLDivElement>(null);
+  const count = useRef<HTMLSpanElement>(null);
   const [stage, setStage] = useState<Stage>("load");
   const [section, setSection] = useState(0);
   const [menu, setMenu] = useState(false);
@@ -81,26 +83,41 @@ export default function HouseLanding() {
   const [shown, setShown] = useState<Tile | null>(null); // รูปที่เปิดดูเต็มจออยู่
 
   // ---------- หน้าโหลด ----------
-  // รอภาพแรกโหลดเสร็จ (หรือครบ 4 วินาที) แต่อยู่อย่างน้อย 1.4 วินาทีให้เห็นจังหวะแผ่นสีเข้มขึ้นมา
+  // ตัวเลข + เส้นบรอนซ์ค่อยๆ วิ่งไปถึง 90 ระหว่างรอภาพแรก → ภาพโหลดเสร็จ (หรือครบ 4 วินาที) วิ่งต่อจนครบ 100
+  // อยู่อย่างน้อย 2 วินาทีให้เห็นโลโก้วาดตัวเองจบ แล้วเปิด: แสงวงกลมกระจายออกจากกลางจอ เผยภาพแรก (CSS ทำต่อ)
   useEffect(() => {
     const started = performance.now();
-    let opened = false;
-    const open = () => {
-      if (opened) return;
-      opened = true;
-      const wait = Math.max(0, 1400 - (performance.now() - started));
-      setTimeout(() => {
+    let last = started;
+    let loaded = false;
+    let shown = 0;
+    let raf = 0;
+    let timer = 0;
+    const load = () => (loaded = true);
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      shown += ((loaded ? 100 : 90) - shown) * (1 - Math.exp(-dt * (loaded ? 7 : 1.1)));
+      if (loaded && shown > 99.5) shown = 100;
+      // แก้ DOM ตรงๆ ทุกเฟรม ไม่ต้องให้ React วาดใหม่
+      if (count.current) count.current.textContent = String(Math.floor(shown)).padStart(3, "0");
+      loader.current?.style.setProperty("--p", String(shown / 100));
+      if (shown === 100 && now - started > 2000) {
         setStage("open");
-        setTimeout(() => setStage("done"), 1100);
-      }, wait);
+        timer = window.setTimeout(() => setStage("done"), 1700);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
     };
+    raf = requestAnimationFrame(tick);
     const img = root.current?.querySelector<HTMLImageElement>(".hs-hero-still img");
-    if (img?.complete) open();
-    img?.addEventListener("load", open, { once: true });
-    const t = setTimeout(open, 4000);
+    if (img?.complete) load();
+    img?.addEventListener("load", load, { once: true });
+    const fallback = setTimeout(load, 4000);
     return () => {
-      clearTimeout(t);
-      img?.removeEventListener("load", open);
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+      clearTimeout(fallback);
+      img?.removeEventListener("load", load);
     };
   }, []);
 
@@ -226,11 +243,23 @@ export default function HouseLanding() {
   return (
     <div ref={root} className={`${archivo.variable} ${plexMono.variable} hs-root`} data-stage={stage}>
       {/* ---------- หน้าโหลด ---------- */}
-      <div className="hs-loader" aria-hidden={stage === "done"} role="status" aria-label="Loading">
-        <p className="hs-loader-mark">
-          <Mark /> Hearth
-        </p>
-        <div className="hs-loader-panel" />
+      {/* ไฟอุ่นๆ กลางจอ + โลโก้วาดเส้นกรอบแล้วเปลวไฟติดขึ้น + ชื่อเลื่อนขึ้นทีละตัว + ตัวเลขและเส้นบรอนซ์บอกความคืบหน้า */}
+      <div ref={loader} className="hs-loader" aria-hidden={stage === "done"} role="status" aria-label="Loading">
+        <div className="hs-loader-glow" />
+        <div className="hs-loader-center" data-active="true">
+          <svg viewBox="0 0 20 20" className="hs-loader-mark" aria-hidden>
+            <rect x="2.8" y="2.8" width="14.4" height="14.4" pathLength={1} />
+            <path d={FLAME} />
+          </svg>
+          <p className="hs-loader-word">
+            <Reveal text="Hearth" delay={0.5} step={0.07} />
+          </p>
+        </div>
+        <div className="hs-loader-foot hs-label">
+          <span>Living room &amp; kitchen</span>
+          <span ref={count}>000</span>
+        </div>
+        <i className="hs-loader-line" />
       </div>
 
       {/* ---------- จอแรก: ภาพนิ่งเต็มจอสลับกัน ---------- */}
@@ -526,11 +555,13 @@ export default function HouseLanding() {
 }
 
 // โลโก้: เตาผิงสี่เหลี่ยมกับเปลวไฟข้างใน
+const FLAME = "M10 5.5c.6 2.3 3.2 3.6 3.2 6.6a3.2 3.2 0 0 1-6.4 0c0-1.6 1-2.4 1.6-3.4.3 1 .8 1.5 1.4 1.7-.4-1.6-.4-3.2.2-4.9z";
+
 function Mark() {
   return (
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden className="inline-block align-[-3px]">
       <rect x="2.8" y="2.8" width="14.4" height="14.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M10 5.5c.6 2.3 3.2 3.6 3.2 6.6a3.2 3.2 0 0 1-6.4 0c0-1.6 1-2.4 1.6-3.4.3 1 .8 1.5 1.4 1.7-.4-1.6-.4-3.2.2-4.9z" fill="currentColor" />
+      <path d={FLAME} fill="currentColor" />
     </svg>
   );
 }

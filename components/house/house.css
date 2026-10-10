@@ -104,57 +104,162 @@
 }
 
 /* ---------- หน้าโหลด ---------- */
+/* --r = รัศมีของวงแสงที่เจาะทะลุหน้าโหลด (ลงทะเบียนชนิดไว้ เบราว์เซอร์จึงค่อยๆ เปลี่ยนค่าได้) */
+@property --r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
 .hs-loader {
+  --r: -24vmax; /* ยังไม่เปิด: วงอยู่นอกจอ ทั้งจอทึบ */
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: var(--stone);
-  display: grid;
-  place-items: center;
-  transition: visibility 0s linear 0.8s;
-}
-.hs-loader-mark {
-  position: absolute;
-  top: 33%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 22px;
-  color: rgb(0 0 0 / 0.35);
-}
-/* แผ่นสีเข้ม: ตอนโหลดค่อยๆ สูงขึ้นจากล่าง → พร้อมแล้วขยายเต็มจอ → หน้าโหลดหายไป เห็นภาพแรก */
-.hs-loader-panel {
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 0;
-  height: 62%;
+  overflow: hidden;
   background: var(--ink);
-  transform-origin: bottom;
-  animation: panel-rise 1.4s var(--ease) both;
+  color: var(--on-ink);
+  /* ตรงกลางวงโปร่งใส (เห็นภาพแรก) ขอบวงนุ่มกว้าง 22vmax เหมือนแสงไฟที่ค่อยๆ สว่างออกไป */
+  mask-image: radial-gradient(circle at 50% 44%, transparent var(--r), #000 calc(var(--r) + 22vmax));
   transition:
-    left 1s var(--ease),
-    right 1s var(--ease),
-    height 1s var(--ease);
+    --r 1.5s cubic-bezier(0.65, 0, 0.25, 1) 0.2s,
+    visibility 0s linear 1.7s;
 }
-@keyframes panel-rise {
-  from {
-    transform: scaleY(0);
-  }
-}
-.hs-root[data-stage="open"] .hs-loader-panel,
-.hs-root[data-stage="done"] .hs-loader-panel {
-  left: 0;
-  right: 0;
-  height: 100%;
+.hs-root[data-stage="open"] .hs-loader,
+.hs-root[data-stage="done"] .hs-loader {
+  --r: 150vmax;
 }
 .hs-root[data-stage="done"] .hs-loader {
   visibility: hidden;
   pointer-events: none;
 }
-.hs-root[data-stage="done"] .hs-loader-panel {
+/* แสงไฟอุ่นๆ หลังโลโก้ หายใจช้าๆ เหมือนถ่านในเตาผิง */
+.hs-loader-glow {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: min(90vw, 760px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: radial-gradient(closest-side, rgb(222 146 78 / 0.3), rgb(169 132 88 / 0.1) 50%, transparent);
+  animation:
+    hs-fade 1.6s ease both,
+    hs-ember 3.4s ease-in-out 1.6s infinite alternate;
+}
+.hs-loader-center {
+  position: absolute;
+  inset: 44% 0 auto;
+  translate: 0 -50%;
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+  transition:
+    opacity 0.6s ease,
+    translate 1s var(--ease);
+}
+.hs-root[data-stage="open"] .hs-loader-center,
+.hs-root[data-stage="done"] .hs-loader-center {
   opacity: 0;
-  transition: opacity 0.8s ease;
+  translate: 0 -64%;
+}
+/* โลโก้: วาดเส้นกรอบสี่เหลี่ยมรอบเดียว แล้วเปลวไฟติดขึ้นและไหวเบาๆ */
+.hs-loader-mark {
+  width: 76px;
+  height: 76px;
+  overflow: visible;
+}
+.hs-loader-mark rect {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.7;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: hs-draw 1.3s cubic-bezier(0.65, 0, 0.35, 1) 0.1s forwards;
+}
+.hs-loader-mark path {
+  fill: var(--bronze);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation:
+    hs-light 0.9s var(--ease) 0.9s both,
+    hs-flicker 1.7s ease-in-out 1.8s infinite alternate;
+}
+.hs-loader-word {
+  font-size: clamp(44px, 7vw, 92px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.hs-loader-foot {
+  position: absolute;
+  inset: auto var(--gutter) 30px;
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted-ink);
+  animation: hs-fade 1s ease 0.4s both;
+  transition: opacity 0.4s ease;
+}
+.hs-loader-foot span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+/* เส้นบรอนซ์ล่างสุด ยาวตามความคืบหน้า (--p ตั้งจาก JavaScript ทุกเฟรม) */
+.hs-loader-line {
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: var(--bronze);
+  transform-origin: left;
+  transform: scaleX(var(--p, 0));
+  transition: opacity 0.4s ease;
+}
+.hs-root[data-stage="open"] .hs-loader-foot,
+.hs-root[data-stage="open"] .hs-loader-line {
+  opacity: 0;
+}
+@keyframes hs-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes hs-ember {
+  0% {
+    scale: 0.94;
+    opacity: 0.8;
+  }
+  45% {
+    scale: 1.03;
+    opacity: 1;
+  }
+  70% {
+    scale: 0.98;
+    opacity: 0.88;
+  }
+  100% {
+    scale: 1.06;
+    opacity: 1;
+  }
+}
+@keyframes hs-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes hs-light {
+  from {
+    opacity: 0;
+    scale: 0.3;
+  }
+}
+@keyframes hs-flicker {
+  0% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 0.95 1.06;
+  }
+  100% {
+    scale: 1.03 0.96;
+  }
 }
 
 /* ---------- จอแรก ---------- */
@@ -1039,7 +1144,11 @@ html:has(.hs-box[open]) {
 /* เครื่องที่ตั้งให้ลดภาพเคลื่อนไหว: ไม่มีการเลื่อนโผล่ / หน้าโหลดไม่มีแอนิเมชัน */
 @media (prefers-reduced-motion: reduce) {
   .hs-root [data-reveal],
-  .hs-loader-panel,
+  .hs-loader,
+  .hs-loader-glow,
+  .hs-loader-center,
+  .hs-loader-mark *,
+  .hs-loader-foot,
   .hs-hero-stills,
   .hs-hero-still img,
   .hs-pill {
@@ -1049,6 +1158,9 @@ html:has(.hs-box[open]) {
   .hs-root [data-reveal] {
     opacity: 1;
     transform: none;
+  }
+  .hs-loader-mark rect {
+    stroke-dashoffset: 0;
   }
   .hs-word {
     transition: none;
