@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { HERITAGE, HERITAGE_FILM } from "@/config/f1";
+import { useEffect, useRef, type CSSProperties } from "react";
+import { HERITAGE } from "@/config/f1";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -18,26 +18,12 @@ const ROWS = (() => {
 })();
 
 // หน้าประวัติของ GRID 26 แบบหน้าเว็บ Longbow: หน้ายาวที่เลื่อนลงอ่านไปเรื่อยๆ (ไม่ใช่ทีละจอเหมือน section อื่น)
-// - จอแรก: วิดีโอแข่งรถเต็มกรอบ (คอม = คลิปแนวนอน, มือถือ = คลิปแนวตั้ง) — เลื่อนลงต่อถึงจะเจอหัวเรื่อง
 // - หัวเรื่องตัวใหญ่ "Since 2005." แล้วตามด้วยปีสำคัญทีละแถว บนกริด 4 คอลัมน์แบบแบบวิศวกรรม
 // - แถวที่มีรูป: ปี + ข้อความ 2 คอลัมน์ รูป 2 คอลัมน์ (สลับซ้าย/ขวาทีละแถว) / แถวที่ไม่มีรูป: ชื่อรถตัวโตแบบโปสเตอร์
 // - แต่ละชิ้นค่อยๆ โผล่ขึ้นมาตอนเลื่อนมาถึง (IntersectionObserver ใส่ data-in ให้ แล้ว CSS ทำภาพเคลื่อนไหว)
 // อยู่ในเนื้อหาที่เลื่อนจริงของหน้า (ไม่ใช่ข้อความลอยอยู่กับที่) — F1Story เลื่อนจออิสระให้ในช่วงนี้
-export default function HeritageSection({
-  active,
-  near,
-  narrow,
-}: {
-  active: boolean; // section นี้แสดงอยู่
-  near: boolean; // อยู่ติดกับ section ที่แสดงอยู่ → เริ่มโหลดวิดีโอไว้ก่อน
-  narrow: boolean; // จอแคบ (มือถือ) → คลิปแนวตั้ง
-}) {
+export default function HeritageSection() {
   const root = useRef<HTMLDivElement>(null);
-  const film = useRef<HTMLVideoElement>(null);
-  const [filmInView, setFilmInView] = useState(false); // วิดีโอยังอยู่ในจอ (เลื่อนลงไปอ่านต่อแล้ว = หยุดเล่น)
-  const [paused, setPaused] = useState<boolean | null>(null); // null = ยังไม่ได้กด (ใช้ค่าตามการตั้งค่าเครื่อง)
-  const clip = narrow ? HERITAGE_FILM.tall : HERITAGE_FILM.wide;
-  const src = near ? clip.src : undefined; // โหลดเมื่อเลื่อนมาใกล้ ไม่เปลืองเน็ตตั้งแต่เปิดหน้า
 
   useEffect(() => {
     const el = root.current;
@@ -56,55 +42,8 @@ export default function HeritageSection({
     return () => io.disconnect();
   }, []);
 
-  // วิดีโออยู่ในจอไหม (เห็นอย่างน้อย 15%)
-  useEffect(() => {
-    const v = film.current;
-    if (!v) return;
-    const io = new IntersectionObserver(([e]) => setFilmInView(e.isIntersecting), { threshold: 0.15 });
-    io.observe(v);
-    return () => io.disconnect();
-  }, []);
-
-  // เล่นเฉพาะตอนอยู่หน้านี้และวิดีโอยังอยู่ในจอ / ผู้ใช้กดหยุดได้ (วิดีโอที่เล่นเองเกิน 5 วินาทีต้องหยุดได้)
-  // เครื่องที่ตั้งให้ลดภาพเคลื่อนไหว: เริ่มแบบหยุดไว้ (เห็นรูปปก) กดเล่นเองได้
-  useEffect(() => {
-    const v = film.current;
-    if (!v || !src) return;
-    const stopped = paused ?? matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (active && filmInView && !stopped) v.play().catch(() => {});
-    else v.pause();
-  }, [active, filmInView, paused, src]);
-  const stopped = paused === true;
-
   return (
     <div ref={root} className="f1-hx">
-      {/* จอแรก: วิดีโอเต็มกรอบ เปิดออกจากตรงกลางตอนเลื่อนมาถึง / ป้ายคลิป + ปุ่มหยุดอยู่มุมล่าง */}
-      <figure data-reveal className="f1-hx-film">
-        <video
-          ref={film}
-          src={src}
-          poster={clip.poster}
-          muted
-          loop
-          playsInline
-          preload="none"
-          aria-hidden
-        />
-        <figcaption className="f1-hx-film-meta">
-          <span className="f1-label text-[9px] text-white/85 md:text-[10px]">
-            <span className="text-[var(--f1-red)]">[ Clip ]</span> {clip.caption}
-          </span>
-          <button
-            type="button"
-            onClick={() => setPaused(!stopped)}
-            aria-label={stopped ? "Play video" : "Pause video"}
-            className="f1-hx-film-btn pointer-events-auto"
-          >
-            {stopped ? "Play" : "Pause"}
-          </button>
-        </figcaption>
-      </figure>
-
       <header className="f1-hx-head">
         <div data-reveal>
           <p className="f1-label">[ Heritage ]</p>

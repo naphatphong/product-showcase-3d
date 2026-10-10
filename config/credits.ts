@@ -114,26 +114,7 @@ export const credits: Credit[] = [
     license: "Royalty Free License (no AI)",
     changes:
       "Cropped to the living room and kitchen, materials re-made, meshes simplified, lighting baked in Blender Cycles and compressed for the web (scripts/hearth). The home page piece is a cut-away dollhouse of the same room (ceiling and upper walls removed). The photographs on /house are the designer's own renders from the product page, cropped to fit.",
-  }, // รูปถ่ายและวิดีโอในหน้า /f1 (ดาวน์โหลดจาก Pexels)
-  {
-    usedFor: "GRID 26 — heritage video (desktop)",
-    title: "Formula 1 race, Miami (Pexels video 15293954)",
-    author: "Pexels contributor",
-    authorUrl: "https://www.pexels.com/video/15293954/",
-    source: "https://www.pexels.com/video/15293954/",
-    license: "Pexels License",
-    changes: "Scaled down to 1600×900 and re-encoded without sound; poster image taken from a frame of the clip.",
-  },
-  {
-    usedFor: "GRID 26 — heritage video (phones)",
-    title: "Verstappen Overtake at Spa",
-    author: "Timo van Overdijk",
-    authorUrl: "https://www.pexels.com/video/verstappen-overtake-at-spa-16726088/",
-    source: "https://www.pexels.com/video/verstappen-overtake-at-spa-16726088/",
-    license: "Pexels License",
-    changes:
-      "Scaled down to 720×1280 at 30 fps and re-encoded without sound; poster image taken from a frame of the clip.",
-  },
+  }, // รูปถ่ายในหน้า /f1 (ดาวน์โหลดจาก Pexels)
   {
     usedFor: "GRID 26 — heritage, 2006",
     title: "Dynamic Formula 1 Car Racing on São Paulo Track",

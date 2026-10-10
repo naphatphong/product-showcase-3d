@@ -60,11 +60,11 @@ coming back to the home page in the same tab skips it.
 | `components/three/LensFlare.tsx` | Screen-space lens flare from the sun (glow, ghosts, rainbow arc), hidden when the Earth blocks it |
 | `components/three/FloatingProduct.tsx` | One floating product: loads its `.glb`, size/centre normalisation, hover glow, HUD label |
 | `components/fizz/` | FIZZ page: Lenis scroll paging, 3D cans on a scroll timeline, bubbles, HUD, loader, FAQ |
-| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, speed dial (`SpeedSection`), long scrolling history page with a racing video and photos (`HeritageSection`), design close-up with callouts that follow the car (`DesignSection`), part chapters, HUD, loader. `showroom/` is the garage: the room built in code (`Garage.tsx`), cars, spotlights and camera (`ShowroomScene.tsx`), panels and buttons (`Showroom.tsx`) |
+| `components/f1/` | GRID 26 page: Lenis scroll paging, the RB22 in 16 parts that explode / reassemble on a scroll timeline, speed dial (`SpeedSection`), long scrolling history page with photos (`HeritageSection`), design close-up with callouts that follow the car (`DesignSection`), part chapters, HUD, loader. `showroom/` is the garage: the room built in code (`Garage.tsx`), cars, spotlights and camera (`ShowroomScene.tsx`), panels and buttons (`Showroom.tsx`) |
 | `config/site.ts` | Site name, headline, intro text |
 | `config/products.ts` | Product data: name, category, tagline, specs, variants (model, colour, home city) |
 | `config/fizz.ts` | FIZZ copy: brand stories, soda facts, FAQ |
-| `config/f1.ts` | GRID 26: the car in the story, part names, where each part flies to, the 8 part chapters (text and stats), speed stats and video, history years and photos, design callouts, where each car is parked in the garage |
+| `config/f1.ts` | GRID 26: the car in the story, part names, where each part flies to, the 8 part chapters (text and stats), speed stats, history years and photos, design callouts, where each car is parked in the garage |
 | `config/credits.ts` | Authors and licences of the Earth imagery and 3D models |
 | `lib/orbitSound.ts`, `lib/fizzSound.ts`, `lib/synth.ts` | Web Audio sound for each page + shared synth pieces |
 | `lib/dive.ts`, `lib/format.ts`, `lib/useNarrow.ts` | Dive duration, coordinate formatting, phone-width check |
@@ -78,8 +78,7 @@ coming back to the home page in the same tab skips it.
 - Product name, specs or tagline: `config/products.ts`
 - A product's variants (model file, colour, colour button, home city): `variants` in `config/products.ts`
 - GRID 26 camera angles for each section: `components/f1/scene/timeline.ts`
-- GRID 26 history page: the racing video on its first screen is `HERITAGE_FILM` in `config/f1.ts` (a wide clip for desktop,
-  a tall clip for phones, files in `public/video/f1/`); years, text and photos are `HERITAGE` (photos in `public/photos/f1/`). It is the one
+- GRID 26 history page: years, text and photos are `HERITAGE` in `config/f1.ts` (photos in `public/photos/f1/`). It is the one
   section longer than a screen: the story scrolls freely through it, then pages again (`freeRange` in `components/f1/F1Story.tsx`)
 - GRID 26 garage: where each car is parked, which way it faces and the camera angle when it is picked are `SHOWROOM_CARS`
   in `config/f1.ts` (`x`, `z` in metres, `rot` and `view` in degrees); room size and props are in

@@ -366,13 +366,7 @@ export default function F1Story() {
             }}
             className={i === HERITAGE_I ? "relative min-h-svh" : "relative h-svh"}
           >
-            {i === HERITAGE_I && (
-              <HeritageSection
-                active={active === HERITAGE_I}
-                near={Math.abs(active - HERITAGE_I) <= 1}
-                narrow={narrow}
-              />
-            )}
+            {i === HERITAGE_I && <HeritageSection />}
           </section>
         ))}
       </main>
