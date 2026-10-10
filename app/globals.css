@@ -595,6 +595,77 @@ html.lenis body {
   .f1-cta:hover::before {
     inset: -3px;
   }
+  .f1-cta-xl {
+    padding: 1.15rem 2.6rem;
+    font-size: 13px;
+  }
+  /* แสงวิ่งผ่านปุ่มจากซ้ายไปขวาเป็นระยะ (เลื่อน gradient ที่กว้าง 3 เท่าของปุ่ม) ให้สะดุดตา — hover แล้วหยุด */
+  .f1-shine {
+    background-image: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.28) 50%, transparent 58%);
+    background-size: 300% 100%;
+    background-repeat: no-repeat;
+    animation: f1-shine 3.6s ease-in-out infinite;
+  }
+  @keyframes f1-shine {
+    0%,
+    50% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: 0 0;
+    }
+  }
+  .f1-arrow {
+    display: inline-block;
+    transition: transform 0.25s;
+  }
+  a:hover .f1-arrow {
+    transform: translateX(4px);
+  }
+  /* ปุ่มเข้าโรงรถบนแถบเมนู (Hud.tsx): ซ่อนไว้จนเลื่อนผ่านจอที่ 2 แล้วเลื่อนลงมา / จุดแดงกะพริบ */
+  .f1-garage {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    background-color: var(--f1-ink);
+    color: var(--f1-paper);
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition:
+      opacity 0.5s,
+      visibility 0.5s,
+      transform 0.5s cubic-bezier(0.2, 0.7, 0.1, 1),
+      background-color 0.25s;
+  }
+  .f1-garage[data-on="true"] {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .f1-garage:hover {
+    background: var(--f1-red);
+  }
+  .f1-garage-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--f1-red);
+    animation: f1-blink 1.4s ease-in-out infinite;
+  }
+  .f1-garage:hover .f1-garage-dot {
+    background: #fff;
+  }
+  @keyframes f1-blink {
+    50% {
+      opacity: 0.25;
+    }
+  }
   /* ปุ่มรอง: กรอบเส้นบาง */
   .f1-pill {
     display: inline-block;
@@ -1251,6 +1322,10 @@ html.lenis body {
 
 /* ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": แสดงข้อความทันที ไม่มีตัวอักษรวิ่ง/พื้นหลังขยับ */
 @media (prefers-reduced-motion: reduce) {
+  .f1-shine,
+  .f1-garage-dot {
+    animation: none;
+  }
   .reveal-char,
   .reveal-fade,
   .ghost-line,

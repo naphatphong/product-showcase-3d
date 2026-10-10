@@ -375,7 +375,14 @@ export default function F1Story() {
       <div aria-hidden className={`f1-veil f1-veil-top ${active === HERITAGE_I ? "is-on" : ""}`} />
       <div aria-hidden className={`f1-veil f1-veil-bottom ${active === HERITAGE_I ? "is-on" : ""}`} />
 
-      <Hud bar={bar} sheet={active + 1} sheets={SECTIONS.length} origin={car.origin} onLogo={() => goTo(0)} />
+      <Hud
+        bar={bar}
+        sheet={active + 1}
+        sheets={SECTIONS.length}
+        origin={car.origin}
+        onLogo={() => goTo(0)}
+        garage={active > SPEED_I}
+      />
       <Loader progress={progress} ready={ready} onDone={onLoaded} />
     </div>
   );

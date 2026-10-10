@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
-import { CHAPTERS, type Chapter } from "@/config/f1";
+import { CHAPTERS, SHOWROOM_CARS, type Chapter } from "@/config/f1";
 
 // ข้อความที่ลอยทับฉาก 3D ของแต่ละ section ในหน้า GRID 26 (position: fixed อยู่กับที่ ไม่เลื่อนตามหน้า)
 // section ไหนแสดงอยู่ ข้อความของ section นั้นจะค่อยๆ โผล่ขึ้นมา ที่เหลือซ่อน (คลาส overlay ใน globals.css)
@@ -157,12 +157,24 @@ export function Outro({ active, note }: { active: boolean; note?: string }) {
           Red Bull, Ferrari and Mercedes side by side in a 3D showroom. Pick a car, then click any part to see what it
           does.
         </p>
-        <div className="reveal-fade mt-8 flex flex-wrap justify-center gap-4">
-          <Link href="/" className="f1-pill pointer-events-auto">
-            ← Back to orbit
+        <p className="f1-label reveal-fade mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px]">
+          {SHOWROOM_CARS.map((c) => (
+            <span key={c.id}>
+              <span className="text-[var(--f1-red)]">■</span> {c.short}
+            </span>
+          ))}
+          <span>· 16 parts each · 360°</span>
+        </p>
+        {/* ปุ่มหลักตัวใหญ่ มีแสงวิ่งผ่านเป็นระยะ / ปุ่มกลับเป็นปุ่มรองอยู่ข้างล่าง */}
+        <div className="reveal-fade mt-7 flex flex-col items-center gap-5">
+          <Link href="/f1/showroom" className="f1-cta f1-cta-xl f1-shine pointer-events-auto">
+            Enter the 3D garage{" "}
+            <span aria-hidden className="f1-arrow">
+              →
+            </span>
           </Link>
-          <Link href="/f1/showroom" className="f1-cta pointer-events-auto">
-            Open the showroom →
+          <Link href="/" className="f1-label pointer-events-auto text-[10px] underline-offset-4 hover:underline">
+            ← Back to orbit
           </Link>
         </div>
         <p className="reveal-fade mt-10 max-w-xl text-[10px] leading-relaxed text-[var(--f1-faint)]">

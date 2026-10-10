@@ -8,7 +8,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 // กรอบหน้าจอของหน้า GRID 26 (อยู่กับที่ตลอด) หน้าตาเหมือนกระดาษเขียนแบบวิศวกรรม:
 // - เส้นบอกความคืบหน้าการเลื่อนหน้าด้านบน (ความยาวมาจาก CSS variable --p ที่ F1Story อัปเดตเองทุกครั้งที่เลื่อน)
-// - แถบเมนู: โลโก้ GRID 26 (กลับขึ้นบนสุด) | กลับหน้าโชว์รูม
+// - แถบเมนู: โลโก้ GRID 26 (กลับขึ้นบนสุด) | ปุ่มเข้าโรงรถ 3D (โผล่เมื่อ garage = true) + กลับหน้าโชว์รูม
 // - มุมจอ 4 มุมเป็นเส้นหักมุม + ป้ายเล็กมุมล่างแบบช่องรายละเอียดของแบบ (เลขแผ่น สเกล ที่ตั้งโรงงาน)
 export default function Hud({
   bar,
@@ -16,12 +16,14 @@ export default function Hud({
   sheets,
   origin,
   onLogo,
+  garage,
 }: {
   bar: RefObject<HTMLDivElement | null>; // ตัวที่ F1Story ใส่ค่า --p (0–1)
   sheet: number; // section ที่แสดงอยู่ (นับจาก 1)
   sheets: number; // จำนวน section ทั้งหมด
   origin: { city: string; lat: number; lon: number }; // ที่ตั้งโรงงานของทีม
   onLogo: () => void;
+  garage: boolean; // แสดงปุ่มเข้าโรงรถ (F1Story เปิดให้ตั้งแต่เลื่อนผ่านจอที่ 2)
 }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-[4]">
@@ -40,9 +42,25 @@ export default function Hud({
           <span className="f1-title text-[26px] md:text-[30px]">GRID 26</span>
         </button>
 
-        <Link href="/" className="f1-pill pointer-events-auto">
-          ← Orbit
-        </Link>
+        <div className="flex items-center gap-2.5 md:gap-4">
+          {/* ปุ่มเข้าโรงรถ: ตอนซ่อนกด/โฟกัสไม่ได้ (tabIndex -1) */}
+          <Link
+            href="/f1/showroom"
+            data-on={garage}
+            tabIndex={garage ? 0 : -1}
+            className="f1-garage f1-shine pointer-events-auto"
+          >
+            <span aria-hidden className="f1-garage-dot" />
+            <span className="md:hidden">Garage</span>
+            <span className="hidden md:inline">Enter the 3D garage</span>
+            <span aria-hidden className="f1-arrow">
+              →
+            </span>
+          </Link>
+          <Link href="/" aria-label="Back to orbit" className="f1-pill pointer-events-auto">
+            ←<span className="hidden md:inline"> Orbit</span>
+          </Link>
+        </div>
       </header>
 
       {/* มุมจอ 4 มุม */}
