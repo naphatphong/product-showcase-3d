@@ -40,6 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# ไฟล์ทำงานของสคริปต์อัดรูปบ้าน (scripts/render): โมเดลต้นฉบับขนาดใหญ่ + ภาพทีละเฟรมของวิดีโอ
-/scripts/render/models/
-/.render/
+
+# Python
+__pycache__/

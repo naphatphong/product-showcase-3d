@@ -5,8 +5,11 @@
 #
 # วิธีใช้:  python3.13 -I export.py <hearth-lm.blend> <ผลลัพธ์.glb> [keep=1.0]
 #   keep < 1 = ลดรายละเอียดทุกชิ้นลงอีก (โมเดลเบาสำหรับมือถือ) แสงที่อบไว้ติดไปกับจุดยอดที่เหลือ
-import bpy, sys, math
+import bpy, sys, os, math
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I ไม่ใส่โฟลเดอร์สคริปต์ให้เอง
+from feathers import feather_uvs
 
 src, out = sys.argv[1], sys.argv[2]
 KEEP = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
@@ -19,35 +22,7 @@ for o in sc.objects:
         mw = o.matrix_world.copy(); o.parent = None; o.matrix_world = mw
 for o in [o for o in sc.objects if o.type in ('LIGHT', 'CAMERA', 'EMPTY')]: bpy.data.objects.remove(o)
 
-# โคมระย้าขนนกมาโดยไม่มีพิกัดรูป (UV) รูปขนนกจึงไม่เคยขึ้น:
-# หาทิศหลัก 2 ทิศของขนนกแต่ละแผ่น (SVD) วางแผ่นให้แบน แล้วขึงรูปขนนกทับ ให้ด้านยาวของแผ่นเป็นความสูงของรูป
-ch = bpy.data.objects.get('item_chandelier')
-if ch:
-    import bmesh
-    me = ch.data; bm = bmesh.new(); bm.from_mesh(me); uvl = bm.loops.layers.uv.verify()
-    fm = {i for i, m in enumerate(me.materials) if m and m.name.startswith('Feather')}
-    seen, cards = set(), 0
-    for f in bm.faces:
-        if f.index in seen or f.material_index not in fm: continue
-        # ไล่หาหน้าที่ติดกันทั้งหมด = ขนนก 1 แผ่น
-        st, part = [f], []; seen.add(f.index)
-        while st:
-            g = st.pop(); part.append(g)
-            for e in g.edges:
-                for h in e.link_faces:
-                    if h.index not in seen and h.material_index in fm: seen.add(h.index); st.append(h)
-        co = np.array([v.co[:] for g in part for v in g.verts]); c = co.mean(0)
-        ax = np.linalg.svd(co - c, full_matrices=False)[2]; p = (co - c) @ ax[:2].T
-        lo, hi = p.min(0), np.maximum(p.max(0), p.min(0) + 1e-6)
-        for g in part:
-            for l in g.loops:
-                q = (np.array(l.vert.co[:]) - c) @ ax[:2].T; q = (q - lo) / (hi - lo)
-                l[uvl].uv = (q[1], q[0])        # แกนแรก = ทิศที่ยาวที่สุด = ความสูงของรูป
-        cards += 1
-    bm.to_mesh(me); bm.free()
-    # ขนนกบางเป็นแผ่นเดียว ต้องเห็นได้ทั้งสองด้าน
-    for i in fm: me.materials[i].use_backface_culling = False
-    print('feather cards', cards, flush=True)
+print('feather cards', feather_uvs(), flush=True)
 
 def tris(o): return sum(len(p.vertices) - 2 for p in o.data.polygons)
 total0 = total1 = 0

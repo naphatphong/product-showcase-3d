@@ -16,6 +16,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const linear = (x: number) => x;
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
+// ตำแหน่งเลื่อนหน้า (px) ที่ทำให้ทัวร์อยู่ที่ t (ใช้ทั้งในทัวร์ และป้ายห้องบนแปลนที่พากลับมาดูมุมนั้น)
+export function tourY(t: number) {
+  const el = document.getElementById("tour");
+  if (!el) return 0;
+  return el.getBoundingClientRect().top + scrollY + (t / N) * (el.offsetHeight - innerHeight);
+}
+
 // ทัวร์ห้อง HEARTH: ส่วนที่สูง N+1 จอ ภาพ 3D ติดอยู่กับจอ (sticky) ระหว่างเลื่อนผ่าน
 // เลื่อนลง 1 จอ = ไป 1 มุม: กล้องเดินทางไปมุมถัดไป แล้วค่อยๆ เคลื่อนเข้าช้าๆ เฟอร์นิเจอร์มุมนั้นเด้งขึ้น
 // เลื่อนกลับขึ้น = เฟอร์นิเจอร์ยุบลงไป / ปุ่ม Auto เลื่อนให้เองทีละมุม หยุดดูมุมละ 3 วินาที
@@ -71,10 +78,7 @@ export default function HearthTour({ lenis }: { lenis: RefObject<Lenis | null> }
   // เลื่อนหน้าไปที่ตำแหน่ง t ของทัวร์ (ใช้ Lenis ให้นุ่ม / เครื่องที่ลดภาพเคลื่อนไหว: กระโดดไปเลย)
   const scrollToT = useCallback(
     (target: number, easing: (x: number) => number, done?: () => void) => {
-      const el = section.current;
-      if (!el) return;
-      const top = el.getBoundingClientRect().top + scrollY;
-      const y = top + (target / N) * (el.offsetHeight - innerHeight);
+      const y = tourY(target);
       const l = lenis.current;
       if (l) {
         const distance = Math.abs(target - motion.current.t);
@@ -138,7 +142,7 @@ export default function HearthTour({ lenis }: { lenis: RefObject<Lenis | null> }
         setLite((v) => v ?? matchMedia("(max-width: 767px)").matches); // ตัดสินครั้งเดียว หมุนจอทีหลังไม่โหลดใหม่
         near.disconnect();
       },
-      { rootMargin: "100% 0px 100% 0px" }, // เริ่มโหลดเมื่อเหลืออีกราว 1 จอจะถึง (ไม่แย่งเน็ตกับวิดีโอหัวเว็บตอนเปิดหน้า)
+      { rootMargin: "100% 0px 100% 0px" }, // เริ่มโหลดเมื่อเหลืออีกราว 1 จอจะถึง (ไม่แย่งเน็ตกับภาพหัวเว็บตอนเปิดหน้า)
     );
     const view = new IntersectionObserver(([e]) => {
       setInView(e.isIntersecting);

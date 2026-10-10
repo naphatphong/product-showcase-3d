@@ -80,6 +80,14 @@
   cursor: default;
   opacity: 0.7;
 }
+/* ปุ่มสีครีมบนภาพเข้ม (ปุ่ม Take the tour บนจอแรก) */
+.hs-btn-light {
+  background: var(--paper);
+  color: var(--on-paper) !important;
+}
+.hs-btn-light:hover {
+  background: #fff;
+}
 
 /* ---------- ชิ้นที่ค่อยๆ โผล่ตอนเลื่อนมาถึง ---------- */
 .hs-root [data-reveal] {
@@ -113,7 +121,7 @@
   font-size: 22px;
   color: rgb(0 0 0 / 0.35);
 }
-/* แผ่นสีเข้ม: ตอนโหลดค่อยๆ สูงขึ้นจากล่าง → พร้อมแล้วขยายเต็มจอ → หน้าโหลดหายไป เห็นวิดีโอ */
+/* แผ่นสีเข้ม: ตอนโหลดค่อยๆ สูงขึ้นจากล่าง → พร้อมแล้วขยายเต็มจอ → หน้าโหลดหายไป เห็นภาพแรก */
 .hs-loader-panel {
   position: absolute;
   left: 8%;
@@ -156,19 +164,65 @@
   overflow: hidden;
   background: var(--ink);
 }
-.hs-hero-film {
+.hs-hero-stills {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
   transform: scale(1.06);
   transition: transform 2.4s var(--ease);
 }
-.hs-root[data-stage="done"] .hs-hero-film {
+.hs-root[data-stage="done"] .hs-hero-stills {
   transform: none;
 }
-/* เงาไล่สีด้านล่างและบนสุด ให้ตัวหนังสืออ่านง่ายบนวิดีโอ */
+/* ภาพนิ่ง 3 ภาพสลับกัน วนทุก 21 วินาที (ภาพละ 7 วิ): ภาพแรกเป็นพื้นล่างตลอด ภาพ 2 และ 3 จางเข้ามาทับ
+   (ภาพที่จางเข้ามาทับภาพที่ยังเต็มอยู่ → ไม่มีจังหวะมืดตอนเปลี่ยนภาพ) / ทุกภาพซูมเข้า-ออกช้าๆ */
+.hs-hero-still {
+  position: absolute;
+  inset: 0;
+  animation: 21s linear -1.7s infinite both;
+}
+.hs-hero-still:nth-child(2) {
+  animation-name: hs-still-2;
+}
+.hs-hero-still:nth-child(3) {
+  animation-name: hs-still-3;
+}
+.hs-hero-still img {
+  animation: hs-drift 14s ease-in-out infinite alternate;
+}
+/* ภาพ 2: จางเข้าที่วินาที 7 → หายตอนภาพ 3 บังอยู่ / ภาพ 3: จางเข้าที่วินาที 14 → จางออกที่วินาที 21 เห็นภาพแรก */
+@keyframes hs-still-2 {
+  0%,
+  33.3% {
+    opacity: 0;
+  }
+  41.4%,
+  76% {
+    opacity: 1;
+  }
+  76.1%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes hs-still-3 {
+  0% {
+    opacity: 1;
+  }
+  8.1%,
+  66.7% {
+    opacity: 0;
+  }
+  74.8%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes hs-drift {
+  to {
+    transform: scale(1.07);
+  }
+}
+/* เงาไล่สีด้านล่างและบนสุด ให้ตัวหนังสืออ่านง่ายบนภาพ */
 .hs-hero-shade {
   position: absolute;
   inset: 0;
@@ -218,6 +272,9 @@
   font-weight: 400;
   line-height: 1.04;
   letter-spacing: -0.025em;
+}
+.hs-hero-cta {
+  margin-top: 26px;
 }
 .hs-hero-meta {
   position: absolute;
@@ -321,11 +378,12 @@
 }
 .hs-tile {
   position: relative;
-}
-.hs-tile-link {
   display: block;
+  width: 100%;
+  cursor: zoom-in;
 }
 .hs-tile-img {
+  display: block;
   position: relative;
   overflow: hidden;
   background: #d9d5ce;
@@ -334,17 +392,17 @@
   object-fit: cover;
   transition: transform 1.2s var(--ease);
 }
-.hs-tile-link:hover .hs-cover {
+.hs-tile:hover .hs-cover {
   transform: scale(1.05);
 }
-/* เงาไล่สีครึ่งล่างของรูปที่มีชื่อบ้าน ให้ตัวหนังสือสีขาวอ่านออกแม้บนผนังสีขาว */
-.hs-tile-link .hs-tile-img::after {
+/* เงาไล่สีครึ่งล่างของรูปที่มีชื่อ ให้ตัวหนังสือสีขาวอ่านออกแม้บนผนังสีขาว */
+.hs-tile-img[data-named="true"]::after {
   content: "";
   position: absolute;
   inset: 45% 0 0;
   background: linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.38));
 }
-/* ชื่อบ้านตัวใหญ่สีขาววางทับครึ่งล่างของรูป (แบบ Doors / Windows ของ fluid.glass) */
+/* ชื่อตัวใหญ่สีขาววางทับครึ่งล่างของรูป (แบบ Doors / Windows ของ fluid.glass) */
 .hs-tile-name {
   position: absolute;
   left: 0;
@@ -358,42 +416,15 @@
   pointer-events: none;
 }
 
-/* ---------- ภายในบ้าน ---------- */
-.hs-interior {
-  padding: 26px var(--gutter) 90px;
+/* ---------- แปลน + ราคา ---------- */
+.hs-plan {
+  padding: 26px var(--gutter) 120px;
 }
-.hs-room-film {
-  position: relative;
-  margin-top: 26px;
-  aspect-ratio: 16 / 9;
-  max-height: 86vh;
-  width: 100%;
-  overflow: hidden;
-  background: #111;
-}
-.hs-room-film video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.hs-room-meta {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: rgb(255 255 255 / 0.8);
-}
-.hs-interior-foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+.hs-plan-head {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
   gap: 32px;
-  margin-top: 70px;
-  padding-top: 18px;
-  border-top: 1px solid rgb(255 255 255 / 0.14);
+  margin-bottom: clamp(40px, 7vh, 80px);
 }
 .hs-h2 {
   font-size: clamp(26px, 2.6vw, 40px);
@@ -401,148 +432,166 @@
   line-height: 1.08;
   letter-spacing: -0.03em;
 }
-.hs-address {
+.hs-plan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: end;
+}
+/* แปลนมองจากบน (พื้นหลังโปร่งใส) วางบนการ์ดสีครีม + ป้ายชื่อโซน */
+.hs-plan-img {
+  position: relative;
+  aspect-ratio: 18 / 11;
+  background: #e4dfd6;
+}
+.hs-plan-img img {
+  object-fit: contain;
+}
+/* ป้ายห้องบนแปลน: กดแล้วเลื่อนขึ้นไปดูมุมนั้นในทัวร์ */
+.hs-plan-zone {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 5px 9px;
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--on-ink);
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+.hs-plan-zone:hover {
+  background: #000;
+}
+.hs-plan-hint {
+  margin-top: 16px;
+  color: var(--muted-paper);
+}
+.hs-plan-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  text-align: right;
-  font-size: 13px;
-  line-height: 1.4;
-}
-.hs-address .hs-btn {
-  margin-top: 10px;
-}
-
-/* ---------- โมเดล 3D ---------- */
-.hs-model {
-  position: relative;
-  padding: 60px var(--gutter) 70px;
-  background: radial-gradient(60% 55% at 50% 55%, #2f3033 0%, var(--ink) 70%);
-}
-.hs-model-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-}
-.hs-model-text {
-  max-width: 300px;
-  font-size: 13px;
-  line-height: 1.45;
-}
-.hs-stage {
-  position: relative;
-  height: min(78vh, 760px);
-  margin-top: 10px;
-  cursor: grab;
-}
-.hs-stage:active {
-  cursor: grabbing;
-}
-/* ตัว canvas ค่อยๆ ปรากฏเมื่อโมเดลโหลดเสร็จ */
-.hs-stage > div {
-  opacity: 0;
-  transition: opacity 1.2s ease;
-}
-.hs-stage[data-ready="true"] > div {
-  opacity: 1;
-}
-.hs-stage-wait {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: var(--muted-ink);
-}
-.hs-model-specs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  padding-top: 16px;
-  border-top: 1px solid rgb(255 255 255 / 0.14);
-  font-size: 15px;
-}
-.hs-model-specs dt {
-  color: var(--muted-ink);
-  margin-bottom: 4px;
-}
-
-/* ---------- บ้านทุกหลัง ---------- */
-.hs-homes {
-  padding: 26px var(--gutter) 140px;
-}
-.hs-homes-head {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 32px;
-  margin-bottom: clamp(60px, 10vh, 120px);
-}
-.hs-home-list {
-  display: grid;
-  gap: clamp(70px, 12vh, 130px);
-}
-.hs-home-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: 32px;
-  padding-top: 18px;
-  border-top: 1px solid rgb(0 0 0 / 0.14);
-  scroll-margin-top: 40px;
-}
-.hs-home-info {
-  position: sticky;
-  top: 40px;
-  align-self: start;
-}
-.hs-home-name {
-  margin: 10px 0 14px;
-  font-size: clamp(34px, 4vw, 60px);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-.hs-home-summary {
-  max-width: 340px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: rgb(25 25 26 / 0.78);
+  align-items: flex-start;
+  gap: 28px;
 }
 .hs-specs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px 20px;
-  max-width: 340px;
-  margin-top: 26px;
+  width: 100%;
   font-size: 14px;
 }
 .hs-specs dt {
   color: var(--muted-paper);
   margin-bottom: 2px;
 }
-.hs-home-shots {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+.hs-price {
+  width: 100%;
+  padding-top: 18px;
+  border-top: 1px solid rgb(0 0 0 / 0.14);
 }
-.hs-shot-main {
-  grid-column: 1 / -1;
+.hs-price-num {
+  margin: 10px 0 8px;
+  font-size: clamp(36px, 3.6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.04em;
 }
-.hs-shot-img {
+.hs-price-note {
+  font-size: 12px;
+  color: var(--muted-paper);
+}
+
+/* ---------- เทียบกลางวัน/กลางคืน ---------- */
+.hs-light {
+  padding: 26px var(--gutter) 120px;
+}
+.hs-compare {
+  --cut: 50%;
   position: relative;
   aspect-ratio: 16 / 9;
+  max-height: 88vh;
+  width: 100%;
   overflow: hidden;
-  background: #d9d5ce;
+  background: #111;
 }
-.hs-shot-main .hs-shot-img {
-  aspect-ratio: 16 / 8.2;
+/* ภาพค่ำทับอยู่ด้านบน ตัดซ้ายทิ้งตามตำแหน่งเส้นแบ่ง → ซ้ายของเส้น = กลางวัน ขวา = กลางคืน */
+.hs-compare-night {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 0 var(--cut));
 }
-.hs-shot-main:hover .hs-cover,
-.hs-shot:hover .hs-cover {
-  transform: scale(1.04);
+.hs-compare-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--cut);
+  width: 1px;
+  background: rgb(255 255 255 / 0.85);
+  pointer-events: none;
 }
-.hs-home-shots figcaption {
-  margin-top: 8px;
-  color: var(--muted-paper);
+.hs-compare-line::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgb(255 255 255 / 0.85);
+  border-radius: 50%;
+  background: rgb(16 16 18 / 0.35);
+  backdrop-filter: blur(6px);
+  transform: translate(-50%, -50%);
+}
+.hs-compare:has(.hs-compare-range:focus-visible) .hs-compare-line::after {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.hs-compare-tag {
+  position: absolute;
+  top: 14px;
+  padding: 4px 8px;
+  background: rgb(16 16 18 / 0.5);
+  color: #fff;
+  pointer-events: none;
+}
+.hs-compare-tag[data-side="day"] {
+  left: 14px;
+}
+.hs-compare-tag[data-side="night"] {
+  right: 14px;
+}
+/* แถบเลื่อนโปร่งใสทับทั้งภาพ: ลาก/แตะตรงไหนก็ได้ (แนวตั้งยังเลื่อนหน้าได้ปกติบนมือถือ) */
+.hs-compare-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+/* ---------- รูปเต็มจอ ---------- */
+.hs-box {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(12 12 13 / 0.95);
+  cursor: zoom-out;
+}
+.hs-box-img {
+  object-fit: contain;
+  padding: clamp(16px, 4vw, 56px);
+}
+.hs-box-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+html:has(.hs-box[open]) {
+  overflow: hidden;
 }
 
 /* ---------- ท้ายหน้า ---------- */
@@ -654,6 +703,9 @@
 .hs-menu-link {
   display: flex;
   gap: 14px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
   padding: 9px 16px;
   font-size: 15px;
   letter-spacing: -0.01em;
@@ -885,8 +937,8 @@
 /* ---------- มือถือ: รูปลอยกลายเป็นตาราง 2 คอลัมน์ / ส่วนต่างๆ เรียงลงมาเป็นแถวเดียว ---------- */
 @media (max-width: 767px) {
   .hs-band-row,
-  .hs-homes-head,
-  .hs-home-row {
+  .hs-plan-head,
+  .hs-plan-row {
     grid-template-columns: 1fr;
   }
   .hs-band-row {
@@ -895,7 +947,7 @@
   .hs-hero-meta .hs-label {
     display: none;
   }
-  /* ปุ่มหยุดวิดีโอยกขึ้นเหนือแถบเมนูลอย (จอแคบ แถบเมนูกินความกว้างเกือบทั้งจอ) */
+  /* ปุ่มเสียงยกขึ้นเหนือแถบเมนูลอย (จอแคบ แถบเมนูกินความกว้างเกือบทั้งจอ) */
   .hs-hero-meta {
     bottom: 76px;
   }
@@ -925,25 +977,16 @@
   .hs-tile-name {
     font-size: 22px;
   }
-  .hs-interior-foot,
-  .hs-model-head,
+  .hs-compare {
+    aspect-ratio: 4 / 3;
+  }
   .hs-foot-row {
     flex-direction: column;
     align-items: flex-start;
   }
-  .hs-address,
   .hs-foot-links {
     align-items: flex-start;
     text-align: left;
-  }
-  .hs-stage {
-    height: 62vh;
-  }
-  .hs-model-specs {
-    grid-template-columns: 1fr 1fr;
-  }
-  .hs-home-info {
-    position: static;
   }
   /* ทัวร์: กล่องข้อความเต็มความกว้าง เหนือแถบเมนูลอย / จุดนำทางเล็กลง ไม่มีชื่อ */
   .hs-tour-caption {
@@ -980,7 +1023,8 @@
 @media (prefers-reduced-motion: reduce) {
   .hs-root [data-reveal],
   .hs-loader-panel,
-  .hs-hero-film,
+  .hs-hero-stills,
+  .hs-hero-still img,
   .hs-pill {
     transition: none;
     animation: none;
@@ -991,6 +1035,9 @@
   }
   .hs-word {
     transition: none;
+  }
+  .hs-hero-still + .hs-hero-still {
+    display: none;
   }
   .hs-tour-caption {
     animation: none;

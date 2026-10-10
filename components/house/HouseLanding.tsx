@@ -2,46 +2,54 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import Lenis from "lenis";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { archivo, plexMono } from "@/components/fonts";
 import Reveal from "@/components/Reveal";
-import HearthTour from "./hearth/HearthTour";
-import { HOMES, HOUSE_FILM, LIVE_MODEL, ROOM_FILM, type HomeShot } from "@/config/house";
+import { setMusic, stopMusic } from "@/lib/hearthSound";
+import { STOPS } from "@/config/hearth";
+import HearthTour, { tourY } from "./hearth/HearthTour";
+import { SETTLE_AT } from "./hearth/timeline";
 import "./house.css"; // สไตล์ของหน้านี้ (คลาสขึ้นต้นด้วย hs-) โหลดเฉพาะหน้า /house
 
-// โมเดล 3D โหลดเมื่อเลื่อนมาใกล้ส่วน "In 3D" เท่านั้น (โค้ด three.js + ไฟล์โมเดลไม่โหลดตอนเปิดหน้า)
-const ModelViewer = dynamic(() => import("./ModelViewer"), { ssr: false });
-
 const pad = (n: number) => String(n).padStart(2, "0");
-const home = (id: string) => HOMES.find((h) => h.id === id)!;
+// รูปทุกรูปในหน้านี้เรนเดอร์จากโมเดลห้อง HEARTH ด้วย Cycles (scripts/hearth/bake.py → still_<ชื่อ>)
+const photo = (name: string) => `/photos/hearth/${name}.webp`;
+
+// จอแรก: ภาพนิ่ง 3 ภาพค่อยๆ ซูมช้าๆ และจางสลับกัน (แทนวิดีโอ ไฟล์เล็กกว่ามาก)
+const HERO = [
+  { name: "hero-1", alt: "The HEARTH living room by day: sofa, fireplace and the kitchen behind" },
+  { name: "hero-2", alt: "Looking back from the kitchen across the dining table to the sofa" },
+  { name: "hero-3-night", alt: "The whole room at night, lit by lamps and the fire" },
+];
 
 // ข้อความใหญ่กลางหน้า: คำค่อยๆ เข้มขึ้นตามการเลื่อน (แบบ fluid.glass)
 const STATEMENT =
-  "We draw homes that sit quietly on their land: pale concrete, rough stone, timber screens and deep shade. Every house is built in 3D, down to the last chair.";
+  "HEARTH is one long room: a soft sofa facing a low fire, a white table under a cloud of feathers and a kitchen in gold-veined marble. Every piece in it is a real 3D model.";
 
-// กลุ่มรูปลอยในส่วน Collection: ตำแหน่งบนจอคอม (% ของความกว้าง, vh จากบนสุด, ความกว้าง vw)
-// speed = เลื่อนเร็ว/ช้ากว่าหน้า (ค่าบวก = ลอยขึ้นเร็วกว่า) ให้ดูมีระยะลึก / name = ชื่อบ้านตัวใหญ่บนรูป
+// กลุ่มรูปลอยในส่วน Details: ตำแหน่งบนจอคอม (% ของความกว้าง, vh จากบนสุด, ความกว้าง vw)
+// speed = เลื่อนเร็ว/ช้ากว่าหน้า (ค่าบวก = ลอยขึ้นเร็วกว่า) ให้ดูมีระยะลึก / name = ชื่อตัวใหญ่บนรูป
 // wide = บนมือถือรูปนี้กว้างเต็มแถว (ที่เหลือวางคู่กัน 2 รูปต่อแถว)
-type Tile = {
-  shot: HomeShot;
-  name?: string;
-  href?: string;
-  x: number;
-  y: number;
-  w: number;
-  ratio: string;
-  speed: number;
-  wide?: boolean;
-};
+type Tile = { src: string; alt: string; name?: string; x: number; y: number; w: number; ratio: string; speed: number; wide?: boolean };
 const TILES: Tile[] = [
-  { shot: home("monolith").cover, name: "Monolith", href: "#home-monolith", x: 20, y: 0, w: 28, ratio: "4 / 5", speed: 0.06, wide: true },
-  { shot: home("pavilion").cover, name: "Pavilion", href: "#home-pavilion", x: 64, y: 44, w: 21, ratio: "3 / 4", speed: 0.16 },
-  { shot: { ...home("monolith").cover, src: "/photos/house/monolith-5.webp", alt: "Rippled water of the Monolith pool", caption: "Pool" }, x: 49, y: 76, w: 12, ratio: "1 / 1", speed: 0.26 },
-  { shot: home("lounge").cover, name: "Lounge", href: "#home-lounge", x: 4, y: 70, w: 25, ratio: "4 / 3", speed: 0.1, wide: true },
-  { shot: home("slope").cover, name: "Slope", href: "#home-slope", x: 33, y: 104, w: 22, ratio: "4 / 5", speed: 0.04 },
-  { shot: home("pavilion").shots[0], x: 75, y: 118, w: 16, ratio: "16 / 10", speed: 0.2 },
+  { src: photo("sofa"), alt: "The sofa and coffee table in front of the fireplace", name: "Sofa", x: 20, y: 0, w: 28, ratio: "4 / 3", speed: 0.06, wide: true },
+  { src: photo("feathers"), alt: "A cloud of feather lamps over the dining table", name: "Feathers", x: 64, y: 40, w: 19, ratio: "4 / 5", speed: 0.16 },
+  { src: photo("tree-night"), alt: "The Christmas tree in the corner at night", x: 49, y: 72, w: 13, ratio: "1 / 1", speed: 0.26 },
+  { src: photo("marble"), alt: "The marble kitchen island with gold veins", name: "Marble", x: 4, y: 58, w: 22, ratio: "4 / 5", speed: 0.1 },
+  { src: photo("dining"), alt: "The dining table set for eight", name: "Dining", x: 30, y: 100, w: 30, ratio: "16 / 10", speed: 0.04, wide: true },
+];
+
+// ขนาดห้อง (วัดจากโมเดล) / ป้ายโซนบนแปลน (ตำแหน่ง % บนรูปแปลน, stop = มุมในทัวร์ที่กดแล้วพาไปดู)
+const SPECS = [
+  { label: "Floor area", value: "52 m²" },
+  { label: "Room", value: "9.1 × 5.7 m" },
+  { label: "Ceiling", value: "2.7 m" },
+  { label: "Seats", value: "5 sofa · 8 table · 3 bar" },
+];
+const ZONES = [
+  { label: "Living", stop: "sofa", x: 24, y: 30 },
+  { label: "Dining", stop: "dining", x: 47, y: 74 },
+  { label: "Kitchen", stop: "kitchen", x: 79, y: 50 },
 ];
 
 // ส่วนต่างๆ ของหน้า (ใช้กับป้ายในแถบเมนูลอยด้านล่าง + เมนู)
@@ -49,41 +57,30 @@ const SECTIONS = [
   { id: "top", label: "Home" },
   { id: "about", label: "About" },
   { id: "tour", label: "Tour" },
-  { id: "collection", label: "Collection" },
-  { id: "interior", label: "Interior" },
-  { id: "model", label: "In 3D" },
-  { id: "homes", label: "Homes" },
+  { id: "details", label: "Details" },
+  { id: "light", label: "Day & night" },
+  { id: "plan", label: "Plan & price" },
 ] as const;
 
 type Stage = "load" | "open" | "done";
 
-// หน้าแรกของเว็บบ้าน (แบบ fluid.glass)
-// 1) หน้าโหลด: พื้นเทา + ชื่อเว็บ แผ่นสีเข้มค่อยๆ สูงขึ้นจากล่าง แล้วขยายเต็มจอ เปิดเข้าวิดีโอ
-// 2) วิดีโอเต็มจอ (MONOLITH) + หัวข้อกลางล่าง / แถบเมนูลอยด้านล่างติดจอตลอด
-// 3) สลับพื้นเข้ม/ครีม: แนะนำ → ข้อความใหญ่ → กลุ่มรูปลอย → วิดีโอในห้อง → โมเดล 3D หมุนได้ → รายการบ้านทุกหลัง
-// รูปและวิดีโอทั้งหมดอัดจากโมเดล 3D ของบ้านหลังนั้นเอง (ดู config/house.ts)
+// หน้าแรกของเว็บ HEARTH (แบบ fluid.glass)
+// 1) หน้าโหลด: พื้นเทา + ชื่อเว็บ แผ่นสีเข้มค่อยๆ สูงขึ้นจากล่าง แล้วขยายเต็มจอ เปิดเข้าภาพแรก
+// 2) ภาพนิ่งเต็มจอสลับกัน + หัวข้อกลางล่าง / แถบเมนูลอยด้านล่างติดจอตลอด / ปุ่มเปิดเพลง (ปิดไว้ก่อน)
+// 3) สลับพื้นเข้ม/ครีม: แนะนำ → ข้อความใหญ่ → ทัวร์ 3D → กลุ่มรูปลอย (กดดูรูปใหญ่) → เทียบกลางวัน/กลางคืน → แปลน + ราคา
 export default function HouseLanding() {
   const root = useRef<HTMLDivElement>(null);
   const lenis = useRef<Lenis | null>(null);
-  const heroFilm = useRef<HTMLVideoElement>(null);
-  const roomFilm = useRef<HTMLVideoElement>(null);
   const statement = useRef<HTMLParagraphElement>(null);
-  const stageBox = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLDialogElement>(null);
   const [stage, setStage] = useState<Stage>("load");
   const [section, setSection] = useState(0);
   const [menu, setMenu] = useState(false);
-  const [narrow, setNarrow] = useState(false);
-  const [heroPaused, setHeroPaused] = useState<boolean | null>(null); // null = ยังไม่ได้กด (ใช้ค่าตามเครื่อง)
-  const [roomPaused, setRoomPaused] = useState<boolean | null>(null);
-  const [roomNear, setRoomNear] = useState(false); // ส่วนวิดีโอห้องใกล้เข้ามา → เริ่มโหลดวิดีโอ
-  const [roomInView, setRoomInView] = useState(false);
-  const [heroInView, setHeroInView] = useState(true);
-  const [modelNear, setModelNear] = useState(false); // ส่วน 3D ใกล้เข้ามา → โหลดโมเดล
-  const [modelReady, setModelReady] = useState(false);
-  const [modelInView, setModelInView] = useState(false); // โมเดลอยู่ในจอ → วาดภาพทุกเฟรม (ออกนอกจอ = หยุดวาด ประหยัดแบต)
+  const [music, setMusicOn] = useState(false);
+  const [shown, setShown] = useState<Tile | null>(null); // รูปที่เปิดดูเต็มจออยู่
 
   // ---------- หน้าโหลด ----------
-  // รอวิดีโอหัวเว็บพร้อมเล่น (หรือครบ 4 วินาที) แต่อยู่อย่างน้อย 1.4 วินาทีให้เห็นจังหวะแผ่นสีเข้มขึ้นมา
+  // รอภาพแรกโหลดเสร็จ (หรือครบ 4 วินาที) แต่อยู่อย่างน้อย 1.4 วินาทีให้เห็นจังหวะแผ่นสีเข้มขึ้นมา
   useEffect(() => {
     const started = performance.now();
     let opened = false;
@@ -96,24 +93,18 @@ export default function HouseLanding() {
         setTimeout(() => setStage("done"), 1100);
       }, wait);
     };
-    const v = heroFilm.current;
-    if (v && v.readyState >= 3) open();
-    v?.addEventListener("canplay", open, { once: true });
+    const img = root.current?.querySelector<HTMLImageElement>(".hs-hero-still img");
+    if (img?.complete) open();
+    img?.addEventListener("load", open, { once: true });
     const t = setTimeout(open, 4000);
     return () => {
       clearTimeout(t);
-      v?.removeEventListener("canplay", open);
+      img?.removeEventListener("load", open);
     };
   }, []);
 
-  // ---------- จอแคบ (มือถือ) ----------
-  useEffect(() => {
-    const mq = matchMedia("(max-width: 767px)");
-    const update = () => setNarrow(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
+  // ออกจากหน้า: ปิดเพลง
+  useEffect(() => stopMusic, []);
 
   // ---------- เลื่อนหน้าแบบนุ่ม (Lenis) + ภาพลอยต่างระดับ + ข้อความค่อยๆ เข้ม ----------
   useEffect(() => {
@@ -178,7 +169,7 @@ export default function HouseLanding() {
     return () => io.disconnect();
   }, []);
 
-  // ---------- ส่วนที่อยู่กลางจอ → ป้ายบนแถบเมนู / วิดีโอและโมเดลโหลดเมื่อใกล้ ----------
+  // ---------- ส่วนที่อยู่กลางจอ → ป้ายบนแถบเมนู ----------
   useEffect(() => {
     const current = new IntersectionObserver(
       (entries) => {
@@ -188,59 +179,14 @@ export default function HouseLanding() {
       },
       { rootMargin: "-50% 0px -50% 0px" },
     );
-    const near = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue;
-          if (e.target.id === "interior") setRoomNear(true);
-          if (e.target.id === "model") setModelNear(true);
-        }
-      },
-      { rootMargin: "600px 0px 600px 0px" },
-    );
-    const inView = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.target === roomFilm.current) setRoomInView(e.isIntersecting);
-          if (e.target === heroFilm.current) setHeroInView(e.isIntersecting);
-          if (e.target === stageBox.current) setModelInView(e.isIntersecting);
-        }
-      },
-      { threshold: 0.01 },
-    );
     for (const { id } of SECTIONS) {
       const el = document.getElementById(id);
-      if (!el) continue;
-      current.observe(el);
-      near.observe(el);
+      if (el) current.observe(el);
     }
-    if (roomFilm.current) inView.observe(roomFilm.current);
-    if (heroFilm.current) inView.observe(heroFilm.current);
-    if (stageBox.current) inView.observe(stageBox.current);
-    return () => {
-      current.disconnect();
-      near.disconnect();
-      inView.disconnect();
-    };
+    return () => current.disconnect();
   }, []);
 
-  // ---------- เล่น/หยุดวิดีโอ: เล่นเฉพาะตอนอยู่ในจอ / ผู้ใช้กดหยุดได้ / เครื่องที่ลดภาพเคลื่อนไหวเริ่มแบบหยุด ----------
-  useEffect(() => {
-    const v = heroFilm.current;
-    if (!v) return;
-    const stopped = heroPaused ?? matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (heroInView && !stopped) v.play().catch(() => {});
-    else v.pause();
-  }, [heroInView, heroPaused]);
-  useEffect(() => {
-    const v = roomFilm.current;
-    if (!v || !roomNear) return;
-    const stopped = roomPaused ?? matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (roomInView && !stopped) v.play().catch(() => {});
-    else v.pause();
-  }, [roomInView, roomNear, roomPaused]);
-
-  // ลิงก์ในหน้า (#collection ฯลฯ): เลื่อนไปแบบนุ่มด้วย Lenis
+  // ลิงก์ในหน้า (#plan ฯลฯ): เลื่อนไปแบบนุ่มด้วย Lenis
   const jump = useCallback((e: MouseEvent<HTMLAnchorElement>) => {
     const id = e.currentTarget.getAttribute("href")!;
     const target = id === "#top" ? 0 : document.querySelector<HTMLElement>(id);
@@ -252,40 +198,54 @@ export default function HouseLanding() {
     else target.scrollIntoView();
   }, []);
 
-  const onModelReady = useCallback(() => setModelReady(true), []);
-  const heroStopped = heroPaused === true;
-  const roomStopped = roomPaused === true;
+  // ป้ายห้องบนแปลน → เลื่อนกลับขึ้นไปที่มุมนั้นในทัวร์ 3D
+  const toStop = (id: string) => {
+    const y = tourY(STOPS.findIndex((x) => x.id === id) + SETTLE_AT);
+    if (lenis.current) lenis.current.scrollTo(y, { duration: 2.4 });
+    else scrollTo({ top: y });
+  };
+
+  // ดูรูปเต็มจอ (<dialog> ของเบราว์เซอร์: กด Esc ปิดได้ โฟกัสอยู่ในกล่อง) / ระหว่างเปิดหยุดการเลื่อนหน้า
+  const openPhoto = (t: Tile) => {
+    setShown(t);
+    box.current?.showModal();
+    lenis.current?.stop();
+  };
+  const closedPhoto = () => {
+    setShown(null);
+    lenis.current?.start();
+  };
+
+  // เปิด/ปิดเพลง (ต้องเริ่มจากการกดปุ่มเท่านั้น เบราว์เซอร์ถึงยอมให้มีเสียง)
+  const toggleMusic = () => {
+    setMusic(!music);
+    setMusicOn(!music);
+  };
 
   return (
     <div ref={root} className={`${archivo.variable} ${plexMono.variable} hs-root`} data-stage={stage}>
       {/* ---------- หน้าโหลด ---------- */}
       <div className="hs-loader" aria-hidden={stage === "done"} role="status" aria-label="Loading">
         <p className="hs-loader-mark">
-          <Mark /> Monolith
+          <Mark /> Hearth
         </p>
         <div className="hs-loader-panel" />
       </div>
 
-      {/* ---------- จอแรก: วิดีโอเต็มจอ ---------- */}
+      {/* ---------- จอแรก: ภาพนิ่งเต็มจอสลับกัน ---------- */}
       <section id="top" className="hs-hero" data-active={stage === "done"}>
-        <video
-          ref={heroFilm}
-          className="hs-hero-film"
-          poster={HOUSE_FILM.poster}
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden
-        >
-          <source src={HOUSE_FILM.src} media="(min-width: 768px)" type="video/mp4" />
-          <source src={HOUSE_FILM.small} type="video/mp4" />
-        </video>
+        <div className="hs-hero-stills">
+          {HERO.map((h, i) => (
+            <div key={h.name} className="hs-hero-still">
+              <Image src={photo(h.name)} alt={h.alt} fill preload={i === 0} sizes="100vw" className="hs-cover" />
+            </div>
+          ))}
+        </div>
         <div className="hs-hero-shade" />
         <header className="hs-header">
           <span />
-          <Link href="/house" className="hs-wordmark" aria-label="Monolith houses">
-            Monolith
+          <Link href="/house" className="hs-wordmark" aria-label="HEARTH">
+            Hearth
           </Link>
           <Link href="/" className="hs-top-link">
             <Arrow /> Back to orbit
@@ -293,15 +253,18 @@ export default function HouseLanding() {
         </header>
         <div className="hs-hero-copy">
           <h1 className="hs-hero-title">
-            <Reveal text="Houses shaped by concrete," delay={0.1} step={0.018} />
+            <Reveal text="A living room built" delay={0.1} step={0.018} />
             <br />
-            <Reveal text="stone and light." delay={0.45} step={0.018} />
+            <Reveal text="around the fire." delay={0.45} step={0.018} />
           </h1>
+          <a href="#tour" onClick={jump} className="hs-btn hs-btn-light hs-hero-cta">
+            <Arrow /> Take the tour
+          </a>
         </div>
         <div className="hs-hero-meta">
-          <span className="hs-label">Rendered from the Monolith model</span>
-          <button type="button" className="hs-film-btn" onClick={() => setHeroPaused(!heroStopped)}>
-            {heroStopped ? "Play" : "Pause"}
+          <span className="hs-label">Rendered from the HEARTH model</span>
+          <button type="button" className="hs-film-btn" aria-pressed={music} onClick={toggleMusic}>
+            {music ? "Sound off" : "Sound on"}
           </button>
         </div>
       </section>
@@ -311,19 +274,19 @@ export default function HouseLanding() {
         <div className="hs-rule" />
         <div className="hs-band-row">
           <p data-reveal className="hs-label">
-            <Diamond /> Residential collection
+            <Diamond /> Living room & kitchen
           </p>
           <p data-reveal className="hs-band-text" style={{ "--d": "0.12s" } as CSSProperties}>
-            Three houses and one living room, each a real 3D model you will be able to walk through. Every picture
-            and film on this page is rendered from those same models.
+            One open room for living, dining and cooking. Every picture on this page, and the tour below, comes from the
+            same 3D model, lit in Cycles.
           </p>
         </div>
       </section>
 
       {/* ---------- ข้อความใหญ่ (พื้นครีม) ---------- */}
-      <section id="about" className={`hs-paper hs-about`}>
-        <p data-reveal className={`hs-label hs-center`}>
-          <Diamond /> About Monolith
+      <section id="about" className="hs-paper hs-about">
+        <p data-reveal className="hs-label hs-center">
+          <Diamond /> About Hearth
         </p>
         <p ref={statement} className="hs-statement">
           {STATEMENT.split(" ").map((w, i) => (
@@ -333,8 +296,8 @@ export default function HouseLanding() {
           ))}
         </p>
         <div data-reveal className="hs-center">
-          <a href="#homes" onClick={jump} className="hs-btn">
-            <Arrow /> See every home
+          <a href="#plan" onClick={jump} className="hs-btn">
+            <Arrow /> See the plan
           </a>
         </div>
       </section>
@@ -343,200 +306,162 @@ export default function HouseLanding() {
       <HearthTour lenis={lenis} />
 
       {/* ---------- กลุ่มรูปลอย (พื้นครีม) ---------- */}
-      <section id="collection" className={`hs-paper hs-collection`}>
+      <section id="details" className="hs-paper hs-collection">
         <div className="hs-rule" />
         <p data-reveal className="hs-label">
-          <Diamond /> The collection
+          <Diamond /> Details
         </p>
         <div className="hs-collage">
           <div data-reveal className="hs-coll-text">
             <p>
-              Our <strong>collection</strong> is four places to live: a stone and concrete villa, a timber pavilion, a
-              white two-storey house and a living room with a wall of glass.
+              Five <strong>corners</strong> of the room up close: the sofa by the fire, the feather lamps, the tree at
+              night, the marble island and the long dining table.
             </p>
-            <a href="#homes" onClick={jump} className="hs-btn">
-              <Arrow /> Collection overview
+            <a href="#tour" onClick={jump} className="hs-btn">
+              <Arrow /> Back to the tour
             </a>
           </div>
-          {TILES.map((t, i) => {
-            const body = (
-              <>
-                <div className="hs-tile-img" style={{ aspectRatio: t.ratio }}>
-                  <Image src={t.shot.src} alt={t.shot.alt} fill sizes="(min-width: 768px) 28vw, 50vw" className="hs-cover" />
-                </div>
-                {t.name && <span className="hs-tile-name">{t.name}</span>}
-              </>
-            );
-            return (
-              <div
-                key={i}
-                className="hs-tile-slot"
-                data-wide={t.wide}
-                style={{ "--x": `${t.x}%`, "--y": `${t.y}vh`, "--w": `${t.w}vw` } as CSSProperties}
-              >
-                <div data-speed={t.speed} className="hs-tile-move">
-                  <div data-reveal className="hs-tile" style={{ "--d": `${(i % 3) * 0.1}s` } as CSSProperties}>
-                    {t.href ? (
-                      <a href={t.href} onClick={jump} className="hs-tile-link">
-                        {body}
-                      </a>
-                    ) : (
-                      body
-                    )}
-                  </div>
-                </div>
+          {TILES.map((t, i) => (
+            <div
+              key={t.src}
+              className="hs-tile-slot"
+              data-wide={t.wide}
+              style={{ "--x": `${t.x}%`, "--y": `${t.y}vh`, "--w": `${t.w}vw` } as CSSProperties}
+            >
+              <div data-speed={t.speed} className="hs-tile-move">
+                <button
+                  type="button"
+                  data-reveal
+                  className="hs-tile"
+                  style={{ "--d": `${(i % 3) * 0.1}s` } as CSSProperties}
+                  aria-label={`View larger: ${t.alt}`}
+                  onClick={() => openPhoto(t)}
+                >
+                  <span className="hs-tile-img" data-named={!!t.name} style={{ aspectRatio: t.ratio }}>
+                    <Image src={t.src} alt="" fill sizes="(min-width: 768px) 30vw, 50vw" className="hs-cover" />
+                  </span>
+                  {t.name && <span className="hs-tile-name">{t.name}</span>}
+                </button>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ---------- ภายในบ้าน: วิดีโอห้อง (พื้นเข้ม) ---------- */}
-      <section id="interior" className="hs-interior">
+      {/* ---------- เทียบกลางวัน/กลางคืน: ภาพมุมเดียวกัน 2 ภาพซ้อนกัน ลากเส้นแบ่งเพื่อเปิดภาพค่ำ (พื้นเข้ม) ---------- */}
+      <section id="light" className="hs-light">
         <div className="hs-rule" />
-        <p data-reveal className="hs-label">
-          <Diamond /> Interior
-        </p>
-        <figure data-reveal className="hs-room-film">
-          <video
-            ref={roomFilm}
-            src={roomNear ? ROOM_FILM.src : undefined}
-            poster={ROOM_FILM.poster}
-            muted
-            loop
-            playsInline
-            preload="none"
-            aria-hidden
-          />
-          <figcaption className="hs-room-meta">
-            <span className="hs-label">Lounge · rendered from the room model</span>
-            <button type="button" className="hs-film-btn" onClick={() => setRoomPaused(!roomStopped)}>
-              {roomStopped ? "Play" : "Pause"}
-            </button>
-          </figcaption>
-        </figure>
-        <div className="hs-interior-foot">
+        <div className="hs-plan-head">
+          <p data-reveal className="hs-label">
+            <Diamond /> Day & night
+          </p>
           <h2 data-reveal className="hs-h2">
-            Rooms you can
+            The same room,
             <br />
-            walk into.
+            two kinds of light.
           </h2>
-          <div data-reveal className="hs-address" style={{ "--d": "0.12s" } as CSSProperties}>
-            <p className="hs-label">Location</p>
-            <p>
-              Khon Kaen, Thailand
-              <br />
-              16.44° N, 102.83° E
-            </p>
-            <span className={`hs-btn hs-btn-ghost`} aria-disabled>
-              <Arrow /> Walk-through · next
+        </div>
+        <div data-reveal className="hs-compare">
+          <Image src={photo("hero-1")} alt="The living room by day" fill sizes="100vw" className="hs-cover" />
+          <div className="hs-compare-night">
+            <Image src={photo("hero-1-night")} alt="The same view at night" fill sizes="100vw" className="hs-cover" />
+          </div>
+          <i className="hs-compare-line" aria-hidden />
+          <span className="hs-label hs-compare-tag" data-side="day">
+            Day
+          </span>
+          <span className="hs-label hs-compare-tag" data-side="night">
+            Night
+          </span>
+          {/* แถบเลื่อนของเบราว์เซอร์ (ใช้คีย์บอร์ดได้) วางโปร่งใสทับทั้งภาพ: ค่าที่ลาก → ตัวแปร CSS --cut โดยไม่ต้องวาด React ใหม่ */}
+          <input
+            type="range"
+            min={0}
+            max={100}
+            defaultValue={50}
+            aria-label="Slide between day and night"
+            className="hs-compare-range"
+            onInput={(e) => e.currentTarget.parentElement!.style.setProperty("--cut", `${e.currentTarget.value}%`)}
+          />
+        </div>
+      </section>
+
+      {/* ---------- แปลน + ราคา (พื้นครีม) ---------- */}
+      <section id="plan" className="hs-paper hs-plan">
+        <div className="hs-rule" />
+        <div className="hs-plan-head">
+          <p data-reveal className="hs-label">
+            <Diamond /> Plan & price
+          </p>
+          <h2 data-reveal className="hs-h2">
+            52 m² of open plan.
+            <br />
+            Living, dining, kitchen.
+          </h2>
+        </div>
+        <div className="hs-plan-row">
+          <figure data-reveal className="hs-plan-img">
+            <Image src={photo("plan")} alt="Top-down plan of the HEARTH room" fill sizes="(min-width: 768px) 60vw, 100vw" />
+            {ZONES.map((z) => (
+              <button
+                key={z.label}
+                type="button"
+                className="hs-plan-zone hs-label"
+                style={{ left: `${z.x}%`, top: `${z.y}%` }}
+                aria-label={`${z.label}: see it in the 3D tour`}
+                onClick={() => toStop(z.stop)}
+              >
+                {z.label} ↑
+              </button>
+            ))}
+          </figure>
+          <div data-reveal className="hs-plan-info" style={{ "--d": "0.12s" } as CSSProperties}>
+            <dl className="hs-specs">
+              {SPECS.map((x) => (
+                <div key={x.label}>
+                  <dt className="hs-label">{x.label}</dt>
+                  <dd>{x.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="hs-price">
+              <p className="hs-label">Fully furnished, as shown</p>
+              <p className="hs-price-num">฿2,450,000</p>
+              <p className="hs-price-note">Concept price for a portfolio project.</p>
+            </div>
+            <span className="hs-btn hs-btn-ghost" aria-disabled>
+              <Arrow /> Enquire · concept
             </span>
           </div>
         </div>
+        <p data-reveal className="hs-plan-hint hs-label">Tap a room on the plan to see it in the 3D tour</p>
       </section>
 
-      {/* ---------- โมเดล 3D หมุนได้ (พื้นเข้ม) ---------- */}
-      <section id="model" className="hs-model">
-        <div className="hs-model-head">
-          <p data-reveal className="hs-label">
-            <Diamond /> In 3D
-          </p>
-          <p data-reveal className="hs-model-text" style={{ "--d": "0.1s" } as CSSProperties}>
-            The same Monolith model, live in your browser. Drag to turn it.
-          </p>
-        </div>
-        <div ref={stageBox} className="hs-stage" data-ready={modelReady}>
-          {modelNear && <ModelViewer src={LIVE_MODEL} narrow={narrow} active={modelInView} onReady={onModelReady} />}
-          {!modelReady && <p className={`hs-label hs-stage-wait`}>Loading model…</p>}
-        </div>
-        <dl className="hs-model-specs">
-          {home("monolith").specs.map((x) => (
-            <div key={x.label}>
-              <dt className="hs-label">{x.label}</dt>
-              <dd>{x.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      {/* ---------- บ้านทุกหลัง (พื้นครีม) ---------- */}
-      <section id="homes" className={`hs-paper hs-homes`}>
-        <div className="hs-rule" />
-        <div className="hs-homes-head">
-          <p data-reveal className="hs-label">
-            <Diamond /> Featured homes
-          </p>
-          <div>
-            <h2 data-reveal className="hs-h2">
-              Each home tells a story
-              <br />
-              of light and material.
-            </h2>
-          </div>
-        </div>
-        <ol className="hs-home-list">
-          {HOMES.map((h, i) => (
-            <li key={h.id} id={`home-${h.id}`} className="hs-home-row">
-              <div data-reveal className="hs-home-info">
-                <p className="hs-label">
-                  {pad(i + 1)} · {h.type}
-                </p>
-                <h3 className="hs-home-name">{h.name}</h3>
-                <p className="hs-home-summary">{h.summary}</p>
-                <dl className="hs-specs">
-                  {h.specs.map((x) => (
-                    <div key={x.label}>
-                      <dt className="hs-label">{x.label}</dt>
-                      <dd>{x.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-              <div className="hs-home-shots">
-                {[h.cover, ...h.shots].map((p, k) => (
-                  <figure
-                    key={p.src}
-                    data-reveal
-                    className={k === 0 ? "hs-shot-main" : "hs-shot"}
-                    style={{ "--d": `${0.08 + k * 0.08}s` } as CSSProperties}
-                  >
-                    <div className="hs-shot-img">
-                      <Image
-                        src={p.src}
-                        alt={p.alt}
-                        fill
-                        sizes={k === 0 ? "(min-width: 768px) 58vw, 100vw" : "(min-width: 768px) 19vw, 33vw"}
-                        className="hs-cover"
-                      />
-                    </div>
-                    <figcaption className="hs-label">{p.caption}</figcaption>
-                  </figure>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {/* ---------- รูปเต็มจอ (กดที่ไหนก็ปิด) ---------- */}
+      <dialog ref={box} className="hs-box" aria-label={shown?.alt} onClose={closedPhoto} onClick={() => box.current?.close()}>
+        {shown && <Image src={shown.src} alt={shown.alt} fill sizes="100vw" className="hs-box-img" />}
+        <button type="button" className="hs-film-btn hs-box-close">
+          Close
+        </button>
+      </dialog>
 
       {/* ---------- ท้ายหน้า ---------- */}
       <footer className="hs-footer">
         <div className="hs-foot-row">
-          <p className="hs-foot-text">A place where concrete, stone and light connect.</p>
+          <p className="hs-foot-text">A living room built around the fire.</p>
           <div className="hs-foot-links">
             <Link href="/" className="hs-btn">
               <Arrow /> Back to orbit
             </Link>
-            <Link href="/credits" className={`hs-btn hs-btn-ghost`}>
+            <Link href="/credits" className="hs-btn hs-btn-ghost">
               <Arrow /> Credits
             </Link>
           </div>
         </div>
         <p className="hs-foot-word" aria-hidden>
-          Monolith
+          Hearth
         </p>
-        <p className="hs-foot-note">
-          Concept project by Blue. Houses and room are 3D models; every image is rendered from them.
-        </p>
+        <p className="hs-foot-note">Concept project by Blue. The room is a 3D model; every image on this page is rendered from it.</p>
       </footer>
 
       {/* ---------- แถบเมนูลอยด้านล่าง (ติดจอตลอด) ---------- */}
@@ -549,6 +474,11 @@ export default function HouseLanding() {
               </a>
             </li>
           ))}
+          <li>
+            <button type="button" className="hs-menu-link" aria-pressed={music} onClick={toggleMusic}>
+              <span>♪</span> {music ? "Sound off" : "Sound on"}
+            </button>
+          </li>
           <li>
             <Link href="/" className="hs-menu-link">
               <span>↩</span> Back to orbit
@@ -580,12 +510,12 @@ export default function HouseLanding() {
   );
 }
 
-// โลโก้: แท่งหินสูงกับแท่งเตี้ยวางคู่กัน (เหมือนหอคอยกับตัวบ้าน MONOLITH)
+// โลโก้: เตาผิงสี่เหลี่ยมกับเปลวไฟข้างใน
 function Mark() {
   return (
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden className="inline-block align-[-3px]">
-      <rect x="3" y="2" width="6" height="16" fill="currentColor" />
-      <rect x="11" y="8" width="6" height="10" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="2.8" y="2.8" width="14.4" height="14.4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M10 5.5c.6 2.3 3.2 3.6 3.2 6.6a3.2 3.2 0 0 1-6.4 0c0-1.6 1-2.4 1.6-3.4.3 1 .8 1.5 1.4 1.7-.4-1.6-.4-3.2.2-4.9z" fill="currentColor" />
     </svg>
   );
 }

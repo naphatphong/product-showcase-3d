@@ -48,6 +48,11 @@ node scripts/hearth/compress.mjs work/hearth-lite-export.glb public/models/house
 # 6. ภาพ 360° สำหรับเงาสะท้อน
 cp work/bake/pano_day.hdr public/models/house/hearth-pano-day.hdr
 cp work/bake/pano_night.hdr public/models/house/hearth-pano-night.hdr
+
+# 7. ภาพนิ่งของหน้าเว็บ (Cycles, มุมกล้องอยู่ใน STILLS ใน bake.py) → public/photos/hearth/<ชื่อ>.webp
+#    still_plan = แปลนมองจากบน พื้นหลังโปร่งใส / PCT=25 = เรนเดอร์ 25% ของขนาดจริงไว้ลองมุมกล้องเร็วๆ
+python3.13 -I scripts/hearth/bake.py work/hearth.blend public/photos/hearth 512 96 \
+  still_hero-1 still_hero-1-night still_hero-2 still_hero-3-night still_sofa still_feathers still_marble still_tree-night still_dining still_plan
 ```
 
 ## อะไรอยู่ในไฟล์ไหน
