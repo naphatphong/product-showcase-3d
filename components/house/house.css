@@ -671,6 +671,205 @@
   opacity: 1;
 }
 
+/* ---------- ทัวร์ห้อง HEARTH: ภาพ 3D ติดจอ เลื่อนลง 1 จอ = 1 มุม (components/house/hearth) ---------- */
+.hs-tour {
+  position: relative;
+  height: calc((var(--stops) + 1) * 100svh);
+  background: #e9e3d9;
+}
+.hs-tour-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: #e9e3d9;
+  color: var(--on-paper);
+  transition: color 0.8s ease;
+}
+.hs-tour-stage[data-dark="true"] {
+  color: var(--on-ink);
+}
+.hs-tour-canvas {
+  position: absolute;
+  inset: 0;
+}
+/* ภาพ 3D ทั้งจอ: เงาไล่สีจางๆ ด้านบน ให้ตัวหนังสือบนภาพอ่านง่าย */
+.hs-tour-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 120px;
+  background: linear-gradient(rgb(233 227 217 / 0.55), transparent);
+  pointer-events: none;
+  transition: background 0.8s ease;
+}
+.hs-tour-stage[data-dark="true"]::after {
+  background: linear-gradient(rgb(23 21 15 / 0.6), transparent);
+}
+.hs-tour-wait {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  background: #e9e3d9;
+  color: var(--on-paper);
+  transition:
+    opacity 1s ease,
+    visibility 1s;
+}
+.hs-tour-wait[data-done="true"] {
+  opacity: 0;
+  visibility: hidden;
+}
+.hs-tour-bar {
+  width: 160px;
+  height: 1px;
+  background: rgb(0 0 0 / 0.12);
+}
+.hs-tour-bar i {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+.hs-tour-top {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px var(--gutter);
+}
+.hs-tour-auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+.hs-tour-auto:hover {
+  background: #000;
+}
+.hs-tour-auto[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--on-paper);
+}
+.hs-tour-dots {
+  position: absolute;
+  right: var(--gutter);
+  top: 50%;
+  z-index: 2;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px;
+  /* แผ่นกระจกฝ้าบางๆ เส้นจะได้เห็นชัดทั้งบนผนังสว่างและห้องตอนค่ำ */
+  background: rgb(242 239 233 / 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background 0.8s ease;
+}
+.hs-tour-stage[data-dark="true"] .hs-tour-dots {
+  background: rgb(28 29 31 / 0.5);
+}
+.hs-tour-dot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+  padding: 7px 0;
+  color: inherit;
+  cursor: pointer;
+}
+.hs-tour-dot i {
+  display: block;
+  width: 16px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+  transition:
+    width 0.5s var(--ease),
+    opacity 0.5s ease;
+}
+.hs-tour-dot span {
+  opacity: 0;
+  transform: translateX(6px);
+  transition:
+    opacity 0.4s ease,
+    transform 0.5s var(--ease);
+}
+.hs-tour-dot:hover i,
+.hs-tour-dot:focus-visible i {
+  opacity: 0.9;
+}
+.hs-tour-dot:hover span,
+.hs-tour-dot:focus-visible span {
+  opacity: 0.85;
+  transform: none;
+}
+.hs-tour-dot[aria-current="step"] i {
+  width: 40px;
+  opacity: 1;
+}
+/* กล่องข้อความของแต่ละมุม: กระจกฝ้าสีครีม (ค่ำ = สีเข้ม) อ่านง่ายบนภาพทุกแบบ */
+.hs-tour-caption {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 32px;
+  z-index: 2;
+  /* ไม่ให้ชนแถบเมนูลอยกลางล่าง (กว้าง 260px) */
+  width: min(380px, calc(50vw - 146px - var(--gutter)));
+  padding: 18px 20px 22px;
+  background: rgb(242 239 233 / 0.82);
+  color: var(--on-paper);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  animation: hs-tour-in 0.9s var(--ease) both;
+  transition:
+    background 0.8s ease,
+    color 0.8s ease;
+}
+.hs-tour-stage[data-dark="true"] .hs-tour-caption {
+  background: rgb(28 29 31 / 0.7);
+  color: var(--on-ink);
+}
+.hs-tour-title {
+  margin: 12px 0 10px;
+  font-size: clamp(28px, 3.2vw, 44px);
+  font-weight: 300;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+.hs-tour-text {
+  font-size: 14px;
+  line-height: 1.5;
+  opacity: 0.78;
+}
+@keyframes hs-tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---------- มือถือ: รูปลอยกลายเป็นตาราง 2 คอลัมน์ / ส่วนต่างๆ เรียงลงมาเป็นแถวเดียว ---------- */
 @media (max-width: 767px) {
   .hs-band-row,
@@ -734,6 +933,35 @@
   .hs-home-info {
     position: static;
   }
+  /* ทัวร์: กล่องข้อความเต็มความกว้าง เหนือแถบเมนูลอย / จุดนำทางเล็กลง ไม่มีชื่อ */
+  .hs-tour-caption {
+    left: 16px;
+    right: 16px;
+    bottom: 76px;
+    width: auto;
+    padding: 14px 16px 16px;
+  }
+  .hs-tour-title {
+    margin: 8px 0 6px;
+  }
+  .hs-tour-text {
+    font-size: 13px;
+  }
+  .hs-tour-dots {
+    top: 64px;
+    transform: none;
+    right: 16px;
+    padding: 4px 8px;
+  }
+  .hs-tour-dot {
+    padding: 5px 0;
+  }
+  .hs-tour-dot span {
+    display: none;
+  }
+  .hs-tour-dot[aria-current="step"] i {
+    width: 28px;
+  }
 }
 
 /* เครื่องที่ตั้งให้ลดภาพเคลื่อนไหว: ไม่มีการเลื่อนโผล่ / หน้าโหลดไม่มีแอนิเมชัน */
@@ -751,5 +979,8 @@
   }
   .hs-word {
     transition: none;
+  }
+  .hs-tour-caption {
+    animation: none;
   }
 }

@@ -7,6 +7,7 @@ import Lenis from "lenis";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
 import { archivo, plexMono } from "@/components/fonts";
 import Reveal from "@/components/Reveal";
+import HearthTour from "./hearth/HearthTour";
 import { HOMES, HOUSE_FILM, LIVE_MODEL, ROOM_FILM, type HomeShot } from "@/config/house";
 import "./house.css"; // สไตล์ของหน้านี้ (คลาสขึ้นต้นด้วย hs-) โหลดเฉพาะหน้า /house
 
@@ -47,6 +48,7 @@ const TILES: Tile[] = [
 const SECTIONS = [
   { id: "top", label: "Home" },
   { id: "about", label: "About" },
+  { id: "tour", label: "Tour" },
   { id: "collection", label: "Collection" },
   { id: "interior", label: "Interior" },
   { id: "model", label: "In 3D" },
@@ -336,6 +338,9 @@ export default function HouseLanding() {
           </a>
         </div>
       </section>
+
+      {/* ---------- ทัวร์ห้อง HEARTH: เลื่อนลงทีละมุม เฟอร์นิเจอร์เด้งขึ้น (components/house/hearth) ---------- */}
+      <HearthTour lenis={lenis} />
 
       {/* ---------- กลุ่มรูปลอย (พื้นครีม) ---------- */}
       <section id="collection" className={`hs-paper hs-collection`}>
