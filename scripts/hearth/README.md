@@ -75,4 +75,6 @@ cp work/bake/pano_night.hdr public/models/house/hearth-pano-night.hdr
 - แสงต่อจุดยอด: ค่าในไฟล์ = √(แสง/4) → แสง = ค่า² × 4 ใส่เข้าที่ `irradiance` ของ shader และปิดแสงกระจายจาก env
   (env จากภาพ 360° ให้แค่เงาสะท้อน)
 - tone mapping: AgX + เพิ่ม contrast 1.2 รอบ 0.606 ใน log space (= "Medium High Contrast" ของ Blender), exposure ~0.7
+- กลางคืน: exposure ลดเหลือ ~0.2 (AgX บีบช่วงแสงมาก ลดแสงลงครึ่งหนึ่งภาพมืดลงนิดเดียว ต้องลดหลายเท่าถึงจะเป็นค่ำ)
+  รูปวิวนอกหน้าต่าง (`Material #2147473862`) หรี่เหลือ ~5% อมน้ำเงิน, ผิวหลอดไฟ (`Light`, `21 - Default23`, `13 - Default2`) เรืองสีส้มอุ่น
 - ขนนกโคมระย้า (วัสดุ `Feather*`): ใช้แสงจาก env, เห็นสองด้าน

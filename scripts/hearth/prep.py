@@ -94,13 +94,27 @@ for o in list(sc.objects):
     if len(o.data.polygons) == 0: removed.append(o.name); bpy.data.objects.remove(o)
 print('removed', len(removed), 'cropped', cropped, flush=True)
 
-# ---------- แผ่นหินอ่อนหลังซิงก์วางทับผนังครัวพอดี: บนเว็บสองผิวแย่งกันแสดง (กะพริบเป็นลาย) และตอนอบแสง
-# ถูกมองว่าจมอยู่ในผนัง (มืด) → ขยับออกมาทางกลางห้อง 4 มม. ----------
+# ---------- แผ่นหินอ่อนหลังซิงก์ (กล่องบาง 2 ซม.) มาแบบ "กลับด้าน": ชิ้นนี้ถูกสะท้อนกระจก (scale ติดลบ) ทุกหน้าในห้อง
+# จึงหันเข้าในกล่อง ตอนอบแสงเลยอบจากด้านในออกมาดำทั้งแผ่น → ย้ายจุดทั้งหมดไปพิกัดโลก (ไม่มีการสะท้อนแล้ว)
+# กลับหน้าให้หันออกนอกกล่อง ทิ้งหน้าหลังที่ชนผนัง (บนเว็บสองผิวทับกันจะกะพริบเป็นลาย) แล้วขยับออกจากผนัง 4 มม. ----------
 Vec = __import__('mathutils').Vector
 for o in [o for o in sc.objects if o.name == 'Object2113134077']:
-    n = sum(((o.matrix_world.to_3x3() @ p.normal) * p.area for p in o.data.polygons), Vec()).normalized()
-    c = sum((o.matrix_world @ v.co for v in o.data.vertices), Vec()) / len(o.data.vertices)
-    if n.dot(Vec((22.6, 14.9, 1.2)) - c) < 0: n = -n   # หันเข้ากลางห้อง
+    if o.data.users > 1: o.data = o.data.copy()
+    bm = bmesh.new(); bm.from_mesh(o.data)
+    bm.transform(o.matrix_world); o.matrix_world = __import__('mathutils').Matrix.Identity(4); bm.normal_update()
+    cb = sum((v.co for v in bm.verts), Vec()) / len(bm.verts)
+    for f in bm.faces:
+        if f.normal.dot(f.calc_center_median() - cb) < 0: f.normal_flip()   # กล่องนูน: หน้าต้องหันออกจากจุดกลางกล่อง
+    bm.normal_update()
+    to_room = (Vec((22.6, 14.9, 1.2)) - cb).normalized()
+    front = max(bm.faces, key=lambda f: f.calc_area() * f.normal.dot(to_room))
+    n = front.normal.copy()                                                # หน้าหลักที่หันเข้าห้อง
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.normal.dot(n) < -0.9], context='FACES')
+    bm.to_mesh(o.data); bm.free()
+    # ทิศแรเงาเดิมที่ติดมากับไฟล์ (custom normals) ยังชี้กลับด้าน: ล้างทิ้ง แล้วแรเงาแบบผิวเรียบแบน
+    bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
+    if o.data.has_custom_normals: bpy.ops.mesh.customdata_custom_splitnormals_clear()
+    for p in o.data.polygons: p.use_smooth = False
     o.location += n * 0.004
 
 # ---------- พิกัดรูปพื้นผิวของวัสดุที่ปูซ้ำ (ไม้พื้น ปูนฉาบ หินอ่อน) ----------

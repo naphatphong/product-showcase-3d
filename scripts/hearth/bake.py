@@ -99,6 +99,8 @@ def area_light(name, loc, size, power, color, rot=(0, 0, 0), sy=None):
 def point(name, loc, power, color, radius=0.05):
     d = bpy.data.lights.new(name, 'POINT'); d.energy = power; d.color = color; d.shadow_soft_size = radius
     o = bpy.data.objects.new(name, d); o.location = loc; sc.collection.objects.link(o); return o
+# ผิวที่เป็นตัวหลอดไฟของโคม (หลอดโคมตั้งโต๊ะ, แถบ LED ใต้โคมซิกแซก, โคมติดผนัง): เรืองแสงเฉพาะกลางคืน
+LAMPS = r'^(Light|21 - Default23|13 - Default2)$'
 WARM, AMBER, SKY = (1.0, 0.82, 0.62), (1.0, 0.68, 0.42), (0.92, 0.96, 1.0)
 COVES = [(22.6, 10.7, 5.6, 0.08), (22.6, 15.5, 5.6, 0.08), (19.9, 13.1, 0.08, 4.6), (25.3, 13.1, 0.08, 4.6)]   # ไฟซ่อนฝ้า (x, y, กว้าง, ยาว)
 def emissive(rx, strength, color=None):
@@ -119,19 +121,20 @@ def lights_day():
     sun = bpy.data.objects.new('sun', bpy.data.lights.new('sun', 'SUN')); sun.data.energy = 3.5; sun.data.color = (1.0, 0.9, 0.78)
     sun.data.angle = math.radians(1.5); sun.rotation_euler = (math.radians(62), 0, math.radians(110)); sc.collection.objects.link(sun)
     world((0.75, 0.82, 0.95), 0.6)
-    emissive(r'^Material #2147473862$', 1.2, (1, 1, 1)); emissive(r'^Kronco - fire', 6)
+    emissive(r'^Material #2147473862$', 1.2, (1, 1, 1)); emissive(r'^Kronco - fire', 6); emissive(LAMPS, 0)
 
+# กลางคืนต้องดูเป็น "ค่ำจริง": ไม่มีไฟเติมทั้งห้อง ไฟซ่อนฝ้าแค่เรืองๆ แสงหลักมาจากโคมแต่ละดวงเป็นวงๆ
+# (รอบแรกใช้ไฟซ่อนฝ้าแรง + ไฟเติม ห้องสว่างเกือบเท่ากลางวัน)
 def lights_night():
-    for (x, y, sx, sy) in COVES: area_light('cove', (x, y, 2.62), sx, 260, AMBER, sy=sy)
-    area_light('fill_living', (22.6, 13.2, 2.6), 4.5, 30, WARM, sy=4)
-    area_light('kitchen_cove', (22.6, 19.2, 2.45), 4.0, 120, AMBER, sy=0.1)
-    point('chandelier', (24.3, 15.0, 1.65), 60, AMBER, 0.25)                                          # โคมขนนกเหนือโต๊ะอาหาร
-    point('table_a', (24.3, 14.6, 0.92), 8, AMBER); point('table_b', (24.3, 15.4, 0.92), 8, AMBER)   # โคมตั้งโต๊ะ
-    point('floor_lamp', (22.3, 11.8, 1.9), 45, AMBER, 0.12)                                           # โคมตั้งพื้นโค้ง
-    point('fire', (20.05, 12.9, 0.5), 70, (1.0, 0.55, 0.25), 0.3)                                    # เตาผิง
-    for y in (16.55, 17.0, 17.45): point('pendant', (22.5, y, 1.75), 25, AMBER, 0.08)                 # โคมซิกแซกเหนือเกาะครัว
-    world((0.05, 0.07, 0.14), 0.25)
-    emissive(r'^Material #2147473862$', 0.06, (0.35, 0.45, 0.8)); emissive(r'^Kronco - fire', 9)
+    for (x, y, sx, sy) in COVES: area_light('cove', (x, y, 2.62), sx, 40, AMBER, sy=sy)
+    area_light('kitchen_cove', (22.6, 19.2, 2.45), 4.0, 40, AMBER, sy=0.1)
+    point('chandelier', (24.3, 15.0, 1.65), 80, AMBER, 0.25)                                          # โคมขนนกเหนือโต๊ะอาหาร
+    point('table_a', (24.3, 14.6, 0.92), 10, AMBER); point('table_b', (24.3, 15.4, 0.92), 10, AMBER) # โคมตั้งโต๊ะ
+    point('floor_lamp', (22.3, 11.8, 1.9), 60, AMBER, 0.12)                                           # โคมตั้งพื้นโค้ง
+    point('fire', (20.05, 12.9, 0.5), 100, (1.0, 0.55, 0.25), 0.3)                                   # เตาผิง
+    for y in (16.55, 17.0, 17.45): point('pendant', (22.5, y, 1.75), 30, AMBER, 0.08)                 # โคมซิกแซกเหนือเกาะครัว
+    world((0.05, 0.07, 0.14), 0.08)
+    emissive(r'^Material #2147473862$', 0.06, (0.35, 0.45, 0.8)); emissive(r'^Kronco - fire', 9); emissive(LAMPS, 8, AMBER)
 
 # ---------- 3. รูปที่จะอบลง: ทุกวัสดุของ shell_lm ชี้ไปที่รูป 'lm' ผ่านพิกัด 'lightmap' ----------
 img = bpy.data.images.get('lm') or bpy.data.images.new('lm', SIZE, SIZE, float_buffer=True, alpha=False)
