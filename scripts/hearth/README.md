@@ -35,7 +35,7 @@ VSPP=128 python3.13 -I scripts/hearth/bake.py work/hearth.blend work/bake 2048 9
 # 3. lightmap .exr → .webp (ตัวเลขที่ 3 = scale: ค่าแสงที่ถือเป็น "ขาวสุด" ของรูป)
 python3.13 -I scripts/hearth/lightmap.py work/bake/day_empty.exr public/models/house/hearth-lm-day-empty.webp 6
 python3.13 -I scripts/hearth/lightmap.py work/bake/day_full.exr  public/models/house/hearth-lm-day-full.webp 6
-python3.13 -I scripts/hearth/lightmap.py work/bake/night.exr     public/models/house/hearth-lm-night.webp 8
+python3.13 -I scripts/hearth/lightmap.py work/bake/night.exr     public/models/house/hearth-lm-night.webp 5
 
 # 4. ส่งออกเป็น glb (ตัวเต็ม และตัวเบาสำหรับมือถือ keep=0.5)
 python3.13 -I scripts/hearth/export.py work/bake/hearth-lm.blend work/hearth-export.glb
