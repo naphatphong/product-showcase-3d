@@ -87,14 +87,14 @@ export const credits: Credit[] = [
       "Compressed for the web (WebP textures, meshopt geometry), 1.6 MB → 227 KB. The modified file is shared under the same licence, CC BY-NC-SA 4.0.",
   },
   {
-    usedFor: "HEARTH — the living room and kitchen, and its photographs",
+    usedFor: "HEARTH — the living room and kitchen (tour and home page), and its photographs",
     title: "Living room free 3d model",
     author: "cavitbarisbalta",
     authorUrl: "https://www.behance.net/cavitbarisbalta",
     source: "https://www.cgtrader.com/free-3d-models/interior/living-room/living-room-3d-model-b34a08fc-d4c3-4455-8b70-bef9d95cc471",
     license: "Royalty Free License (no AI)",
     changes:
-      "Cropped to the living room and kitchen, materials re-made, meshes simplified, lighting baked in Blender Cycles and compressed for the web (scripts/hearth). The photographs on /house are the designer's own renders from the product page, cropped to fit.",
+      "Cropped to the living room and kitchen, materials re-made, meshes simplified, lighting baked in Blender Cycles and compressed for the web (scripts/hearth). The home page piece is a cut-away dollhouse of the same room (ceiling and upper walls removed). The photographs on /house are the designer's own renders from the product page, cropped to fit.",
   }, // รูปถ่ายและวิดีโอในหน้า /f1 (ดาวน์โหลดจาก Pexels)
   {
     usedFor: "GRID 26 — heritage video (desktop)",

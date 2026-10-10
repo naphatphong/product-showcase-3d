@@ -53,6 +53,10 @@ cp work/bake/pano_night.hdr public/models/house/hearth-pano-night.hdr
 #    still_plan = แปลนมองจากบน พื้นหลังโปร่งใส / PCT=25 = เรนเดอร์ 25% ของขนาดจริงไว้ลองมุมกล้องเร็วๆ
 python3.13 -I scripts/hearth/bake.py work/hearth.blend public/photos/hearth 512 96 \
   still_day still_night still_plan
+
+# 8. ชิ้นที่ 4 บนวงแหวนหน้าแรก: ห้องแบบบ้านตุ๊กตา (ตัดฝ้า/ครึ่งบนของผนัง ผนังฝั่งใกล้กล้องโปร่ง) ไม่มีแสงอบ ~2 MB
+python3.13 -I scripts/hearth/ring.py work/hearth.blend work/hearth-ring-export.glb
+node scripts/hearth/compress.mjs work/hearth-ring-export.glb public/models/house/hearth-ring.glb 256
 ```
 
 ## อะไรอยู่ในไฟล์ไหน
@@ -64,6 +68,7 @@ python3.13 -I scripts/hearth/bake.py work/hearth.blend public/photos/hearth 512 
 | `hearth-lm-day-full.webp` | แสงกลางวัน ตอนเฟอร์นิเจอร์ครบ (มีเงาใต้เฟอร์นิเจอร์) |
 | `hearth-lm-night.webp` | แสงกลางคืน (ไฟซ่อนฝ้า เตาผิง โคมไฟ) จุดที่ 6 ของทัวร์ |
 | `hearth-pano-day.hdr` / `-night.hdr` | ภาพ 360° จากกลางห้อง ใช้ทำเงาสะท้อนบนพื้นหินอ่อน โลหะ กระจก |
+| `hearth-ring.glb` | ห้องแบบบ้านตุ๊กตา สำหรับวงแหวนสินค้าหน้าแรก (ส่องไฟด้วยไฟของฉากอวกาศ) |
 
 ใน glb:
 - ชิ้นที่เด้งขึ้นในทัวร์ชื่อ `item_...` มีข้อมูลแนบ `userData = { role: 'item', zone, kind, vol }`

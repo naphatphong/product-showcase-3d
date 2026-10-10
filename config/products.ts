@@ -1,6 +1,6 @@
 // ข้อมูลสินค้าทั้งหมดของโชว์รูม — แก้ชื่อ รายละเอียด สี ได้ที่ไฟล์นี้ที่เดียว
 // เก็บเป็นข้อมูลล้วน (ไม่มีโค้ด 3D ปน) เพื่อให้ย้ายไปเก็บใน Supabase ได้ในเฟสร้านค้า
-// ชื่อสินค้า (FIZZ / SIGNAL / GRID 26 / MONOLITH) แก้ได้ที่นี่ที่เดียว
+// ชื่อสินค้า (FIZZ / SIGNAL / GRID 26 / HEARTH) แก้ได้ที่นี่ที่เดียว
 
 type Place = { city: string; lat: number; lon: number };
 
@@ -151,25 +151,25 @@ export const products: Product[] = [
   },
   {
     slug: "house",
-    name: "MONOLITH",
-    category: "Modern villa",
-    tagline: "Concrete, stone and light.",
-    accent: "#d9b98f", // สีหินทรายของผนังหิน
+    name: "HEARTH",
+    category: "Living room & kitchen",
+    tagline: "A living room built around the fire.",
+    accent: "#c9955c", // บรอนซ์อุ่นแบบโคมทองเหลืองในห้อง
     specs: [
-      { label: "Plot", value: "39 × 35 m" },
-      { label: "Height", value: "9 m" },
-      { label: "Built in", value: "Concrete" },
+      { label: "Floor area", value: "52 m²" },
+      { label: "Ceiling", value: "2.7 m" },
+      { label: "Seats", value: "16" },
     ],
     origin: { city: "Khon Kaen", lat: 16.44, lon: 102.83 },
-    size: 2.3, // บ้านกว้างแต่เตี้ย (39 × 11 × 35 ม.) ขยายขึ้นนิดหน่อย จะได้ไม่ดูเล็กกว่าชิ้นอื่น (ใหญ่กว่านี้จะทับชื่อสินค้า)
-    // โมเดลบ้านทั้งหลังพร้อมสวนและกำแพงรอบ ตัวเล็กสำหรับวงแหวน (ย่อจากต้นฉบับ 785 MB ด้วย scripts/build-house.mjs)
+    size: 2.3, // ห้องยาวแต่เตี้ย ขยายขึ้นนิดหน่อย จะได้ไม่ดูเล็กกว่าชิ้นอื่น
+    // ห้องเดียวกับทัวร์ในหน้า /house แบบบ้านตุ๊กตา: ตัดฝ้ากับครึ่งบนของผนังออก มองเห็นข้างใน (scripts/hearth/ring.py)
     variants: [
       {
-        id: "monolith-villa",
-        name: "Monolith Villa",
-        model: "/models/house/villa-ring.glb",
-        accent: "#d9b98f",
-        swatch: "#cfcac2", // สีคอนกรีตเปลือย
+        id: "hearth",
+        name: "Hearth",
+        model: "/models/house/hearth-ring.glb",
+        accent: "#c9955c",
+        swatch: "#b5a796", // สีหินอุ่นของหน้า HEARTH
         origin: { city: "Khon Kaen", lat: 16.44, lon: 102.83 },
       },
     ],
