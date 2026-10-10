@@ -5,7 +5,7 @@ import type Lenis from "lenis";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import Safe from "@/components/Safe";
 import { HEARTH, STOPS } from "@/config/hearth";
-import { SETTLE_AT, clamp, createMotion, nightAt, stopAt } from "./timeline";
+import { SETTLE_AT, clamp, createMotion, glide, nightAt, restAt, stopAt } from "./timeline";
 
 // ฉาก 3D (three.js + ไฟล์ห้อง ~13 MB) โหลดเมื่อเลื่อนมาใกล้ส่วนนี้เท่านั้น
 const HearthScene = dynamic(() => import("./HearthScene"), { ssr: false });
@@ -24,7 +24,7 @@ export function tourY(t: number) {
 }
 
 // ทัวร์ห้อง HEARTH: ส่วนที่สูง N+1 จอ ภาพ 3D ติดอยู่กับจอ (sticky) ระหว่างเลื่อนผ่าน
-// เลื่อนลง 1 จอ = ไป 1 มุม: กล้องเดินทางไปมุมถัดไป แล้วค่อยๆ เคลื่อนเข้าช้าๆ เฟอร์นิเจอร์มุมนั้นเด้งขึ้น
+// เลื่อนลง 1 จอ = ไป 1 มุม: กล้องไหลไปมุมถัดไปเองช้าๆ (ไม่ตามความเร็วเมาส์) เฟอร์นิเจอร์มุมนั้นเด้งขึ้นระหว่างทาง
 // เลื่อนกลับขึ้น = เฟอร์นิเจอร์ยุบลงไป / ปุ่ม Auto เลื่อนให้เองทีละมุม หยุดดูมุมละ 3 วินาที
 export default function HearthTour({ lenis }: { lenis: RefObject<Lenis | null> }) {
   const section = useRef<HTMLElement>(null);
@@ -42,20 +42,12 @@ export default function HearthTour({ lenis }: { lenis: RefObject<Lenis | null> }
 
   // ---------- การเลื่อน → ตำแหน่งในทัวร์ ----------
   useEffect(() => {
-    let raf = 0;
-    const sync = () => {
-      raf = 0;
-      const t = motion.current.t;
-      setStop(stopAt(t).i); // ค่าเท่าเดิม React ไม่วาดใหม่
-      setDark(nightAt(t) > 0.5);
-    };
     const onScroll = () => {
       const el = section.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
       // 0 = ขอบบนของส่วนนี้ถึงขอบบนจอ → N = เลื่อนจนขอบล่างของส่วนนี้ถึงขอบล่างจอ
       motion.current.t = clamp(-r.top / Math.max(1, r.height - innerHeight), 0, 1) * N;
-      if (!raf) raf = requestAnimationFrame(sync); // ข้อความ/จุดนำทางอัปเดตเฟรมละครั้งพอ
     };
     onScroll();
     addEventListener("scroll", onScroll, { passive: true });
@@ -63,9 +55,32 @@ export default function HearthTour({ lenis }: { lenis: RefObject<Lenis | null> }
     return () => {
       removeEventListener("scroll", onScroll);
       removeEventListener("resize", onScroll);
-      cancelAnimationFrame(raf);
     };
   }, []);
+
+  // ---------- กล้องไหลตามเอง (ทุกเฟรมระหว่างอยู่ในจอ) ----------
+  useEffect(() => {
+    if (!inView) return;
+    const m = motion.current;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // เข้ามาจากด้านบน (ห้องยังว่าง) = เริ่มที่ท่าแรกแล้วค่อยๆ เคลื่อนเข้าห้อง / เข้ามากลางทาง = วางกล้องที่มุมนั้นเลย
+    // ready เปลี่ยน (ฉากโหลดเสร็จ) ก็เริ่มใหม่ ท่าเปิดจะได้ไม่เล่นจบไปก่อนตอนหน้าโหลดยังบังอยู่
+    m.view = m.t < 0.01 ? 0 : restAt(m.t);
+    m.vel = 0;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.1); // สลับแท็บกลับมา: ไม่กระโดดทีเดียวไกล
+      last = now;
+      if (reduce) m.view = restAt(m.t);
+      else glide(m, dt);
+      setStop(stopAt(m.t).i); // ข้อความ/จุดนำทาง = มุมที่กล้องกำลังไป (ค่าเท่าเดิม React ไม่วาดใหม่)
+      setDark(nightAt(m.view) > 0.5); // สีตัวหนังสือตามภาพที่เห็นจริง
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, ready]);
 
   // ---------- ปุ่ม Auto ----------
   const stopAuto = useCallback(() => {
@@ -98,7 +113,7 @@ export default function HearthTour({ lenis }: { lenis: RefObject<Lenis | null> }
     const wait = () => {
       if (a.id === id) a.timer = window.setTimeout(next, PAUSE);
     };
-    // ไปมุมถัดไปที่ยังไม่ถึงจุดพักดู (ความเร็วเลื่อนคงที่: กล้องชะลอเองตอนถึงแต่ละมุมอยู่แล้ว)
+    // ไปมุมถัดไปที่ยังไม่ถึงจุดพักดู (กล้องไหลไปเองตั้งแต่หน้าเลื่อนข้ามเข้าช่วงของมุมนั้น)
     function next() {
       if (a.id !== id) return;
       const i = STOPS.findIndex((_, k) => k + SETTLE_AT > motion.current.t + 0.02);

@@ -12,7 +12,7 @@ import { createPose, nightAt, poseAt, zoneWanted, type TourMotion } from "./time
 
 // ฉาก 3D ของทัวร์ HEARTH (ไฟล์นี้โหลดเมื่อเลื่อนมาใกล้ส่วนทัวร์เท่านั้น: dynamic import ใน HearthTour)
 // - ไม่มีไฟสดในฉากเลย: แสงทั้งหมดอบไว้แล้ว (bakedLight.ts) จึงลื่นแม้บนมือถือ
-// - ทุกเฟรมอ่าน "ตำแหน่งในทัวร์" (motion.t) ที่หน้าเว็บเขียนไว้ → วางกล้อง / เด้งเฟอร์นิเจอร์ / ปรับกลางวัน-กลางคืน
+// - ทุกเฟรมอ่านตำแหน่งกล้องในทัวร์ (motion.view ที่ HearthTour ไหลตามการเลื่อน) → วางกล้อง / เด้งเฟอร์นิเจอร์ / ปรับกลางวัน-กลางคืน
 
 installToneMapping();
 
@@ -27,10 +27,10 @@ const ROOM = "hearth-room"; // ชื่อ object ของห้องใน�
 const LAMP_COLOR = new THREE.Color(1.0, 0.68, 0.42); // ส้มอุ่นแบบหลอดไส้
 const NIGHT_SKY = new THREE.Color(0.35, 0.45, 0.8); // วิวนอกหน้าต่างตอนค่ำ: หรี่ลงและอมน้ำเงิน
 
-// ลำดับการเด้ง: ชิ้นใหญ่ขึ้นก่อน ทีละ 0.09 วินาที แล้วชิ้นเล็ก (drop) หล่นตามมาทีละ 0.045 วินาที
+// ลำดับการเด้ง: ชิ้นใหญ่ขึ้นก่อน ทีละ 0.12 วินาที แล้วชิ้นเล็ก (drop) หล่นตามมาทีละ 0.06 วินาที
 // ตอนยุบกลับทำย้อนลำดับ เร็วกว่า
-const STAGGER_IN = 0.09;
-const STAGGER_DROP = 0.045;
+const STAGGER_IN = 0.12;
+const STAGGER_DROP = 0.06;
 const STAGGER_OUT = 0.025;
 
 // ตัวเรนเดอร์: AgX ของเราเอง (bakedLight.ts) / ค่าคงที่นอก component ไม่งั้น R3F ตั้งค่าใหม่ทุกครั้งที่ React วาดซ้ำ
@@ -260,7 +260,7 @@ function Room({ motion, lite, onReady }: { motion: RefObject<TourMotion>; lite: 
     const { pose, size, bg } = r;
     const { gl, scene } = state;
     const camera = state.camera as THREE.PerspectiveCamera;
-    const t = motion.current.t;
+    const t = motion.current.view;
 
     // ---------- กล้อง ----------
     poseAt(t, pose);

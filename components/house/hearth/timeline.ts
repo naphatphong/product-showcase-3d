@@ -1,21 +1,22 @@
-// ลำดับเหตุการณ์ของทัวร์ HEARTH: แปลง "ตำแหน่งในทัวร์" (t) เป็นท่ากล้อง / เวลาเฟอร์นิเจอร์เด้ง / ความมืดยามค่ำ
-// t = 0 ตอนเริ่มส่วนทัวร์ ถึง STOPS.length ตอนเลื่อนผ่านจุดสุดท้าย — จุดที่ i กินช่วง [i, i + 1)
-// ในแต่ละจุด: ช่วงแรก (TRAVEL) กล้องเดินทางจากจุดก่อน → ช่วงที่เหลือค่อยๆ เคลื่อนเข้าช้าๆ (arrive → settle)
+// ลำดับเหตุการณ์ของทัวร์ HEARTH: แปลง "ตำแหน่งในทัวร์" เป็นท่ากล้อง / เวลาเฟอร์นิเจอร์เด้ง / ความมืดยามค่ำ
+// ตำแหน่ง 0 = เริ่มทัวร์ ถึง STOPS.length = จบ — จุดที่ i กินช่วง [i, i + 1)
+// มี 2 ค่า: t = ตำแหน่งที่หน้าเว็บเลื่อนถึง / view = ตำแหน่งที่กล้องอยู่จริง
+// การเลื่อนแค่บอกว่า "อยู่มุมไหน" แล้วกล้องไหลไปพักที่มุมนั้นเองด้วยความเร็วของมันเอง (glide) ไม่ตามความเร็วเมาส์
 // ไฟล์นี้ไม่มี React: หน้าเว็บ (ข้อความ/ปุ่ม) กับฉาก 3D เรียกใช้ร่วมกัน
 
 import * as THREE from "three";
 import { EVENING, STOPS, type Pose } from "@/config/hearth";
 
-export const TRAVEL = 0.35; // สัดส่วนของแต่ละจุดที่ใช้เดินทาง
-export const POP_AT = TRAVEL * 0.6; // เฟอร์นิเจอร์มุมนั้นเริ่มเด้งเมื่อกล้องเดินทางมาได้ 60%
-export const SETTLE_AT = 0.93; // ตำแหน่ง "พักดู" ของแต่ละจุด (ปุ่ม Auto / จุดนำทาง เลื่อนมาหยุดตรงนี้)
+export const POP_AT = 0.3; // เฟอร์นิเจอร์มุมนั้นเริ่มเด้งเมื่อกล้องไหลมาได้ราว 40% ของทาง
+export const SETTLE_AT = 0.93; // ปุ่ม Auto / จุดนำทาง / ป้ายบนแปลน เลื่อนหน้ามาหยุดตรงนี้ของแต่ละจุด
+const REST = 0.99; // กล้องพักที่ตำแหน่งนี้ของแต่ละจุด (ท่า settle เต็มที่ ก่อนขึ้นจุดถัดไป)
+const GLIDE = 0.95; // ความหนืดของกล้อง: น้อย = ไหลช้าลง (0.95 → ข้ามห้องราว 2 วินาที นิ่งสนิทใน ~4 วินาที)
 
 // ข้อมูลที่หน้าเว็บเขียน แล้วฉาก 3D อ่านทุกเฟรม (object ธรรมดาใน useRef ไม่ใช้ React state เพราะเปลี่ยนทุกเฟรม)
-export type TourMotion = { t: number };
-export const createMotion = (): TourMotion => ({ t: 0 });
+export type TourMotion = { t: number; view: number; vel: number };
+export const createMotion = (): TourMotion => ({ t: 0, view: 0, vel: 0 });
 
 export const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-const easeInOut = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 const smooth = (a: number, b: number, x: number) => {
   const k = clamp((x - a) / (b - a), 0, 1);
   return k * k * (3 - 2 * k);
@@ -32,6 +33,16 @@ export const nightAt = (t: number) => smooth(EVENING + 0.25, EVENING + 0.75, t);
 
 // มุมนี้ควรมีเฟอร์นิเจอร์หรือยัง (เลื่อนกลับขึ้นไปก่อนจุดนั้น = ยุบลงไป)
 export const zoneWanted = (stopIndex: number, t: number) => t >= stopIndex + POP_AT;
+
+// จุดพักของกล้อง: เลื่อนหน้ามาอยู่ในช่วงของมุมไหน (จะเลื่อนเร็วหรือช้า) กล้องก็ไปพักที่มุมนั้น
+export const restAt = (t: number) => stopAt(t).i + REST;
+
+// กล้องไหลไปหาจุดพัก 1 เฟรม: สปริงที่หน่วงพอดี (ไม่เลยเป้าแล้วเด้งกลับ) ออกตัวนุ่ม แล้วชะลอยาวๆ ตอนเข้ามุม
+// ระยะไกลแค่ไหนก็ใช้เวลาพอๆ กัน เลื่อนข้ามหลายมุมรวดเดียว กล้องก็ไหลผ่านแต่ละมุมไปเองนุ่มๆ
+export function glide(m: TourMotion, dt: number) {
+  m.vel += (GLIDE * GLIDE * (restAt(m.t) - m.view) - 2 * GLIDE * m.vel) * dt;
+  m.view += m.vel * dt;
+}
 
 // ---------- ท่ากล้อง ----------
 // เก็บทิศมองเป็น quaternion: หมุนจากทิศหนึ่งไปอีกทิศด้วย slerp จะหมุนทางสั้นที่สุดและนุ่ม
@@ -55,14 +66,18 @@ const mix = (out: CameraPose, a: Key, b: Key, k: number) => {
   out.fov = a.fov + (b.fov - a.fov) * k;
   return out;
 };
+const ab = createPose();
+const bc = createPose();
 
+// ทางเดินกล้องของจุดที่ i: เส้นโค้งเดียวจากท่าพักของมุมก่อน → โค้งผ่านใกล้ arrive → จบที่ settle
+// (เส้นโค้ง Bézier: ผสม 2 ชั้น) ช่วงแรกกล้องข้ามห้องไปก่อน แล้วค่อยๆ ช้าลงจนเป็นการเคลื่อนเข้ามุมช้าๆ ไม่มีจังหวะหยุดกลางทาง
+// ออกตัวและจบแบบนุ่ม (smoothstep) → ผ่านหลายมุมรวดเดียว กล้องก็ชะลอที่แต่ละมุมแล้วค่อยออกตัวต่อ ไม่กระตุก
 export function poseAt(t: number, out: CameraPose) {
   const { i, u } = stopAt(t);
   const here = KEYS[i];
-  if (u < TRAVEL) {
-    const from = i === 0 ? here.arrive : KEYS[i - 1].settle;
-    return mix(out, from, here.arrive, easeInOut(u / TRAVEL));
-  }
-  // ค่อยๆ เคลื่อนเข้า: เร่งออกตัวนุ่มๆ แล้วชะลอตอนจบ (แบบสโลว์โมชั่น)
-  return mix(out, here.arrive, here.settle, easeInOut((u - TRAVEL) / (1 - TRAVEL)));
+  const from = i === 0 ? here.arrive : KEYS[i - 1].settle;
+  const p = smooth(0, REST, u);
+  mix(ab, from, here.arrive, p);
+  mix(bc, here.arrive, here.settle, p);
+  return mix(out, ab, bc, p);
 }
