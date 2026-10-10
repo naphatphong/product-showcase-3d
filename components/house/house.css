@@ -786,10 +786,10 @@
   background: rgb(28 29 31 / 0.5);
 }
 .hs-tour-dot {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
   width: 100%;
   padding: 7px 0;
   color: inherit;
@@ -805,12 +805,24 @@
     width 0.5s var(--ease),
     opacity 0.5s ease;
 }
+/* ชื่อมุม: โผล่ทางซ้ายของแผงตอนชี้ (ไม่กินความกว้างของแผง) */
 .hs-tour-dot span {
+  position: absolute;
+  right: calc(100% + 20px);
+  padding: 4px 8px;
+  white-space: nowrap;
+  background: rgb(242 239 233 / 0.85);
+  color: var(--on-paper);
   opacity: 0;
   transform: translateX(6px);
+  pointer-events: none;
   transition:
     opacity 0.4s ease,
     transform 0.5s var(--ease);
+}
+.hs-tour-stage[data-dark="true"] .hs-tour-dot span {
+  background: rgb(28 29 31 / 0.8);
+  color: var(--on-ink);
 }
 .hs-tour-dot:hover i,
 .hs-tour-dot:focus-visible i {
@@ -818,7 +830,7 @@
 }
 .hs-tour-dot:hover span,
 .hs-tour-dot:focus-visible span {
-  opacity: 0.85;
+  opacity: 1;
   transform: none;
 }
 .hs-tour-dot[aria-current="step"] i {
