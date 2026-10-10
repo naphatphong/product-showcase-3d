@@ -411,19 +411,6 @@
   padding: 26px var(--gutter) clamp(140px, 22vh, 240px);
   background: linear-gradient(var(--ink), #15110f);
 }
-/* ทั้งห้องในภาพเดียว: พาโนรามาเต็มความกว้างจอ (ออกนอกขอบ padding ของแถบ) */
-.hs-pano {
-  position: relative;
-  aspect-ratio: 2667 / 957;
-  margin: clamp(50px, 9vh, 100px) calc(-1 * var(--gutter)) 0;
-  overflow: hidden;
-}
-.hs-pano figcaption {
-  position: absolute;
-  left: var(--gutter);
-  bottom: 14px;
-  color: rgb(255 255 255 / 0.85);
-}
 .hs-band-row {
   display: grid;
   grid-template-columns: 1fr minmax(0, 300px);
@@ -1098,9 +1085,6 @@ html:has(.hs-box[open]) {
   }
   .hs-compare {
     aspect-ratio: 4 / 3;
-  }
-  .hs-pano {
-    aspect-ratio: 16 / 10;
   }
   .hs-foot-row {
     flex-direction: column;

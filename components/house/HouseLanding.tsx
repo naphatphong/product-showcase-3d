@@ -13,7 +13,7 @@ import { SETTLE_AT } from "./hearth/timeline";
 import "./house.css"; // สไตล์ของหน้านี้ (คลาสขึ้นต้นด้วย hs-) โหลดเฉพาะหน้า /house
 
 const pad = (n: number) => String(n).padStart(2, "0");
-// รูปห้อง (room-*, panorama, รูปใน Details) = ภาพเรนเดอร์ของผู้ออกแบบห้อง (cavitbarisbalta) ครอปให้พอดีช่อง
+// รูปห้อง (room-*, รูปใน Details) = ภาพเรนเดอร์ของผู้ออกแบบห้อง (cavitbarisbalta) ครอปให้พอดีช่อง
 // day / night / plan = เรนเดอร์จากโมเดลเดียวกับทัวร์ด้วย Cycles (scripts/hearth/bake.py → still_<ชื่อ>)
 const photo = (name: string) => `/photos/hearth/${name}.webp`;
 
@@ -311,17 +311,6 @@ export default function HouseLanding() {
             tour below runs the same 3D model live in your browser.
           </p>
         </div>
-        {/* ทั้งห้องในภาพเดียว: ภาพพาโนรามาเต็มความกว้าง (มือถือครอปตรงกลาง) */}
-        <figure data-reveal className="hs-pano">
-          <Image
-            src={photo("panorama")}
-            alt="The whole room in one view: kitchen, dining table, sofa and the Christmas tree"
-            fill
-            sizes="100vw"
-            className="hs-cover"
-          />
-          <figcaption className="hs-label">Kitchen · Dining · Living</figcaption>
-        </figure>
       </section>
 
       {/* ---------- ข้อความใหญ่ (พื้นครีม) ---------- */}
