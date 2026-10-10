@@ -23,8 +23,8 @@ export const EXPLODE_I = SECTIONS.indexOf("explode");
 export const FIRST_CHAPTER = SECTIONS.indexOf(CHAPTERS[0].id); // section แรกที่เป็นบทชิ้นส่วน
 export const ASSEMBLE = SECTIONS.indexOf("assemble");
 
-// section ที่ไม่ใช้ฉาก 3D (ซ่อนฉากแล้วหยุดวาด ประหยัดแบตเครื่อง): หน้าประวัติ (วิดีโอ + รูปถ่าย)
-export const NO_3D = new Set([HERITAGE_I]);
+// section ที่ไม่ใช้ฉาก 3D (ซ่อนฉากแล้วหยุดวาด ประหยัดแบตเครื่อง): หน้าประวัติ (รูปถ่าย) และท้ายหน้า (รูปจากโชว์รูม)
+export const NO_3D = new Set([HERITAGE_I, SECTIONS.indexOf("outro")]);
 
 export type Motion = {
   scroll: number; // ตำแหน่งเลื่อนจอ (px)

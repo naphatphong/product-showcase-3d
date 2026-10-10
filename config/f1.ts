@@ -22,6 +22,7 @@ export type PartId =
 
 // รถในเรื่องเล่า: Red Bull RB22 คันเดียว (บลูเลือก 2026-10-09) ส่วนอีก 2 ทีมอยู่ในหน้าโชว์รูม
 export const STORY_CAR = {
+  id: "redbull-rb22", // คันเดียวกันในโชว์รูม (SHOWROOM_CARS) — ลิงก์ "Inspect it in 3D" พาไปคันนี้
   name: "Red Bull RB22",
   short: "RB22",
   model: "/models/f1/redbull-rb22-parts.glb",

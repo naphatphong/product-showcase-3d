@@ -666,6 +666,106 @@ html.lenis body {
       opacity: 0.25;
     }
   }
+  /* ท้ายหน้า (Outro ใน Overlays.tsx): ชวนเข้าโชว์รูม — มือถือ: รูปบน ข้อความล่าง / คอม: ข้อความซ้าย รูปขวา */
+  .f1-outro {
+    position: absolute;
+    inset: 6.5rem 1.25rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+  .f1-outro-media {
+    order: -1;
+  }
+  .f1-outro-shot {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #16171a;
+  }
+  /* รูปอู่ค่อยๆ ซูม/เลื่อนช้าๆ ไม่หยุด ให้รู้สึกว่ามีชีวิต */
+  .f1-outro-shot img {
+    animation: f1-drift 16s ease-in-out infinite alternate;
+    transition: filter 0.4s;
+  }
+  .f1-outro-shot:hover img {
+    filter: brightness(1.18);
+  }
+  @keyframes f1-drift {
+    from {
+      transform: scale(1.04) translateX(-1%);
+    }
+    to {
+      transform: scale(1.12) translateX(1.5%);
+    }
+  }
+  .f1-outro-live {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.65rem;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .f1-outro-cars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+  }
+  .f1-outro-thumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #16171a;
+  }
+  .f1-outro-thumb img {
+    transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.1, 1);
+  }
+  .f1-outro-cars a:hover .f1-outro-thumb img {
+    transform: scale(1.08);
+  }
+  .f1-outro-feats {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: start;
+    gap: 0.5rem 1.5rem;
+    font-family: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  @media (min-width: 768px) {
+    .f1-outro {
+      inset: 8.5rem 60px 5rem;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4vw;
+    }
+    .f1-outro-copy {
+      width: min(30rem, 36vw);
+    }
+    /* ความกว้างรูปจำกัดตามความสูงจอด้วย (รูป + การ์ด ≈ 0.8 เท่าของความกว้าง) ไม่ให้ล้นจอเตี้ย */
+    .f1-outro-media {
+      order: 0;
+      width: min(54vw, calc((100svh - 14rem) * 1.25));
+    }
+    .f1-outro-feats {
+      gap: 0.6rem 1.75rem;
+      font-size: 11px;
+    }
+  }
   /* ปุ่มรอง: กรอบเส้นบาง */
   .f1-pill {
     display: inline-block;
@@ -1323,7 +1423,8 @@ html.lenis body {
 /* ผู้ใช้ที่ตั้ง "ลดการเคลื่อนไหว": แสดงข้อความทันที ไม่มีตัวอักษรวิ่ง/พื้นหลังขยับ */
 @media (prefers-reduced-motion: reduce) {
   .f1-shine,
-  .f1-gate-dot {
+  .f1-gate-dot,
+  .f1-outro-shot img {
     animation: none;
   }
   .reveal-char,

@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
-import { CHAPTERS, SHOWROOM_CARS, type Chapter } from "@/config/f1";
+import { CHAPTERS, SHOWROOM_CARS, STORY_CAR, type Chapter } from "@/config/f1";
+import { products } from "@/config/products";
 
 // ข้อความที่ลอยทับฉาก 3D ของแต่ละ section ในหน้า GRID 26 (position: fixed อยู่กับที่ ไม่เลื่อนตามหน้า)
 // section ไหนแสดงอยู่ ข้อความของ section นั้นจะค่อยๆ โผล่ขึ้นมา ที่เหลือซ่อน (คลาส overlay ใน globals.css)
@@ -28,7 +30,17 @@ export function HeroOverlay({ active, car }: { active: boolean; car: string }) {
             One Formula 1 car, sixteen parts. Scroll to see how fast it is and where it comes from, then pull it
             apart piece by piece and watch it go back together.
           </p>
-          <p className="f1-label mt-5 flex items-center gap-3">
+          <Link
+            href="/f1/showroom"
+            className="f1-label pointer-events-auto mt-5 inline-flex items-center gap-2.5 text-[var(--f1-ink)] hover:text-[var(--f1-red)]"
+          >
+            <span aria-hidden className="f1-gate-dot" />
+            Or jump into the 3D garage
+            <span aria-hidden className="f1-arrow">
+              →
+            </span>
+          </Link>
+          <p className="f1-label mt-4 flex items-center gap-3">
             <span className="scroll-hint" aria-hidden />
             Scroll down
           </p>
@@ -83,6 +95,15 @@ export function ChapterOverlay({ active, chapter, index }: { active: boolean; ch
             </div>
           ))}
         </dl>
+        <Link
+          href={`/f1/showroom?car=${STORY_CAR.id}&part=${chapter.id}`}
+          className="f1-pill reveal-fade pointer-events-auto mt-5 md:mt-7"
+        >
+          Inspect it in 3D{" "}
+          <span aria-hidden className="f1-arrow">
+            →
+          </span>
+        </Link>
       </div>
     </div>
   );
@@ -144,45 +165,85 @@ export function AssembleOverlay({ active }: { active: boolean }) {
   );
 }
 
-// ---------- ท้ายหน้า: ชวนไปหน้าโชว์รูม 3D (รถ 3 ทีม กดดูชิ้นส่วนได้) ----------
+// ---------- ท้ายหน้า: ชวนเข้าโชว์รูม 3D (จุดเด่นของเว็บ) ----------
+// ฉาก 3D ของเรื่องซ่อนในหน้านี้ (NO_3D ใน motion.ts) แล้วโชว์รูปจริงจากหน้าโชว์รูมแทน:
+// รูปอู่ใหญ่ (กดเข้าได้) + การ์ดรถ 3 คัน กดแล้วกล้องในโชว์รูมพาไปที่คันนั้นเลย (?car=...)
+// มือถือ: รูปอยู่บน ข้อความล่าง / คอม: ข้อความซ้าย รูปขวา (.f1-outro ใน globals.css)
+const f1 = products.find((p) => p.slug === "f1")!;
+const GARAGE_CARS = SHOWROOM_CARS.map((c) => ({ ...c, accent: f1.variants.find((v) => v.id === c.id)!.accent }));
+const GARAGE_FEATURES = ["Pick a car", "Turn it 360°", "Explode all 16 parts", "Click any part"];
+
 export function Outro({ active, note }: { active: boolean; note?: string }) {
   return (
     <div data-active={active} className="overlay pointer-events-none fixed inset-0 z-[3]">
-      <div className="absolute inset-x-5 bottom-[9%] flex flex-col items-center text-center md:bottom-[11%]">
-        <p className="f1-label reveal-fade">GRID 26 · 1:18 scale models</p>
-        <h2 className="f1-title mt-3 text-[clamp(2.8rem,6.5vw,6rem)]">
-          <Reveal text="Meet all three." />
-        </h2>
-        <p className="reveal-fade mt-4 max-w-md text-sm leading-relaxed text-[var(--f1-muted)]">
-          Red Bull, Ferrari and Mercedes side by side in a 3D showroom. Pick a car, then click any part to see what it
-          does.
-        </p>
-        <p className="f1-label reveal-fade mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px]">
-          {SHOWROOM_CARS.map((c) => (
-            <span key={c.id}>
-              <span className="text-[var(--f1-red)]">■</span> {c.short}
-            </span>
-          ))}
-          <span>· 16 parts each · 360°</span>
-        </p>
-        {/* ปุ่มหลักตัวใหญ่ มีแสงวิ่งผ่านเป็นระยะ / ปุ่มกลับเป็นปุ่มรองอยู่ข้างล่าง */}
-        <div className="reveal-fade mt-7 flex flex-col items-center gap-5">
-          <Link href="/f1/showroom" className="f1-cta f1-cta-xl f1-shine pointer-events-auto">
-            Enter the 3D garage{" "}
-            <span aria-hidden className="f1-arrow">
-              →
-            </span>
-          </Link>
-          <Link href="/" className="f1-label pointer-events-auto text-[10px] underline-offset-4 hover:underline">
-            ← Back to orbit
-          </Link>
+      <div className="f1-outro">
+        <div className="f1-outro-copy">
+          <p className="f1-label reveal-fade">
+            <span className="text-[var(--f1-red)]">■</span> Next · The 3D garage
+          </p>
+          <h2 className="f1-title mt-3 text-[clamp(2.6rem,5.2vw,5.4rem)]">
+            <Reveal text="Meet all three." />
+          </h2>
+          <p className="reveal-fade mt-4 hidden max-w-sm text-sm leading-relaxed text-[var(--f1-muted)] md:block">
+            Red Bull, Ferrari and Mercedes parked in one workshop, in real-time 3D right in your browser.
+          </p>
+          <ol className="f1-outro-feats reveal-fade mt-4 md:mt-6">
+            {GARAGE_FEATURES.map((f, i) => (
+              <li key={f}>
+                <span className="text-[var(--f1-red)]">{pad(i + 1)}</span> {f}
+              </li>
+            ))}
+          </ol>
+          <div className="reveal-fade mt-6 flex flex-col items-start gap-5 md:mt-9">
+            <Link href="/f1/showroom" className="f1-cta f1-cta-xl f1-shine pointer-events-auto">
+              Enter the 3D garage{" "}
+              <span aria-hidden className="f1-arrow">
+                →
+              </span>
+            </Link>
+            <p className="text-[10px] leading-relaxed text-[var(--f1-faint)]">
+              <Link href="/" className="pointer-events-auto underline-offset-2 hover:text-[var(--f1-ink)] hover:underline">
+                ← Back to orbit
+              </Link>{" "}
+              · {note ?? "Concept project — not a real product."} ·{" "}
+              <Link href="/credits" className="pointer-events-auto underline underline-offset-2 hover:text-[var(--f1-ink)]">
+                Credits
+              </Link>
+            </p>
+          </div>
         </div>
-        <p className="reveal-fade mt-10 max-w-xl text-[10px] leading-relaxed text-[var(--f1-faint)]">
-          {note ?? "Concept project — not a real product."} ·{" "}
-          <Link href="/credits" className="pointer-events-auto underline underline-offset-2 hover:text-[var(--f1-ink)]">
-            Credits
+
+        <div className="f1-outro-media reveal-fade">
+          <Link href="/f1/showroom" aria-label="Enter the 3D garage" className="f1-outro-shot pointer-events-auto">
+            <Image src="/photos/f1/garage.webp" alt="" fill sizes="(min-width: 768px) 54vw, 100vw" className="object-cover" />
+            <span className="f1-outro-live">
+              <span aria-hidden className="f1-gate-dot" /> Real-time 3D
+            </span>
           </Link>
-        </p>
+          <ul className="f1-outro-cars">
+            {GARAGE_CARS.map((c) => (
+              <li key={c.id}>
+                <Link href={`/f1/showroom?car=${c.id}`} className="pointer-events-auto block">
+                  <span className="f1-outro-thumb">
+                    <Image
+                      src={`/photos/f1/garage-${c.id}.webp`}
+                      alt=""
+                      fill
+                      sizes="(min-width: 768px) 18vw, 33vw"
+                      className="object-cover"
+                    />
+                  </span>
+                  <span className="f1-label mt-2 block text-[9px] md:text-[10px]">
+                    <span style={{ color: c.accent }}>■</span> {c.short}{" "}
+                    <span aria-hidden className="f1-arrow">
+                      →
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

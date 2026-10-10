@@ -64,7 +64,17 @@ export default function Showroom() {
 
   const onReady = useCallback(() => setReady(true), []);
   const onProgress = useCallback((p: number) => setProgress(p), []);
-  const onLoaded = useCallback(() => setStarted(true), []);
+  // โหลดเสร็จ: ถ้ามาจากลิงก์ในหน้าเรื่อง เช่น /f1/showroom?car=redbull-rb22&part=power
+  // กล้องจะเคลื่อนไปคันนั้นและเปิดชิ้นนั้นให้เลย
+  const onLoaded = useCallback(() => {
+    setStarted(true);
+    const q = new URLSearchParams(location.search);
+    const i = CARS.findIndex((c) => c.id === q.get("car"));
+    if (i < 0) return;
+    pickCar(i);
+    const part = CHAPTERS.findIndex((c) => c.id === q.get("part"));
+    if (part >= 0) setChapter(part);
+  }, [pickCar]);
   const car = focus === null ? null : CARS[focus];
   const ch = chapter === null ? null : CHAPTERS[chapter];
 

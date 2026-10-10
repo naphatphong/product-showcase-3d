@@ -83,6 +83,8 @@ coming back to the home page in the same tab skips it.
 - GRID 26 garage: where each car is parked, which way it faces and the camera angle when it is picked are `SHOWROOM_CARS`
   in `config/f1.ts` (`x`, `z` in metres, `rot` and `view` in degrees); room size and props are in
   `components/f1/showroom/Garage.tsx`. Keyboard: Esc steps back, ← / → switch car
+- Links into the garage: `/f1/showroom?car=redbull-rb22&part=power` opens that car (and part, a chapter id from `CHAPTERS`).
+  The story's ending shows garage screenshots `public/photos/f1/garage*.webp`; re-shoot them if the garage changes
 - Any new photo or video needs a credit in `config/credits.ts`
 
 ## Adding a 3D model
