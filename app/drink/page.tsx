@@ -1,8 +1,9 @@
-import ProductIntro, { productMetadata } from "@/components/ProductIntro";
+import { productMetadata } from "@/components/ProductIntro";
+import Fizz from "@/components/fizz/Fizz";
 
-// หน้าสินค้า /drink — ตอนนี้เป็นหน้าชั่วคราว ข้อมูลทั้งหมดมาจาก config/products.ts
+// หน้าสินค้า /drink — FIZZ: เลือกกระป๋อง 6 ยี่ห้อ แล้วเลื่อนดูเรื่องราวทีละ section (ดู components/fizz)
 export const metadata = productMetadata("drink");
 
 export default function Page() {
-  return <ProductIntro slug="drink" />;
+  return <Fizz />;
 }

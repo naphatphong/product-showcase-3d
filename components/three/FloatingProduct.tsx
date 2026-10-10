@@ -1,63 +1,98 @@
 "use client";
 
-import { useRef, useState, type RefObject } from "react";
+import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import { Center, Html, Resize, useCursor } from "@react-three/drei";
+import { Center, Html, Resize, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import type { Product } from "@/config/products";
-import { CarPlaceholder, DrinkPlaceholder, WatchPlaceholder } from "./placeholders";
+import Safe from "@/components/Safe";
+import type { Product, Variant } from "@/config/products";
 
-// ขนาดของสินค้าทุกชิ้น: ด้านที่ยาวที่สุดจะยาวเท่านี้ (หน่วยในฉาก) ทุกชิ้นจึงดูใหญ่พอๆ กัน
+// ขนาดเริ่มต้นของสินค้า: ด้านที่ยาวที่สุดจะยาวเท่านี้ (หน่วยในฉาก) ทุกชิ้นจึงดูใหญ่พอๆ กัน
+// (สินค้าแต่ละชิ้นปรับเองได้ด้วย size ใน config เช่น รถยาวๆ ให้ใหญ่ขึ้น)
 const SIZE = 1.9;
+
+// มุมเอียงของแต่ละชิ้น [ก้ม/เงย (แกน x), เอียงซ้าย/ขวา (แกน z)] เรเดียน — ในอวกาศไม่มีพื้น ของจึงไม่ตั้งตรง
+// แต่ละชิ้นเอียงไม่เหมือนกัน และส่ายช้าๆ รอบมุมนี้ตลอด (WOBBLE) เหมือนลอยอยู่จริง
+const TILTS: [number, number][] = [
+  [0.25, -0.3],
+  [0.2, 0.28],
+  [0.28, -0.18],
+  [0.42, 0.16], // ห้อง HEARTH (บ้านตุ๊กตา): ก้มลงมากกว่าชิ้นอื่น ให้มองเห็นข้างในห้องจากมุมสูง
+];
+const WOBBLE = 0.12;
+
+// โหลดไฟล์ .glb (drei จะแคชไว้ โหลดซ้ำไม่เสียเวลา และถอดไฟล์ที่บีบแบบ meshopt ให้เอง)
+function GltfModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  return <primitive object={scene} />;
+}
 
 type Props = {
   product: Product;
   index: number;
-  position: [number, number, number]; // ตำแหน่งเป้าหมาย (สินค้าจะค่อยๆ เลื่อนไปหา)
-  scale: number;
-  active: boolean; // สินค้าที่กำลังแสดงรายละเอียด
-  dimmed: boolean; // มีชิ้นอื่น active อยู่ → ชิ้นนี้หรี่ลง
+  active: boolean; // จอดอยู่ตรงกลาง = สินค้าที่รายละเอียดกำลังแสดง
+  variant: Variant; // แบบที่เลือกอยู่ (โมเดล + สี)
   // ชั้น HTML (อยู่นอก Canvas) ที่ใช้วางป้ายชื่อ — null = ไม่แสดงป้าย
   labelLayer: RefObject<HTMLDivElement | null> | null;
-  onHover: (index: number) => void;
+  onHover: (index: number | null) => void; // null = เมาส์ออกจากสินค้าแล้ว
   onSelect: (index: number) => void;
 };
 
 // สินค้า 1 ชิ้นลอยอยู่กลางอวกาศ (ไม่มีฐาน) + แสงขอบสีประจำสินค้า + ป้ายชื่อด้านล่าง
+// ตำแหน่งบนวงโคจรและขนาดถูกกำหนดจาก Scene — ไฟล์นี้ดูแลแค่ตัวสินค้าเอง
 export default function FloatingProduct({
   product,
   index,
-  position,
-  scale,
   active,
-  dimmed,
+  variant,
   labelLayer,
   onHover,
   onSelect,
 }: Props) {
-  const root = useRef<THREE.Group>(null);
   const model = useRef<THREE.Group>(null);
+  const tilt = useRef<THREE.Group>(null);
   const rim = useRef<THREE.PointLight>(null);
   const lift = useRef(0); // ความสูงที่ยกขึ้นตอนนี้ (ค่อยๆ เปลี่ยน)
+  const spin = useRef(0); // มุมที่ยังต้องหมุนเพิ่ม (ใช้ตอนเปลี่ยนแบบ)
   const [hovered, setHovered] = useState(false);
-  useCursor(hovered); // เปลี่ยนเมาส์เป็นรูปมือเมื่อชี้สินค้า
+  const size = product.size ?? SIZE;
+  // ขนาดครึ่งหนึ่งของสินค้าจริง (รู้หลังวัดขนาดโมเดล): สูง = ใช้กับกล่องรับคลิก, กว้าง = วางป้ายข้างสินค้าพอดี
+  // ความกว้างคิดจากด้านที่ยาวกว่าระหว่างกว้าง/ลึก เพราะสินค้าหมุนรอบตัวเองตลอด
+  const [half, setHalf] = useState({ w: size / 2, h: size / 2 });
+  const halfHeight = half.h;
+
+  // เปลี่ยนแบบ (เช่นเปลี่ยนทีม) → หมุนโชว์ 1 รอบ
+  const variantId = variant.id;
+  const firstVariant = useRef(variantId);
+  useEffect(() => {
+    if (variantId !== firstVariant.current) spin.current += Math.PI * 2;
+  }, [variantId]);
+
+  // สินค้าที่มาจอดตรงกลาง → โหลดไฟล์ของแบบอื่นรอไว้ กดเปลี่ยนแล้วขึ้นทันที
+  useEffect(() => {
+    if (active) product.variants.forEach((v) => useGLTF.preload(v.model));
+  }, [active, product]);
 
   useFrame((state, dt) => {
-    const r = root.current;
     const m = model.current;
-    if (!r || !m) return;
+    if (!m) return;
     const damp = THREE.MathUtils.damp; // ค่อยๆ เข้าใกล้ค่าเป้าหมาย (ยิ่งตัวเลขที่ 3 มาก ยิ่งเร็ว)
-    // เลื่อนไปตำแหน่ง/ขนาดเป้าหมาย (ใช้ตอน carousel บนมือถือเลื่อน)
-    r.position.x = damp(r.position.x, position[0], 5, dt);
-    r.position.y = damp(r.position.y, position[1], 5, dt);
-    r.position.z = damp(r.position.z, position[2], 5, dt);
-    r.scale.setScalar(damp(r.scale.x, active ? scale * 1.08 : dimmed ? scale * 0.92 : scale, 5, dt));
-    // ลอยขึ้นลงช้าๆ (แต่ละชิ้นจังหวะไม่ตรงกัน) + ยกสูงขึ้นเมื่อ active + หมุนรอบตัวเอง
-    lift.current = damp(lift.current, active ? 0.15 : 0, 4, dt);
+    // ลอยขึ้นลงช้าๆ (แต่ละชิ้นจังหวะไม่ตรงกัน) + ยกสูงขึ้นเมื่อจอดอยู่ + หมุนรอบตัวเอง
+    lift.current = damp(lift.current, active ? 0.12 : 0, 4, dt);
     m.position.y = lift.current + Math.sin(state.clock.elapsedTime * 1.1 + index * 2) * 0.08;
-    m.rotation.y += dt * (active ? 0.6 : 0.2);
-    // แสงขอบสีประจำสินค้า สว่างขึ้นเมื่อ active
-    if (rim.current) rim.current.intensity = damp(rim.current.intensity, active ? 25 : dimmed ? 2 : 6, 6, dt);
+    const extra = spin.current * (1 - Math.exp(-5 * dt)); // หมุนเพิ่มแบบเร็วตอนแรกแล้วค่อยๆ ช้าลง
+    spin.current -= extra;
+    m.rotation.y += dt * (active ? 0.5 : 0.2) + extra;
+    // เอียง + ส่ายช้าๆ (จังหวะแกน x กับ z ไม่เท่ากัน จึงไม่ซ้ำเป็นวงเดิม) — หมุนรอบตัวเองก็หมุนรอบแกนที่เอียงนี้
+    const t = tilt.current;
+    if (t) {
+      const [tx, tz] = TILTS[index % TILTS.length];
+      const time = state.clock.elapsedTime;
+      t.rotation.x = tx + Math.sin(time * 0.37 + index * 1.3) * WOBBLE;
+      t.rotation.z = tz + Math.sin(time * 0.29 + index * 2.1) * WOBBLE;
+    }
+    // แสงขอบสีประจำสินค้า: สว่างสุดเมื่อจอดอยู่, ชิ้นอื่นสว่างขึ้นเมื่อเอาเมาส์ชี้ (บอกว่าคลิกได้)
+    if (rim.current) rim.current.intensity = damp(rim.current.intensity, active ? 22 : hovered ? 12 : 4, 6, dt);
   });
 
   const over = (e: ThreeEvent<PointerEvent>) => {
@@ -65,64 +100,84 @@ export default function FloatingProduct({
     setHovered(true);
     onHover(index);
   };
+  const out = () => {
+    setHovered(false);
+    onHover(null);
+  };
   const click = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    if (e.delta > 8) return; // นิ้วลากไปไกล = กำลังปัด carousel ไม่ใช่การแตะ
+    if (e.delta > 8) return; // ลากไปไกล = กำลังลากเปลี่ยนชิ้น ไม่ใช่การคลิก
     onSelect(index);
   };
 
   return (
-    <group ref={root} position={position}>
-      {/* กล่องล่องหนครอบตัวสินค้า ใช้รับเมาส์/นิ้ว (ชี้โดนง่ายกว่าเล็งตัวสินค้าตรงๆ) */}
-      <mesh visible={false} onPointerOver={over} onPointerOut={() => setHovered(false)} onClick={click}>
-        <cylinderGeometry args={[1.05, 1.05, 2.1, 16]} />
-      </mesh>
+    <group>
+      {/* tilt = กลุ่มที่เอียงตัวสินค้า กล่องรับคลิก และไฟขอบไปพร้อมกัน (ป้ายข้างสินค้าอยู่นอกกลุ่ม ไม่ต้องเอียงตาม) */}
+      <group ref={tilt}>
+        {/* กล่องล่องหนครอบตัวสินค้า ใช้รับเมาส์/นิ้ว (ชี้โดนง่ายกว่าเล็งตัวสินค้าตรงๆ) */}
+        <mesh visible={false} onPointerOver={over} onPointerOut={out} onClick={click}>
+          <cylinderGeometry args={[size / 2 + 0.1, size / 2 + 0.1, Math.max(halfHeight * 2 + 0.3, 1), 16]} />
+        </mesh>
 
-      {/* ไฟดวงเล็กสีประจำสินค้า วางไว้ด้านหลัง ทำให้ขอบสินค้าเรืองสีนั้น (rim light) */}
-      <pointLight
-        ref={rim}
-        color={product.accent}
-        intensity={6}
-        distance={3}
-        decay={2}
-        position={[0, 0.3, -1]}
-      />
+        {/* ไฟดวงเล็กสีประจำสินค้า วางไว้ด้านหลัง ทำให้ขอบสินค้าเรืองสีนั้น (rim light) */}
+        <pointLight
+          ref={rim}
+          color={variant.accent}
+          intensity={4}
+          distance={3}
+          decay={2}
+          position={[0, 0.3, -1]}
+        />
 
-      {/* ตัวสินค้า (ตอนนี้เป็นโมเดลชั่วคราว รอโมเดลจริง)
-          Resize = ย่อ/ขยายให้ด้านที่ยาวสุดยาว 1 หน่วย, Center = เลื่อนให้จุดกึ่งกลางอยู่ที่ (0,0,0)
-          โมเดลจริงที่ได้มาจะขนาดเท่าไรก็ตาม จะถูกจัดให้ขนาดและตำแหน่งเท่ากันหมด */}
-      <group ref={model}>
-        <group scale={SIZE}>
-          <Center>
-            <Resize>
-              {product.slug === "drink" && <DrinkPlaceholder accent={product.accent} />}
-              {product.slug === "watch" && <WatchPlaceholder />}
-              {product.slug === "car" && <CarPlaceholder />}
-            </Resize>
-          </Center>
+        {/* ตัวสินค้า: ไฟล์ .glb ของแบบที่เลือก
+            Resize = ย่อ/ขยายให้ด้านที่ยาวสุดยาว 1 หน่วย, Center = เลื่อนให้จุดกึ่งกลางอยู่ที่ (0,0,0)
+            โมเดลจะขนาดเท่าไรก็ตาม จะถูกจัดให้ขนาดและตำแหน่งเท่ากันหมด
+            Suspense อยู่นอก Center: Center จะวัดขนาดหลังไฟล์โหลดเสร็จแล้วเท่านั้น */}
+        <group ref={model}>
+          <group scale={size}>
+            {/* Safe: ไฟล์โมเดลโหลดไม่สำเร็จ → ซ่อนเฉพาะชิ้นนี้ (key = เปลี่ยนแบบแล้วลองใหม่ได้) */}
+            <Safe key={variantId}>
+              <Suspense fallback={null}>
+                {/* key: เปลี่ยนแบบ = สร้าง Center/Resize ใหม่ ให้วัดขนาดโมเดลใหม่อีกรอบ */}
+                <Center
+                  key={variantId}
+                  onCentered={({ width, height, depth }) => {
+                    const w = (Math.max(width, depth) * size) / 2;
+                    const h = (height * size) / 2;
+                    // ค่าเดิม → คืน object เดิม React จะไม่ render ใหม่ (Center เรียกฟังก์ชันนี้ทุกครั้งที่ render)
+                    setHalf((cur) => (cur.w === w && cur.h === h ? cur : { w, h }));
+                  }}
+                >
+                  <Resize>
+                    <GltfModel url={variant.model} />
+                  </Resize>
+                </Center>
+              </Suspense>
+            </Safe>
+          </group>
         </group>
       </group>
 
-      {/* ป้ายชื่อใต้สินค้า: เป็น HTML ที่ drei จัดตำแหน่งให้ตามจุด 3D (แค่ตกแต่ง screen reader ข้ามได้) */}
+      {/* ป้ายข้างสินค้า (เฉพาะชิ้นที่จอดอยู่) แบบหน้าจอเครื่องมือ: เป้าเล็ง + เส้น + "Click to enter"
+          เป็น HTML ที่ drei จัดตำแหน่งให้ตามจุด 3D (แค่ตกแต่ง screen reader ข้ามได้)
+          ชิ้นอื่นอยู่นอกจอ ไม่ต้องมีป้าย (ถ้ามี ป้ายจะลอยผ่านกลางจอตอนสินค้าบินเข้ามา) */}
       {/* portal: บอก drei ให้วางป้ายในชั้นที่เตรียมไว้ตั้งแต่แรก (ถ้าปล่อยให้ drei หาที่วางเอง มันจะย้ายที่หลัง
           render ครั้งแรก ทำให้ React 19 error ตอนเปลี่ยนหน้า) */}
-      {labelLayer && (
+      {labelLayer && active && (
         <Html
           portal={labelLayer as RefObject<HTMLElement>}
-          position={[0, -SIZE / 2 - 0.2, 0]}
-          center
+          position={[half.w + 0.1, -half.h * 0.35, 0]}
           pointerEvents="none"
           zIndexRange={[5, 0]}
         >
+          {/* มุมซ้ายบนของ Html อยู่ที่จุด 3D → เลื่อนให้กลางเป้าเล็งตรงจุดนั้นพอดี */}
           <div
             aria-hidden
-            className={`w-56 text-center transition-opacity duration-500 ${active ? "opacity-100" : dimmed ? "opacity-35" : "opacity-70"}`}
+            className="orbit-mono flex -translate-x-[6px] -translate-y-1/2 items-center gap-2 text-[9px] whitespace-nowrap tracking-[0.3em] text-white/85 uppercase motion-safe:animate-fade-in"
           >
-            <div className="text-[10px] tracking-[0.35em] text-white/50">0{index + 1}</div>
-            <div className="mt-1 font-display text-xl tracking-[0.2em] text-white">{product.name}</div>
-            <div className="mt-0.5 text-[11px] uppercase tracking-[0.25em] text-white/50">
-              {product.category}
-            </div>
+            <span className="orbit-cross" style={{ color: variant.accent }} />
+            <span className="h-px w-8 bg-white/40" />
+            Click to enter
           </div>
         </Html>
       )}

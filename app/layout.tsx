@@ -20,7 +20,7 @@ const sans = Jost({
 // title / description ของแท็บและตอนแชร์ลิงก์ ดึงจาก config ของเว็บ
 export const metadata: Metadata = {
   title: `${site.name} ${site.byline}`,
-  description: `${site.headline} Interactive 3D product showcase — concept projects.`,
+  description: `${site.headline.join(" ")} Interactive 3D product showcase — concept projects.`,
 };
 
 // layout ครอบทุกหน้า: ใส่ <html> <body> และคลาสฟอนต์ไว้ที่นี่ที่เดียว

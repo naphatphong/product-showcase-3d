@@ -29,6 +29,18 @@ export default function ProductIntro({ slug }: { slug: Product["slug"] }) {
         {p.name}
       </h1>
       <p className="mt-4 text-lg text-white/70">{p.tagline}</p>
+      {/* รายชื่อแบบของสินค้า (เช่น รถ 3 ทีม) พร้อมจุดสีประจำแบบ */}
+      <ul className="mt-8 flex flex-wrap justify-center gap-3">
+        {p.variants.map((v) => (
+          <li
+            key={v.id}
+            className="flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/70"
+          >
+            <span className="h-2 w-2 rounded-full" style={{ background: v.accent }} />
+            {v.name}
+          </li>
+        ))}
+      </ul>
       <p className="mt-10 max-w-md text-sm text-white/40">
         The full {p.category.toLowerCase()} experience is being built — coming next.
       </p>
@@ -38,8 +50,11 @@ export default function ProductIntro({ slug }: { slug: Product["slug"] }) {
       >
         ← Back to orbit
       </Link>
-      <p className="absolute inset-x-0 bottom-4 text-[10px] text-white/30">
-        {p.note ?? "Concept project — not a real product."}
+      <p className="absolute inset-x-0 bottom-4 px-4 text-[10px] text-white/30">
+        {p.note ?? "Concept project — not a real product."} ·{" "}
+        <Link href="/credits" className="underline underline-offset-2 hover:text-white/60">
+          Credits
+        </Link>
       </p>
     </main>
   );
