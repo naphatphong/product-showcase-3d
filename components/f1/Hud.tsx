@@ -48,9 +48,9 @@ export default function Hud({
             href="/f1/showroom"
             data-on={garage}
             tabIndex={garage ? 0 : -1}
-            className="f1-garage f1-shine pointer-events-auto"
+            className="f1-gate f1-shine pointer-events-auto"
           >
-            <span aria-hidden className="f1-garage-dot" />
+            <span aria-hidden className="f1-gate-dot" />
             <span className="md:hidden">Garage</span>
             <span className="hidden md:inline">Enter the 3D garage</span>
             <span aria-hidden className="f1-arrow">
