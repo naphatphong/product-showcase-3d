@@ -46,10 +46,10 @@ export function Finale() {
           ← Back to orbit
         </Link>
         <Link
-          href="/watch"
+          href="/f1"
           className="rounded-full bg-white px-6 py-3 text-[11px] uppercase tracking-[0.25em] text-black transition hover:bg-white/80"
         >
-          Next: MERIDIAN →
+          Next: GRID 26 →
         </Link>
       </div>
       <p className="mt-16 text-[11px] uppercase tracking-[0.3em] text-white/45">Keep scrolling to start over ↓</p>

@@ -24,6 +24,7 @@ export type Product = {
   // จุด "บ้านเกิด" ของสินค้า (แสดงในหน้าสินค้า) — lat บวก = เหนือ, lon บวก = ตะวันออก
   origin: Place;
   note?: string; // ข้อความเล็กๆ ท้ายหน้าสินค้า (ถ้าไม่มี ใช้ข้อความ concept project)
+  hidden?: boolean; // true = ซ่อนจากเว็บไว้ก่อน (ไม่อยู่บนวงแหวน) ลบบรรทัดนี้เพื่อเอากลับมา
   size?: number; // ขนาดในโชว์รูม (ความยาวด้านที่ยาวที่สุด) ค่าเริ่มต้น 1.9 — ของยาวๆ อย่างรถให้ใหญ่ขึ้น
   // แบบของสินค้า อย่างน้อย 1 แบบ (type [Variant, ...Variant[]] = array ที่ห้ามว่าง)
   // มีมากกว่า 1 แบบ → แผงรายละเอียดมีปุ่มให้เลือก / ตอนกดเข้า กล้องดำดิ่งไปเมืองของแบบที่เลือก
@@ -36,7 +37,7 @@ const ATLANTA: Place = { city: "Atlanta", lat: 33.75, lon: -84.39 }; // Coca-Col
 const NEW_BERN: Place = { city: "New Bern", lat: 35.11, lon: -77.04 }; // Pepsi (1893)
 const GENEVA: Place = { city: "Geneva", lat: 46.2, lon: 6.14 }; // เมืองนาฬิกาของโลก
 
-export const products: Product[] = [
+const allProducts: Product[] = [
   {
     slug: "drink",
     name: "FIZZ",
@@ -85,6 +86,7 @@ export const products: Product[] = [
   },
   {
     slug: "watch",
+    hidden: true, // Blue 2026-10-11: ซ่อนไว้ก่อน จนกว่าหน้าแยกชิ้นจะเสร็จ
     name: "MERIDIAN",
     category: "Automatic watches",
     tagline: "Every part, in motion.",
@@ -174,6 +176,8 @@ export const products: Product[] = [
     ],
   },
 ];
+
+export const products = allProducts.filter((p) => !p.hidden);
 
 // ลำดับของแบบเริ่มต้น (จาก defaultVariant) — id ไม่ตรงกับแบบไหนเลย → แบบแรก
 export function defaultVariantIndex(product: Product) {
