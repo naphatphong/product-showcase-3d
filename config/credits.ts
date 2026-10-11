@@ -95,15 +95,14 @@ export const credits: Credit[] = [
       "Split into one file per can, then compressed for the web (WebP textures, meshopt geometry), ~2.2 MB → ~250 KB per can.",
   },
   {
-    usedFor: "SIGNAL — iPhone 17 Pro",
-    title: "Apple iPhone 17 Pro 6.3''",
-    author: "zhe_kan",
-    authorUrl: "https://sketchfab.com/zhe_kan",
-    source: "https://sketchfab.com/3d-models/apple-iphone-17-pro-63-b05fec18fb8343acbb96ed84773f5e93",
-    license: "CC BY-NC-SA 4.0",
-    // ShareAlike (SA): ไฟล์ที่เราแก้แล้วต้องแจกต่อด้วย license เดียวกัน
+    usedFor: "MERIDIAN — Mechanical Watch",
+    title: "Mechanical Watch",
+    author: "emmanualfrancis23",
+    authorUrl: "https://www.cgtrader.com/designers/emmanualfrancis23",
+    source: "https://www.cgtrader.com/free-3d-models/electronics/other/mechanical-watch-031ba1a5-c655-4eb6-9f75-94c52b243e4b",
+    license: "Royalty Free License (no AI)",
     changes:
-      "Compressed for the web (WebP textures, meshopt geometry), 1.6 MB → 227 KB. The modified file is shared under the same licence, CC BY-NC-SA 4.0.",
+      "Materials re-made from the designer's textures (polished rose-gold case, cognac strap), small parts subdivided for smooth curves, rotated upright and compressed for the web (WebP textures, meshopt geometry), 3.9 MB FBX → 3.0 MB (scripts/watch).",
   },
   {
     usedFor: "HEARTH — the living room and kitchen (tour and home page), and its photographs",
@@ -177,5 +176,4 @@ export const credits: Credit[] = [
 export const trademarks = [
   "Formula 1, Mercedes-AMG Petronas F1, Scuderia Ferrari, Oracle Red Bull Racing and their sponsors",
   "The Coca-Cola Company, PepsiCo and Keurig Dr Pepper",
-  "Apple Inc.",
 ];

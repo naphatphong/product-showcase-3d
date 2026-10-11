@@ -6,7 +6,7 @@
 | `f1/ferrari-sf26.glb` | 2026 Ferrari SF-26 | Dave Love ([Tyler_Dave](https://sketchfab.com/Tyler_Dave)) | [Sketchfab](https://sketchfab.com/3d-models/2026-ferrari-sf-26-e5ca6cecdc42449283f4bed27360f2a7) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) |
 | `f1/redbull-rb22.glb`, `f1/redbull-rb22-parts.glb` | 2026 Redbull RB22 | Dave Love ([Tyler_Dave](https://sketchfab.com/Tyler_Dave)) | [Sketchfab](https://sketchfab.com/3d-models/2026-redbull-rb22-0a3d24a58e0549d591a5a48c22eec383) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) |
 | `soda/*.glb` (6 files: coca-cola, coca-cola-zero, sprite, pepsi, pepsi-zero, dr-pepper) | Soda Cans - 500ml \| Free Download | Mark Peters ([mark-peters](https://sketchfab.com/mark-peters)) | [Sketchfab](https://sketchfab.com/3d-models/soda-cans-500ml-free-download-84452c6420a44ea4be84c49fc6b2df6c) | [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/) |
-| `phone/iphone-17-pro.glb` | Apple iPhone 17 Pro 6.3'' | zhe_kan ([zhe_kan](https://sketchfab.com/zhe_kan)) | [Sketchfab](https://sketchfab.com/3d-models/apple-iphone-17-pro-63-b05fec18fb8343acbb96ed84773f5e93) | [CC BY-NC-SA 4.0](http://creativecommons.org/licenses/by-nc-sa/4.0/) |
+| `watch/mechanical-watch.glb` | Mechanical Watch | emmanualfrancis23 ([CGTrader](https://www.cgtrader.com/designers/emmanualfrancis23)) | [CGTrader](https://www.cgtrader.com/free-3d-models/electronics/other/mechanical-watch-031ba1a5-c655-4eb6-9f75-94c52b243e4b) | [Royalty Free License (no AI)](https://www.cgtrader.com/pages/terms-and-conditions#royalty-free-license) |
 | `house/hearth.glb`, `house/hearth-lite.glb`, `house/hearth-lm-*.webp`, `house/hearth-pano-*.hdr` | Living room free 3d model | cavitbarisbalta ([Behance](https://www.behance.net/cavitbarisbalta)) | [CGTrader](https://www.cgtrader.com/free-3d-models/interior/living-room/living-room-3d-model-b34a08fc-d4c3-4455-8b70-bef9d95cc471) | [Royalty Free License (no AI)](https://www.cgtrader.com/pages/terms-and-conditions#royalty-free-license) |
 
 Changes made: compressed for the web with [glTF Transform](https://gltf-transform.dev) 4.5
@@ -18,17 +18,15 @@ then compressed the same way: ~5.9 MB.
 The soda model holds all six cans in one 14 MB file; it was first split into one file per can (keeping only
 that can's node, then pruning unused data), then compressed the same way: ~2.2 MB → ~250 KB per can.
 
-The iPhone model went from 1.6 MB to 227 KB the same way.
+The watch (`watch/mechanical-watch.glb`) was rebuilt from the designer's FBX and textures with `scripts/watch/prep.py` (materials re-made, small parts subdivided, rotated upright), then compressed with `scripts/hearth/compress.mjs`: 3.9 MB FBX → 3.0 MB. It is used only inside this website and is not offered as a separate download.
 
 The HEARTH room (`house/hearth*.glb`) was cropped from the original scene to the living room and kitchen, its materials
 re-made, its meshes simplified and its lighting baked in Blender Cycles (lightmaps + per-vertex light), then compressed
 with glTF Transform; the steps are in `scripts/hearth/README.md`. The model is used only inside this website and is
 not offered as a separate download.
 
-The soda cans (CC BY-NC) and the iPhone (CC BY-NC-SA) are non-commercial licences: they are used here only in
-a non-commercial portfolio. ShareAlike: the compressed `phone/iphone-17-pro.glb` is a modified version of
-zhe_kan's model and is shared under the same licence, CC BY-NC-SA 4.0.
+The soda cans (CC BY-NC) are a non-commercial licence: they are used here only in a non-commercial portfolio.
 
 Team names, liveries, brand names and logos belong to their owners. This is a non-commercial fan concept and
 is not affiliated with or endorsed by Formula 1, Mercedes-AMG Petronas F1, Scuderia Ferrari, Oracle Red Bull Racing,
-The Coca-Cola Company, PepsiCo, Keurig Dr Pepper or Apple.
+The Coca-Cola Company, PepsiCo, Keurig Dr Pepper.

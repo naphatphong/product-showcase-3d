@@ -24,7 +24,7 @@ LEVEL = 9          # ระดับ tile ของ EOX (WGS84): 1 tile = 180/2^
 SIZES = ((2048, ""), (1024, "-sm"))
 CITIES = {  # ต้องตรงกับ origin ใน config/products.ts (ชื่อไฟล์ = ชื่อเมืองตัวเล็ก เว้นวรรคเป็น -)
     "Atlanta": (33.75, -84.39), "New Bern": (35.11, -77.04), "Waco": (31.55, -97.15),
-    "Cupertino": (37.33, -122.01), "Monaco": (43.74, 7.42), "Brackley": (52.03, -1.15),
+    "Geneva": (46.20, 6.14), "Monaco": (43.74, 7.42), "Brackley": (52.03, -1.15),
     "Maranello": (44.53, 10.86), "Milton Keynes": (52.04, -0.76), "Khon Kaen": (16.44, 102.83),
 }
 

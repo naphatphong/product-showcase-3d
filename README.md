@@ -12,10 +12,10 @@ page. Optional synthesized sound and a lens flare from the sun complete the scen
 | # | Product | Page | 3D model |
 |---|---|---|---|
 | 1 | FIZZ — soft drinks, 6 cans (Coca-Cola, Coke Zero, Sprite, Pepsi, Pepsi Zero, Dr Pepper) — full scroll page | `/drink` | `public/models/soda` |
-| 2 | SIGNAL — smartphones (iPhone 17 Pro) | `/phone` | `public/models/phone` |
+| 2 | MERIDIAN — automatic watch (Mechanical Watch) | `/watch` | `public/models/watch` |
 | 3 | GRID 26 — 1:18 F1 scale models, 3 teams (Mercedes W17, Ferrari SF-26, Red Bull RB22) — scroll story: speed dial, team history, design close-up, then the RB22 comes apart part by part and goes back together; the garage (`/f1/showroom`) parks all 3 cars to pick, turn around, take apart and inspect part by part | `/f1`, `/f1/showroom` | `public/models/f1` |
 
-Every product has one or more variants (a can, a team, a phone). Pick one with the colour buttons under the product
+Every product has one or more variants (a can, a team, a watch). Pick one with the colour buttons under the product
 name and the model, accent colour and the city the camera dives to all follow it. The FIZZ page opens on the same can.
 
 Full plan and milestones (Thai): [PLAN.md](./PLAN.md).
@@ -34,7 +34,7 @@ Controls on the home page:
 | | Leave the intro | Next / previous product | Enter its page |
 |---|---|---|---|
 | Desktop | Enter orbit, scroll down | drag, mouse wheel / trackpad, ‹ › at the screen edges | click the product or Enter … → |
-| Phone | Enter orbit, swipe up | swipe, ‹ › next to the Enter button | tap the product or Enter … → |
+| Watch | Enter orbit, swipe up | swipe, ‹ › next to the Enter button | tap the product or Enter … → |
 | Keyboard | Enter, Space, ↓, → | ← → | Enter |
 
 Sound is off until you turn it on (top right, or "Experience with sound" on the intro). Once you are past the intro,
@@ -46,7 +46,7 @@ coming back to the home page in the same tab skips it.
 |---|---|
 | `app/page.tsx` | Home page: logo, intro headline and product links (server-rendered) + `<Showroom />` |
 | `app/drink` | FIZZ: full scroll page (`components/fizz`) |
-| `app/phone` | SIGNAL (placeholder page for now) |
+| `app/watch` | MERIDIAN (placeholder page for now) |
 | `app/f1` | GRID 26: scroll story (`components/f1`); `app/f1/showroom` is the garage (`components/f1/showroom`) |
 | `app/credits` | Credits page, generated from `config/credits.ts` |
 | `components/Showroom.tsx` | Home state: loader → intro → orbit, drag / wheel / keyboard, sound, the dive into the Earth |
@@ -111,8 +111,8 @@ All 3 cars are split this way (`*-parts.glb`); the plain files are what the home
 ## Credits
 
 Earth imagery: NASA Earth Observatory (Blue Marble, Black Marble) — public domain.
-F1 car models: Dave Love, CC BY 4.0. Soda cans: Mark Peters, CC BY-NC 4.0. iPhone 17 Pro: zhe_kan, CC BY-NC-SA 4.0.
+F1 car models: Dave Love, CC BY 4.0. Soda cans: Mark Peters, CC BY-NC 4.0. Mechanical Watch: emmanualfrancis23, Royalty Free (no AI).
 All were compressed for the web — details on the site's `/credits` page and in `public/models/CREDITS.md`.
 
 Brand names, logos and liveries belong to their owners. This is a non-commercial fan concept and is not affiliated
-with Formula 1 or any team, The Coca-Cola Company, PepsiCo, Keurig Dr Pepper or Apple.
+with Formula 1 or any team, The Coca-Cola Company, PepsiCo, Keurig Dr Pepper.

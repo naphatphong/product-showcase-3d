@@ -1,6 +1,6 @@
 // ข้อมูลสินค้าทั้งหมดของโชว์รูม — แก้ชื่อ รายละเอียด สี ได้ที่ไฟล์นี้ที่เดียว
 // เก็บเป็นข้อมูลล้วน (ไม่มีโค้ด 3D ปน) เพื่อให้ย้ายไปเก็บใน Supabase ได้ในเฟสร้านค้า
-// ชื่อสินค้า (FIZZ / SIGNAL / GRID 26 / HEARTH) แก้ได้ที่นี่ที่เดียว
+// ชื่อสินค้า (FIZZ / MERIDIAN / GRID 26 / HEARTH) แก้ได้ที่นี่ที่เดียว
 
 type Place = { city: string; lat: number; lon: number };
 
@@ -15,7 +15,7 @@ export type Variant = {
 };
 
 export type Product = {
-  slug: "drink" | "phone" | "f1" | "house"; // ใช้เป็น URL ของหน้าสินค้า เช่น /phone
+  slug: "drink" | "watch" | "f1" | "house"; // ใช้เป็น URL ของหน้าสินค้า เช่น /watch
   name: string;
   category: string;
   tagline: string;
@@ -34,7 +34,7 @@ export type Product = {
 // เมืองที่ใช้ซ้ำหลายแบบ
 const ATLANTA: Place = { city: "Atlanta", lat: 33.75, lon: -84.39 }; // Coca-Cola (1886)
 const NEW_BERN: Place = { city: "New Bern", lat: 35.11, lon: -77.04 }; // Pepsi (1893)
-const CUPERTINO: Place = { city: "Cupertino", lat: 37.33, lon: -122.01 }; // Apple Park
+const GENEVA: Place = { city: "Geneva", lat: 46.2, lon: 6.14 }; // เมืองนาฬิกาของโลก
 
 export const products: Product[] = [
   {
@@ -84,28 +84,27 @@ export const products: Product[] = [
     ],
   },
   {
-    slug: "phone",
-    name: "SIGNAL",
-    category: "Smartphones",
-    tagline: "Pro, from every angle.",
-    accent: "#7d8cff",
+    slug: "watch",
+    name: "MERIDIAN",
+    category: "Automatic watches",
+    tagline: "Every part, in motion.",
+    accent: "#f0a37f",
     specs: [
-      { label: "Display", value: "6.3″" },
-      { label: "Chip", value: "A19 Pro" },
-      { label: "Cameras", value: "3 × 48 MP" },
+      { label: "Parts", value: "94" },
+      { label: "Case", value: "Rose gold" },
+      { label: "Movement", value: "Skeleton" },
     ],
-    origin: CUPERTINO,
-    note: "Fan concept — not affiliated with Apple. 3D model by zhe_kan (CC BY-NC-SA 4.0).",
-    size: 1.7, // มือถือ 2 เครื่องวางคู่กันเป็นสี่เหลี่ยมเกือบจัตุรัส ดูใหญ่กว่ากระป๋อง จึงย่อลงนิดหน่อย
-    // โมเดลวางมือถือ 2 เครื่องคู่กัน (ด้านหลัง + หน้าจอ) ตามที่ผู้สร้างจัดไว้
+    origin: GENEVA,
+    note: "Concept watch — not a real product. 3D model by emmanualfrancis23 (Royalty Free licence).",
+    size: 2.2, // หน้าปัด + สายตั้งสูงยาว เลยให้ใหญ่กว่ากระป๋องหน่อย
     variants: [
       {
-        id: "iphone-17-pro",
-        name: "iPhone 17 Pro",
-        model: "/models/phone/iphone-17-pro.glb",
-        accent: "#7d8cff",
-        swatch: "#34406e", // สี Deep Blue ของตัวเครื่อง
-        origin: CUPERTINO,
+        id: "rose-gold",
+        name: "Rose Gold",
+        model: "/models/watch/mechanical-watch.glb",
+        accent: "#f0a37f",
+        swatch: "#e9a285", // สีตัวเรือน rose gold
+        origin: GENEVA,
       },
     ],
   },
