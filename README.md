@@ -37,10 +37,10 @@ flowchart LR
     A[Land on home page] --> B[Products orbit<br/>above Earth]
     B -->|hover / swipe / ← →| C[Details panel<br/>for active product]
     C -->|click / tap / Enter| D{prefers-reduced-<br/>motion?}
-    D -->|yes| G[Go to page now]
+    D -->|yes| G
     D -->|no| E[Camera dives to<br/>product's home city]
     E --> F[Fade to black<br/>at 55% of the dive]
-    F --> G[/drink · /watch · /car/]
+    F --> G[Navigate to /drink · /watch · /car]
 ```
 
 ### 2. One state owner, many inputs
